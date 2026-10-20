@@ -1,0 +1,11 @@
+# Normalize line endings so Mac and Windows (RTX PC) don't fight over files.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.webp binary
+*.wav binary
+*.ogg binary
+*.glb binary
+*.blend binary
