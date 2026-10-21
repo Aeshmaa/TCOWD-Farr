@@ -144,7 +144,6 @@ func _build_inventory_window() -> void:
 
 	_auto_sp_btn = Button.new()
 	_auto_sp_btn.focus_mode = Control.FOCUS_NONE
-	_auto_sp_btn.size_flags_horizontal = Control.FOCUS_NONE
 	_auto_sp_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_auto_sp_btn.pressed.connect(func() -> void: if _player: _player.cycle_auto_charger("SP"))
 	charger_row.add_child(_auto_sp_btn)

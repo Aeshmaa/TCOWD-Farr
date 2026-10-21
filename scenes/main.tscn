@@ -125,7 +125,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 0, -42)
 station_name = "Legion Citadel HQ Refinery (NE)"
 
 [node name="SvelNpcPotion" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 0, 35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49, 0, 39)
 npc_name = "Injector Unit V-01"
 npc_title = "Ark Potion & Charger NPC"
 vendor_type = "POTION"
@@ -133,7 +133,7 @@ faction_id = "sveleitre"
 accent_color = Color(0.25, 0.95, 0.75, 1)
 
 [node name="SvelNpcWeapon" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 0, 41)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49, 0, 45)
 npc_name = "Ordnance Unit W-02"
 npc_title = "Weapon & Ammo/Force NPC"
 vendor_type = "WEAPON"
@@ -141,7 +141,7 @@ faction_id = "sveleitre"
 accent_color = Color(0.35, 0.85, 1, 1)
 
 [node name="SvelNpcArmor" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32, 0, 35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, 39)
 npc_name = "Chassis Foundry A-03"
 npc_title = "Svel Chassis Armor NPC (Lv.1-45)"
 vendor_type = "ARMOR"
@@ -149,7 +149,7 @@ faction_id = "sveleitre"
 accent_color = Color(0.45, 0.75, 1, 1)
 
 [node name="SvelNpcUtility" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32, 0, 41)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, 45)
 npc_name = "Logistics Node U-04"
 npc_title = "Scrolls, Bags & Salvage NPC"
 vendor_type = "UTILITY"
@@ -157,7 +157,7 @@ faction_id = "sveleitre"
 accent_color = Color(0.75, 0.9, 1, 1)
 
 [node name="OrderNpcPotion" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, 35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 39)
 npc_name = "Haoma Alchemist Darius"
 npc_title = "Sanctuary Potion NPC"
 vendor_type = "POTION"
@@ -166,7 +166,7 @@ body_color = Color(0.45, 0.38, 0.22, 1)
 accent_color = Color(1, 0.88, 0.35, 1)
 
 [node name="OrderNpcWeapon" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, 41)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 45)
 npc_name = "Atar Forgemaster Kaveh"
 npc_title = "Weapon & Force Charge NPC"
 vendor_type = "WEAPON"
@@ -175,7 +175,7 @@ body_color = Color(0.45, 0.38, 0.22, 1)
 accent_color = Color(1, 0.78, 0.28, 1)
 
 [node name="OrderNpcArmor" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, 35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, 39)
 npc_name = "Royal Armorer Bahram"
 npc_title = "Order/Druj Shared Armor NPC"
 vendor_type = "ARMOR"
@@ -184,7 +184,7 @@ body_color = Color(0.45, 0.38, 0.22, 1)
 accent_color = Color(1, 0.85, 0.45, 1)
 
 [node name="OrderNpcUtility" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, 41)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, 45)
 npc_name = "Scribe of the Seal"
 npc_title = "Scrolls, Bags & Tithe NPC"
 vendor_type = "UTILITY"
@@ -193,7 +193,7 @@ body_color = Color(0.45, 0.38, 0.22, 1)
 accent_color = Color(1, 0.92, 0.55, 1)
 
 [node name="LegionNpcPotion" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, -41)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, -45)
 npc_name = "Bloodbrewer Zarik"
 npc_title = "Citadel Potion NPC"
 vendor_type = "POTION"
@@ -202,7 +202,7 @@ body_color = Color(0.38, 0.16, 0.2, 1)
 accent_color = Color(0.98, 0.3, 0.38, 1)
 
 [node name="LegionNpcWeapon" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, -35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, -39)
 npc_name = "Aka-Warpsmith Vartan"
 npc_title = "Weapon & Force Charge NPC"
 vendor_type = "WEAPON"
@@ -211,7 +211,7 @@ body_color = Color(0.38, 0.16, 0.2, 1)
 accent_color = Color(0.95, 0.25, 0.45, 1)
 
 [node name="LegionNpcArmor" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, -41)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, -45)
 npc_name = "Obsidian Armorer Sorush"
 npc_title = "Order/Druj Shared Armor NPC"
 vendor_type = "ARMOR"
@@ -220,7 +220,7 @@ body_color = Color(0.38, 0.16, 0.2, 1)
 accent_color = Color(1, 0.38, 0.35, 1)
 
 [node name="LegionNpcUtility" parent="World" instance=ExtResource("8_vendor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, -35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, -39)
 npc_name = "Pact-Keeper Narseh"
 npc_title = "Scrolls, Bags & Pact Debt NPC"
 vendor_type = "UTILITY"

@@ -1151,7 +1151,11 @@ func _check_interact_arrival() -> bool:
 
 func _trigger_interaction(target: Node3D) -> void:
 	if target is VendorNpc:
-		active_vendor_npc = target as VendorNpc
+		var npc := target as VendorNpc
+		if npc.faction_id != str(_faction_dict()["id"]):
+			event_logged.emit("%s glares at you: \"I do not trade with outsiders of %s.\"" % [npc.npc_name, _faction_dict()["name"]])
+			return
+		active_vendor_npc = npc
 		event_logged.emit("Speaking with %s <%s>." % [active_vendor_npc.npc_name, active_vendor_npc.npc_title])
 		_emit_state()
 	elif target is FarrVein:
