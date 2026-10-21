@@ -30,15 +30,15 @@ agent_height = 1.5
 agent_radius = 0.5
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
-albedo_color = Color(0.22, 0.24, 0.27, 1)
+albedo_color = Color(0.2, 0.22, 0.25, 1)
 roughness = 0.9
 
 [sub_resource type="BoxMesh" id="BoxMesh_ground"]
 material = SubResource("StandardMaterial3D_ground")
-size = Vector3(60, 1, 60)
+size = Vector3(130, 1, 130)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
-size = Vector3(60, 1, 60)
+size = Vector3(130, 1, 130)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pillar"]
 albedo_color = Color(0.38, 0.36, 0.33, 1)
@@ -46,10 +46,10 @@ roughness = 0.85
 
 [sub_resource type="BoxMesh" id="BoxMesh_pillar"]
 material = SubResource("StandardMaterial3D_pillar")
-size = Vector3(2.5, 3, 2.5)
+size = Vector3(3, 4, 3)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_pillar"]
-size = Vector3(2.5, 3, 2.5)
+size = Vector3(3, 4, 3)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
 albedo_color = Color(0.32, 0.34, 0.38, 1)
@@ -57,10 +57,10 @@ roughness = 0.8
 
 [sub_resource type="BoxMesh" id="BoxMesh_wall"]
 material = SubResource("StandardMaterial3D_wall")
-size = Vector3(8, 2, 1.5)
+size = Vector3(12, 2.5, 2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
-size = Vector3(8, 2, 1.5)
+size = Vector3(12, 2.5, 2)
 
 [node name="Main" type="Node3D"]
 
@@ -68,7 +68,7 @@ size = Vector3(8, 2, 1.5)
 environment = SubResource("Environment_main")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866025, -0.383022, 0.321394, 0, 0.642788, 0.766044, -0.5, -0.663414, 0.55667, 0, 12, 0)
+transform = Transform3D(0.866025, -0.383022, 0.321394, 0, 0.642788, 0.766044, -0.5, -0.663414, 0.55667, 0, 18, 0)
 shadow_enabled = true
 
 [node name="World" type="NavigationRegion3D" parent="."]
@@ -85,7 +85,7 @@ mesh = SubResource("BoxMesh_ground")
 shape = SubResource("BoxShape3D_ground")
 
 [node name="PillarNW" type="StaticBody3D" parent="World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1.5, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 2, -8)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="World/PillarNW"]
 mesh = SubResource("BoxMesh_pillar")
@@ -94,7 +94,7 @@ mesh = SubResource("BoxMesh_pillar")
 shape = SubResource("BoxShape3D_pillar")
 
 [node name="PillarNE" type="StaticBody3D" parent="World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1.5, -5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2, -8)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="World/PillarNE"]
 mesh = SubResource("BoxMesh_pillar")
@@ -103,7 +103,7 @@ mesh = SubResource("BoxMesh_pillar")
 shape = SubResource("BoxShape3D_pillar")
 
 [node name="RuinedWall" type="StaticBody3D" parent="World"]
-transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, -2, 1, 3)
+transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, -4, 1.25, 8)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="World/RuinedWall"]
 mesh = SubResource("BoxMesh_wall")
@@ -111,74 +111,135 @@ mesh = SubResource("BoxMesh_wall")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/RuinedWall"]
 shape = SubResource("BoxShape3D_wall")
 
-[node name="RefineryStation" parent="World" instance=ExtResource("6_refinery")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 9)
+[node name="SveleitreHQRefinery" parent="World" instance=ExtResource("6_refinery")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42, 0, 42)
+station_name = "Sveleitre Ark HQ Refinery (SW)"
 
-[node name="LowGradeVein" parent="World" instance=ExtResource("5_vein")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 4)
-vein_name = "Low-Grade Farr Vein"
+[node name="OrderHQRefinery" parent="World" instance=ExtResource("6_refinery")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 0, 42)
+station_name = "Order Sanctuary HQ Refinery (SE)"
+
+[node name="LegionHQRefinery" parent="World" instance=ExtResource("6_refinery")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 0, -42)
+station_name = "Legion Citadel HQ Refinery (NE)"
+
+[node name="SveleitreOutpostVein" parent="World" instance=ExtResource("5_vein")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 0, 28)
+vein_name = "Ark Outpost Farr Vein (Lv.1-15)"
 max_units = 5
 yield_per_cycle = 10
 weight_per_unit = 2.0
-value_per_unit = 20
+value_per_unit = 22
+mine_duration = 1.8
+
+[node name="OrderOutpostVein" parent="World" instance=ExtResource("5_vein")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 28)
+vein_name = "Sanctuary Outpost Farr Vein (Lv.1-15)"
+max_units = 5
+yield_per_cycle = 10
+weight_per_unit = 2.0
+value_per_unit = 22
+mine_duration = 1.8
+
+[node name="LegionOutpostVein" parent="World" instance=ExtResource("5_vein")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, -28)
+vein_name = "Citadel Outpost Farr Vein (Lv.1-15)"
+max_units = 5
+yield_per_cycle = 10
+weight_per_unit = 2.0
+value_per_unit = 22
 mine_duration = 1.8
 
 [node name="RichFarrVein" parent="World" instance=ExtResource("5_vein")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -9)
-vein_name = "Rich Farr Vein"
-max_units = 4
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, 0, 0, 2)
+vein_name = "Contested Rich Farr Vein (Lv.20-35)"
+max_units = 5
 yield_per_cycle = 15
 weight_per_unit = 2.0
-value_per_unit = 40
-mine_duration = 2.5
+value_per_unit = 50
+mine_duration = 2.4
 crystal_color = Color(1, 0.52, 0.12, 1)
 
 [node name="ScarMegavein" parent="World" instance=ExtResource("5_vein")]
-transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -10, 0, -11)
-vein_name = "Scar Megavein Core"
-max_units = 6
-yield_per_cycle = 20
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -18, 0, -18)
+vein_name = "Scar Megavein Core (Lv.35-45)"
+max_units = 8
+yield_per_cycle = 25
 weight_per_unit = 2.0
-value_per_unit = 75
-mine_duration = 3.2
-crystal_color = Color(0.95, 0.25, 0.35, 1)
+value_per_unit = 95
+mine_duration = 3.0
+crystal_color = Color(0.95, 0.22, 0.35, 1)
 
-[node name="RivalMinerEast" parent="." instance=ExtResource("7_enemy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, -8.5)
-enemy_name = "Rival Strip-Miner"
-level = 10
-max_hp = 200
-attack_damage = 15
-bounty_reward = 140
-drop_farr_units = 15
-drop_farr_value = 300
+[node name="SwLevelingMob" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0, 25)
+enemy_name = "Scrap Scavenger"
+level = 5
+max_hp = 160
+attack_damage = 12
+bounty_reward = 120
+drop_farr_units = 12
+drop_farr_value = 240
 
-[node name="CorruptedDaevaGuard" parent="." instance=ExtResource("7_enemy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -9.5)
-enemy_name = "Druj Vein-Stalker"
-level = 18
-max_hp = 340
-attack_damage = 24
-bounty_reward = 260
+[node name="SeLevelingMob" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0, 25)
+enemy_name = "Fallen Acolyte"
+level = 5
+max_hp = 160
+attack_damage = 12
+bounty_reward = 120
+drop_farr_units = 12
+drop_farr_value = 240
+
+[node name="NeLevelingMob" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0, -25)
+enemy_name = "Lesser Daeva"
+level = 5
+max_hp = 160
+attack_damage = 12
+bounty_reward = 120
+drop_farr_units = 12
+drop_farr_value = 240
+
+[node name="CenterElite1" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 3.5, 0, 0)
+enemy_name = "Druj Vein-Stalker (Elite)"
+level = 25
+max_hp = 680
+attack_damage = 42
+bounty_reward = 450
 drop_farr_units = 25
-drop_farr_value = 650
+drop_farr_value = 800
 body_color = Color(0.45, 0.15, 0.55, 1)
 accent_color = Color(1, 0.2, 0.45, 1)
 
-[node name="RogueAutomaton" parent="." instance=ExtResource("7_enemy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, -12)
-enemy_name = "Orphaned Fork-Drone"
-level = 22
-max_hp = 420
-attack_damage = 28
-bounty_reward = 350
-drop_farr_units = 30
-drop_farr_value = 900
+[node name="CenterElite2" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -13, 0, -14)
+enemy_name = "Orphaned Fork-Guard (Elite)"
+level = 35
+max_hp = 1150
+attack_damage = 68
+bounty_reward = 850
+drop_farr_units = 35
+drop_farr_value = 1400
 body_color = Color(0.25, 0.42, 0.48, 1)
 accent_color = Color(0.2, 0.95, 1, 1)
 
+[node name="WorldBossAeshma" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(4.5, 0, 0, 0, 4.5, 0, 0, 0, 4.5, -24, 0, -24)
+enemy_name = "AESHMA, THE WRATH UNBOUND (Forsworn Boss)"
+level = 50
+max_hp = 6500
+attack_damage = 165
+attack_range = 5.5
+aggro_radius = 12.0
+bounty_reward = 5000
+drop_farr_units = 80
+drop_farr_value = 6000
+body_color = Color(0.88, 0.86, 0.85, 1)
+accent_color = Color(1, 0.15, 0.15, 1)
+
 [node name="Player" parent="." instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -38, 0, 38)
 
 [node name="CameraRig" type="Node3D" parent="."]
 script = ExtResource("3_camrig")
@@ -188,7 +249,7 @@ target_path = NodePath("../Player")
 projection = 1
 size = 16.0
 near = 0.1
-far = 200.0
+far = 300.0
 
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("4_hud")
@@ -196,11 +257,11 @@ camera_rig_path = NodePath("../CameraRig")
 player_path = NodePath("../Player")
 
 [node name="TopBar" type="HBoxContainer" parent="HUD"]
-offset_left = 16.0
-offset_top = 14.0
-offset_right = 1150.0
-offset_bottom = 46.0
-theme_override_constants/separation = 8
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 1580.0
+offset_bottom = 42.0
+theme_override_constants/separation = 6
 
 [node name="CamModeButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
@@ -210,40 +271,55 @@ text = "CAM [C]: 1: 360° Free Orbit"
 [node name="ProjButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
 focus_mode = 0
-text = "VIEW [V]: Perspective (3D Depth)"
-
-[node name="ResetButton" type="Button" parent="HUD/TopBar"]
-layout_mode = 2
-focus_mode = 0
-text = "Reset Cam [R]"
+text = "VIEW [V]: Perspective"
 
 [node name="FactionButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
 focus_mode = 0
-text = "Faction [F]: Sveleitre"
+text = "Race [F]: Sveleitre"
 
-[node name="DeathButton" type="Button" parent="HUD/TopBar"]
+[node name="ClassButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
 focus_mode = 0
-text = "Simulate Death [K]"
+text = "Class [J]: Breaker"
+
+[node name="BranchButton" type="Button" parent="HUD/TopBar"]
+layout_mode = 2
+focus_mode = 0
+text = "Lv.30 Job [B]"
+
+[node name="GearButton" type="Button" parent="HUD/TopBar"]
+layout_mode = 2
+focus_mode = 0
+text = "Buy Gear [U]"
+
+[node name="LevelButton" type="Button" parent="HUD/TopBar"]
+layout_mode = 2
+focus_mode = 0
+text = "+5 Lv / Archon [L]"
+
+[node name="HqButton" type="Button" parent="HUD/TopBar"]
+layout_mode = 2
+focus_mode = 0
+text = "Warp HQ [H]"
 
 [node name="HelpLabel" type="Label" parent="HUD"]
-offset_left = 16.0
-offset_top = 50.0
-offset_right = 1040.0
-offset_bottom = 96.0
-text = "MacBook / PC Camera: Hold [Space] + Slide Trackpad (or Right-Drag) = 360° Orbit & Tilt  |  [Q/E] Rotate  |  [Z/X] or Pinch/2-Finger Scroll = Zoom
-Gameplay: Click Enemy / [Tab] = Target & Attack  |  [1-4] = Skills & Race Signature  |  Click Vein = Mine  |  Click Refinery = Pay Debt"
+offset_left = 14.0
+offset_top = 46.0
+offset_right = 1080.0
+offset_bottom = 92.0
+text = "Camera: Hold [Space] + Slide Trackpad (or Right-Drag) = 360° Orbit  |  [Q/E] Rotate  |  [Z/X] or Pinch/2-Finger Scroll = Zoom
+RPG: [F] Race  |  [J] 4 Base Classes  |  [B] Lv.30 Job Branch  |  [U] Upgrade Lv.1-50 Gear  |  [L] Test Level/Archon  |  [H] Warp HQ"
 
 [node name="TargetPanel" type="PanelContainer" parent="HUD"]
 visible = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -180.0
-offset_top = 54.0
-offset_right = 180.0
-offset_bottom = 112.0
+offset_left = -210.0
+offset_top = 92.0
+offset_right = 210.0
+offset_bottom = 148.0
 grow_horizontal = 2
 
 [node name="VBox" type="VBoxContainer" parent="HUD/TargetPanel"]
@@ -253,7 +329,7 @@ layout_mode = 2
 layout_mode = 2
 horizontal_alignment = 1
 modulate = Color(1, 0.55, 0.55, 1)
-text = "Lv.10 Rival Strip-Miner"
+text = "Lv.50 AESHMA"
 
 [node name="TargetBar" type="ProgressBar" parent="HUD/TargetPanel/VBox"]
 layout_mode = 2
@@ -262,26 +338,27 @@ layout_mode = 2
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -430.0
-offset_top = 14.0
-offset_right = -16.0
-offset_bottom = 158.0
+offset_left = -465.0
+offset_top = 48.0
+offset_right = -14.0
+offset_bottom = 205.0
 grow_horizontal = 0
 
 [node name="Margin" type="VBoxContainer" parent="HUD/EconomyPanel"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 4
 
 [node name="EconomyLabel" type="Label" parent="HUD/EconomyPanel/Margin"]
 layout_mode = 2
-text = "Lv.1 (Sveleitre)  |  HP: 300 / 300  |  ATK: 28
-Ark Debt: 5000 FC   |   Wallet: 0 FC
+text = "Lv.1  |  Breaker (Frontline)
+Gear: Lv.1 Indentured Issue  |  HP: 364/364  |  ATK: 25
+Ark Debt: 5000 FC   |   Wallet: 500 FC
 Unrefined Farr: 0 (0 FC)  |  Wt: 0/100"
 
 [node name="HpBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
 layout_mode = 2
-max_value = 300.0
-value = 300.0
+max_value = 364.0
+value = 364.0
 
 [node name="WeightBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
 layout_mode = 2
@@ -318,9 +395,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -360.0
+offset_left = -380.0
 offset_top = -82.0
-offset_right = 360.0
+offset_right = 380.0
 offset_bottom = -42.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -328,28 +405,28 @@ alignment = 1
 theme_override_constants/separation = 10
 
 [node name="Skill1" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(165, 38)
+custom_minimum_size = Vector2(180, 38)
 layout_mode = 2
 focus_mode = 0
 text = "1: Auto-Atk [OFF]"
 
 [node name="Skill2" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(165, 38)
+custom_minimum_size = Vector2(180, 38)
 layout_mode = 2
 focus_mode = 0
-text = "2: Rail Piercer"
+text = "2: Ram Cleave"
 
 [node name="Skill3" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(165, 38)
+custom_minimum_size = Vector2(180, 38)
 layout_mode = 2
 focus_mode = 0
-text = "3: Siege Mode"
+text = "3: Shock Stomp AoE"
 
 [node name="Skill4" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(175, 38)
+custom_minimum_size = Vector2(190, 38)
 layout_mode = 2
 focus_mode = 0
-text = "4: Titan Frame"
+text = "4: Siege Mode"
 
 [node name="LogLabel" type="Label" parent="HUD"]
 anchors_preset = 2
@@ -357,7 +434,7 @@ anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
 offset_top = -34.0
-offset_right = 1200.0
+offset_right = 1350.0
 offset_bottom = -10.0
 grow_vertical = 0
 modulate = Color(0.85, 0.95, 1, 1)

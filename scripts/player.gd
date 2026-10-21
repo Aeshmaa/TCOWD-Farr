@@ -1,15 +1,10 @@
 extends CharacterBody3D
-## Phase 1–4 Player Controller:
-## - NavMesh click-to-move + WASD movement
-## - Farr Vein mining channel + Carry Weight + Refinery Debt payment + Chinvat Bridge death drop
-## - RF-style Tab-Target combat + 4-slot Skill Hotbar:
-##     * [1] Basic Auto-Attack (Weapon)
-##     * [2] Single-Target Class Skill (4s cooldown)
-##     * [3] AoE Class Skill (6s cooldown)
-##     * [4] Exclusive Racial Signature (ONLY ONE per race, just like RF Online):
-##         - Sveleitre: Siege Mode (Locks in place, 14m artillery AoE, costs ammo debt per shell)
-##         - Order of the Oracle: Call Fravashi (Summons AI companion that follows, tanks aggro & levels up)
-##         - Legion of the Druj: Mount Dread-Titan (Mounts massive 2.2x Obsidian War-Frame, +350 HP & +90% ATK, costs heavy repair debt per hit taken)
+## Data-Driven Player Controller (driven by `GameData`):
+## - 3 Factions ([F]), 4 Base Classes per faction ([J]), 2 Lv.30 Advanced Job branches ([B])
+## - Lv.1–45 Level Cap + Lv.50 Ascended Faction Leader (Archon) promotion ([L] to test leveling)
+## - Lv.1–50 Equipment Tiers ([U] to buy next tier with Wallet FC)
+## - Teleport to Faction HQ ([H]) across the 3-HQ + Central Scar map
+## - 1 Exclusive Racial Signature per race ([4]): Sveleitre=Siege, Order=Fravashi, Legion=Dread-Titan Mount
 
 signal state_updated(status_data: Dictionary)
 signal event_logged(message: String)
@@ -17,37 +12,7 @@ signal event_logged(message: String)
 const DROPPED_BAG_SCENE := preload("res://scenes/dropped_ore_bag.tscn")
 const FRAVASHI_SCENE := preload("res://scenes/fravashi_companion.tscn")
 
-const FACTIONS := [
-	{
-		"name": "Sveleitre",
-		"debt_name": "Ark Debt",
-		"upkeep_label": "Core & Ammo Upkeep",
-		"color": Color(0.3, 0.9, 1.0),
-		"skill2": "2: Rail Piercer",
-		"skill3": "3: Null-Pulse AoE",
-		"skill4": "4: Siege Mode",
-	},
-	{
-		"name": "Order of the Oracle",
-		"debt_name": "Vow Debt",
-		"upkeep_label": "Relic & Fravashi Tithe",
-		"color": Color(1.0, 0.85, 0.35),
-		"skill2": "2: Atar Lance",
-		"skill3": "3: Pillar of Atar",
-		"skill4": "4: Call Fravashi",
-	},
-	{
-		"name": "Legion of the Druj",
-		"debt_name": "Pact Debt",
-		"upkeep_label": "Dread-Titan Upkeep",
-		"color": Color(0.95, 0.3, 0.35),
-		"skill2": "2: Aka Rend",
-		"skill3": "3: Druj Nova",
-		"skill4": "4: Dread-Titan Mount",
-	},
-]
-
-@export var base_move_speed := 5.5
+@export var base_move_speed := 6.0
 @export var overburdened_speed_mult := 0.6
 @export var acceleration := 30.0
 @export var hold_retarget_interval := 0.1
@@ -55,19 +20,17 @@ const FACTIONS := [
 @export var starting_debt := 5000
 @export var upkeep_interval := 25.0
 @export var upkeep_cost := 75
-@export var respawn_point := Vector3(0.0, 0.1, 8.0)
-
-@export_group("Combat")
-@export var base_max_hp := 300
-@export var base_attack_damage := 28
-@export var base_attack_range := 2.6
-@export var attack_interval := 1.05
 
 @onready var agent: NavigationAgent3D = $NavigationAgent3D
 @onready var sprite: DirectionalSprite = $Sprite
 @onready var marker: MeshInstance3D = $TargetMarker
 
 var faction_index := 0
+var class_index := 0
+var job_branch := 0
+var gear_tier_index := 0
+var is_ascended_leader := false
+
 var level := 1
 var xp := 0
 var max_hp := 300
@@ -77,17 +40,16 @@ var unrefined_units := 0
 var current_weight := 0.0
 var unrefined_value := 0
 var current_debt := 5000
-var wallet_credits := 0
+var wallet_credits := 500
 
 var is_mining := false
 var mining_progress := 0.0
 
-# Combat & Exclusive Racial Signature states (1 per race)
 var selected_enemy: EnemyUnit = null
 var auto_attacking := false
-var siege_mode := false          # Exclusive to Sveleitre ([4])
-var fravashi_instance: FravashiCompanion = null  # Exclusive to Order ([4])
-var frame_mounted := false       # Exclusive to Legion Dread-Titan Mount ([4])
+var siege_mode := false
+var fravashi_instance: FravashiCompanion = null
+var frame_mounted := false
 
 var _attack_cd := 0.0
 var _skill2_cd := 0.0
@@ -104,14 +66,14 @@ var _mining_vein: FarrVein = null
 
 func _ready() -> void:
 	add_to_group("friendly_combatant")
-	max_hp = base_max_hp
-	current_hp = max_hp
 	current_debt = starting_debt
 	_upkeep_timer = upkeep_interval
+	_recalc_vital_stats()
+	current_hp = max_hp
 	_apply_faction_tint()
 	_connect_world_enemies()
 	_emit_state()
-	event_logged.emit("Ready! [1] Auto-Atk, [2] Single Skill, [3] AoE Skill, [4] Exclusive Race Signature.")
+	event_logged.emit("Welcome to the Var! [F] Race, [J] Class, [B] Lv.30 Job, [U] Gear, [L] +5 Lv, [H] Warp HQ.")
 
 
 func _connect_world_enemies() -> void:
@@ -129,6 +91,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		_holding_world_click = false
 	elif event.is_action_pressed("faction_cycle"):
 		cycle_faction()
+	elif event.is_action_pressed("class_cycle"):
+		cycle_class()
+	elif event.is_action_pressed("job_branch_toggle"):
+		toggle_job_branch()
+	elif event.is_action_pressed("upgrade_gear"):
+		upgrade_equipment()
+	elif event.is_action_pressed("dev_level_up"):
+		dev_boost_level()
+	elif event.is_action_pressed("teleport_hq"):
+		teleport_to_hq()
 	elif event.is_action_pressed("simulate_death"):
 		simulate_death()
 	elif event.is_action_pressed("target_cycle"):
@@ -151,16 +123,14 @@ func _physics_process(delta: float) -> void:
 	_skill2_cd = maxf(0.0, _skill2_cd - delta)
 	_skill3_cd = maxf(0.0, _skill3_cd - delta)
 
-	# Out-of-combat natural HP regeneration.
 	if not auto_attacking and current_hp < max_hp:
-		current_hp = mini(max_hp, current_hp + int(ceil(max_hp * 0.02 * delta)))
+		current_hp = mini(max_hp, current_hp + int(ceil(max_hp * 0.025 * delta)))
 
-	# Periodic faction upkeep tick.
 	_upkeep_timer -= delta
 	if _upkeep_timer <= 0.0:
 		_upkeep_timer = upkeep_interval
 		current_debt += upkeep_cost
-		var f: Dictionary = FACTIONS[faction_index]
+		var f: Dictionary = _faction_dict()
 		event_logged.emit("%s accrued: +%d FC added to %s." % [f["upkeep_label"], upkeep_cost, f["debt_name"]])
 
 	if selected_enemy and (not is_instance_valid(selected_enemy) or selected_enemy.is_dead):
@@ -173,7 +143,6 @@ func _physics_process(delta: float) -> void:
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 
 	if siege_mode:
-		# Sveleitre Siege Mode locks the player in place!
 		if input != Vector2.ZERO:
 			event_logged.emit("Locked in Siege Mode! Press [4] to undeploy before moving.")
 		_clear_click_target()
@@ -230,6 +199,102 @@ func _physics_process(delta: float) -> void:
 		sprite.set_facing(wish)
 
 	_emit_state()
+
+
+func _faction_dict() -> Dictionary:
+	return GameData.FACTIONS[faction_index]
+
+
+func _class_dict() -> Dictionary:
+	return _faction_dict()["classes"][class_index]
+
+
+func _gear_dict() -> Dictionary:
+	return GameData.EQUIPMENT_TIERS[gear_tier_index]
+
+
+func _active_job_title() -> String:
+	var c := _class_dict()
+	if level >= 30:
+		var jobs: Array = c["jobs"]
+		return "%s -> %s" % [c["base"], jobs[job_branch]]
+	return "%s (%s)" % [c["base"], c["role"]]
+
+
+func cycle_class() -> void:
+	class_index = (class_index + 1) % 4
+	_recalc_vital_stats()
+	current_hp = max_hp
+	var c := _class_dict()
+	event_logged.emit("Switched Base Class -> %s (%s). Weapon Range: %.1fm." % [c["base"], c["role"], c["range"]])
+
+
+func toggle_job_branch() -> void:
+	job_branch = 1 - job_branch
+	var c := _class_dict()
+	var jobs: Array = c["jobs"]
+	if level < 30:
+		event_logged.emit("Selected future Lv.30 Job Branch: %s (unlocks at Lv.30!)." % jobs[job_branch])
+	else:
+		_recalc_vital_stats()
+		event_logged.emit("Switched Lv.30 Advanced Job -> %s!" % jobs[job_branch])
+
+
+func upgrade_equipment() -> void:
+	if gear_tier_index + 1 >= GameData.EQUIPMENT_TIERS.size():
+		event_logged.emit("Already wearing maximum Tier 7 Ascended Archon Regalia!")
+		return
+	var next_gear: Dictionary = GameData.EQUIPMENT_TIERS[gear_tier_index + 1]
+	var req_lv: int = next_gear["req_lv"]
+	var cost: int = next_gear["cost"]
+	if level < req_lv:
+		event_logged.emit("Need Level %d to equip %s (use [L] to test leveling!)." % [req_lv, next_gear["name"]])
+		return
+	if wallet_credits < cost:
+		event_logged.emit("Need %d Wallet FC to buy %s (you have %d FC)." % [cost, next_gear["name"], wallet_credits])
+		return
+	wallet_credits -= cost
+	gear_tier_index += 1
+	_recalc_vital_stats()
+	current_hp = max_hp
+	event_logged.emit("EQUIPPED %s! (+%d HP, +%d ATK)" % [next_gear["name"], next_gear["bonus_hp"], next_gear["bonus_atk"]])
+
+
+func dev_boost_level() -> void:
+	if level < 45:
+		var prev := level
+		level = mini(45, level + 5)
+		if prev < 30 and level >= 30:
+			var jobs: Array = _class_dict()["jobs"]
+			event_logged.emit("REACHED LV.%d! Promoted to Advanced Job: %s!" % [level, jobs[job_branch]])
+		else:
+			event_logged.emit("Boosted to Level %d (Normal Cap: 45). Wallet +1000 FC for gear testing." % level)
+		wallet_credits += 1000
+	elif not is_ascended_leader:
+		is_ascended_leader = true
+		level = 50
+		wallet_credits += 5000
+		event_logged.emit("ELECTED FACTION LEADER (ASCENDED ARCHON)! Raised to Lv.50 & unlocked Archon Regalia!")
+	else:
+		is_ascended_leader = false
+		level = 1
+		gear_tier_index = 0
+		event_logged.emit("Reset back to Level 1 Recruit.")
+	_recalc_vital_stats()
+	current_hp = max_hp
+
+
+func teleport_to_hq() -> void:
+	if is_mining:
+		_cancel_mining("")
+	siege_mode = false
+	auto_attacking = false
+	_clear_click_target()
+	_interact_target = null
+	var f := _faction_dict()
+	global_position = f["hq_spawn"]
+	velocity = Vector3.ZERO
+	event_logged.emit("Warped to %s (%s)." % [f["hq_name"], f["name"]])
 
 
 func _handle_click(delta: float) -> void:
@@ -322,7 +387,6 @@ func use_skill(slot: int) -> void:
 	_emit_state()
 
 
-## [2] Single-Target Class Skill (shared structure across all 3 races)
 func _cast_skill_2() -> void:
 	if _skill2_cd > 0.0:
 		event_logged.emit("Skill 2 on cooldown (%.1fs)." % _skill2_cd)
@@ -332,53 +396,46 @@ func _cast_skill_2() -> void:
 	if selected_enemy == null:
 		event_logged.emit("No target in range for Skill 2.")
 		return
+	var s2: Dictionary = _class_dict()["skill2"]
 	var dist := Vector2(global_position.x - selected_enemy.global_position.x, global_position.z - selected_enemy.global_position.z).length()
-	var max_dist := 14.0 if siege_mode else 8.5
+	var max_dist := maxf(float(s2["range"]), 15.0 if siege_mode else 0.0)
 	if dist > max_dist:
-		event_logged.emit("Target too far for Skill 2 (move within %.1fm)." % max_dist)
+		event_logged.emit("Target too far for %s (move within %.1fm)." % [s2["name"], max_dist])
 		return
 	if is_mining:
 		_cancel_mining("")
-	_skill2_cd = 4.0
+	_skill2_cd = float(s2["cd"])
 	sprite.set_facing(selected_enemy.global_position - global_position)
-	var dmg := int(round(_effective_attack_damage() * 2.3))
+	var dmg := int(round(_effective_attack_damage() * float(s2["mult"])))
 	selected_enemy.receive_damage(dmg, self)
-	var f: Dictionary = FACTIONS[faction_index]
-	event_logged.emit("%s hit %s for %d DMG!" % [f["skill2"], selected_enemy.enemy_name, dmg])
+	event_logged.emit("%s hit %s for %d DMG!" % [s2["name"], selected_enemy.enemy_name, dmg])
 
 
-## [3] AoE Class Skill (shared structure across all 3 races)
 func _cast_skill_3() -> void:
 	if _skill3_cd > 0.0:
 		event_logged.emit("Skill 3 on cooldown (%.1fs)." % _skill3_cd)
 		return
 	if is_mining:
 		_cancel_mining("")
+	var s3: Dictionary = _class_dict()["skill3"]
 	var center := selected_enemy.global_position if (selected_enemy and not selected_enemy.is_dead) else global_position
-	_skill3_cd = 6.0
-	var dmg := int(round(_effective_attack_damage() * 1.9))
-	var hits := _deal_aoe_damage(center, 4.8, dmg)
-	var f: Dictionary = FACTIONS[faction_index]
-	event_logged.emit("%s unleashed! Hit %d enemy(s) for %d AoE DMG." % [f["skill3"], hits, dmg])
+	_skill3_cd = float(s3["cd"])
+	var dmg := int(round(_effective_attack_damage() * float(s3["mult"])))
+	var hits := _deal_aoe_damage(center, float(s3["radius"]), dmg)
+	event_logged.emit("%s unleashed! Hit %d enemy(s) for %d AoE DMG." % [s3["name"], hits, dmg])
 
 
-## [4] Exclusive Racial Signature (ONLY ONE per race):
-##   - Sveleitre (0): Siege Mode (Accretia style)
-##   - Order (1): Call Fravashi Summon (Cora style)
-##   - Legion (2): Mount Dread-Titan Frame (Bellato MAU style)
 func _cast_signature_4() -> void:
 	if faction_index == 0:
-		# SVELEITRE EXCLUSIVE: Siege Mode
 		siege_mode = not siege_mode
 		if siege_mode:
 			if is_mining:
 				_cancel_mining("")
 			_clear_click_target()
-			event_logged.emit("SVELEITRE SIEGE MODE: Locked in place! Range 14m, AoE artillery shells (+15 FC Ark Debt/shot).")
+			event_logged.emit("SVELEITRE SIEGE MODE: Locked in place! Range 15m, AoE artillery shells (+15 FC Ark Debt/shot).")
 		else:
 			event_logged.emit("Siege Mode retracted. Mobile again.")
 	elif faction_index == 1:
-		# ORDER EXCLUSIVE: Summon Fravashi Companion
 		if fravashi_instance == null or not is_instance_valid(fravashi_instance):
 			fravashi_instance = FRAVASHI_SCENE.instantiate() as FravashiCompanion
 			get_parent().add_child(fravashi_instance)
@@ -397,13 +454,12 @@ func _cast_signature_4() -> void:
 			else:
 				event_logged.emit("Dismissed Fravashi Spirit.")
 	elif faction_index == 2:
-		# LEGION EXCLUSIVE: Mount Dread-Titan (massive war construct, expensive repair debt)
 		frame_mounted = not frame_mounted
 		_recalc_vital_stats()
 		if frame_mounted:
 			sprite.scale = Vector3(2.2, 2.2, 2.2)
 			sprite.position.y = 1.75
-			event_logged.emit("LEGION SIGNATURE: Mounted Dread-Titan Construct (2.2x scale, +350 HP, +90% ATK). Every hit taken costs +18 FC Repair Debt!")
+			event_logged.emit("LEGION SIGNATURE: Mounted Dread-Titan Construct (2.2x scale, +400 HP, +90% ATK). Hits taken cost +18 FC Repair Debt!")
 		else:
 			sprite.scale = Vector3.ONE
 			sprite.position.y = 0.8
@@ -416,17 +472,17 @@ func _process_auto_attack() -> void:
 		return
 	var to_enemy := selected_enemy.global_position - global_position
 	to_enemy.y = 0.0
-	if to_enemy.length() > _effective_attack_range() + 0.25:
+	if to_enemy.length() > _effective_attack_range() + 0.35:
 		return
 	if _attack_cd > 0.0:
 		return
 
-	_attack_cd = attack_interval
+	_attack_cd = 1.05
 	sprite.set_facing(to_enemy)
 	var dmg := _effective_attack_damage()
 	if siege_mode:
 		current_debt += 15
-		var hits := _deal_aoe_damage(selected_enemy.global_position, 3.8, dmg)
+		var hits := _deal_aoe_damage(selected_enemy.global_position, 4.0, dmg)
 		event_logged.emit("Siege Artillery shell hit %d target(s) for %d DMG (+15 FC Ark Debt)." % [hits, dmg])
 	else:
 		selected_enemy.receive_damage(dmg, self)
@@ -449,7 +505,6 @@ func receive_damage(amount: int, attacker: Node3D) -> void:
 		_cancel_mining("Mining interrupted by enemy attack!")
 	current_hp = maxi(0, current_hp - amount)
 	if frame_mounted:
-		# Legion Dread-Titan Mount adds heavy repair debt on every hit!
 		current_debt += 18
 	if selected_enemy == null and attacker is EnemyUnit:
 		_set_selected_enemy(attacker as EnemyUnit)
@@ -463,13 +518,11 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 		_set_selected_enemy(null)
 		auto_attacking = false
 	wallet_credits += enemy.bounty_reward
-	xp += 45
-	var needed := level * 100
+	xp += 55
+	var needed := level * 90
 	if xp >= needed and level < 45:
 		xp -= needed
 		level += 1
-		base_max_hp += 25
-		base_attack_damage += 5
 		_recalc_vital_stats()
 		current_hp = max_hp
 		event_logged.emit("LEVEL UP! Reached Level %d (Cap 45 / Leader 50)." % level)
@@ -479,25 +532,41 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 
 
 func _effective_attack_damage() -> int:
-	var mult := 1.0
+	var c := _class_dict()
+	var g := _gear_dict()
+	var base_atk := (24 + (level - 1) * 5 + int(g["bonus_atk"])) * float(c["atk_mult"])
+	if level >= 30:
+		base_atk *= 1.25
+	if is_ascended_leader:
+		base_atk *= 1.3
 	if frame_mounted:
-		mult *= 1.9
+		base_atk *= 1.9
 	if siege_mode:
-		mult *= 1.65
-	return int(round(base_attack_damage * mult))
+		base_atk *= 1.65
+	return int(round(base_atk))
 
 
 func _effective_attack_range() -> float:
 	if siege_mode:
-		return 14.0
+		return 15.0
+	var c := _class_dict()
+	var r := float(c["range"])
 	if frame_mounted:
-		return 3.5
-	return base_attack_range
+		r = maxf(r, 3.6)
+	return r
 
 
 func _recalc_vital_stats() -> void:
-	var bonus_hp := 350 if frame_mounted else 0
-	max_hp = base_max_hp + bonus_hp
+	var c := _class_dict()
+	var g := _gear_dict()
+	var raw_hp := (280 + (level - 1) * 28 + int(g["bonus_hp"])) * float(c["hp_mult"])
+	if level >= 30:
+		raw_hp *= 1.2
+	if is_ascended_leader:
+		raw_hp *= 1.35
+	if frame_mounted:
+		raw_hp += 400
+	max_hp = int(round(raw_hp))
 	current_hp = mini(current_hp, max_hp)
 
 
@@ -526,7 +595,7 @@ func _trigger_interaction(target: Node3D) -> void:
 			event_logged.emit("%s is depleted. Waiting for regeneration..." % vein.vein_name)
 			return
 		if current_weight >= max_weight:
-			event_logged.emit("Carry weight full (%.0f / %.0f)! Extract at the Refinery first." % [current_weight, max_weight])
+			event_logged.emit("Carry weight full (%.0f / %.0f)! Extract at a Refinery first." % [current_weight, max_weight])
 			return
 		is_mining = true
 		_mining_vein = vein
@@ -543,10 +612,12 @@ func _process_mining(delta: float) -> void:
 		_cancel_mining("Vein depleted.")
 		return
 	if current_weight >= max_weight:
-		_cancel_mining("Inventory weight limit reached! Return to the Refinery.")
+		_cancel_mining("Inventory weight limit reached! Return to a Refinery.")
 		return
 
-	mining_progress += delta / max(_mining_vein.mine_duration, 0.2)
+	var c := _class_dict()
+	var mine_mult: float = float(c.get("mine_speed_mult", 1.0))
+	mining_progress += (delta * mine_mult) / max(_mining_vein.mine_duration, 0.2)
 	if mining_progress >= 1.0:
 		mining_progress = 0.0
 		var result := _mining_vein.extract_one_cycle()
@@ -561,7 +632,7 @@ func _process_mining(delta: float) -> void:
 			_cancel_mining("%s exhausted." % _mining_vein.vein_name)
 			return
 		if current_weight >= max_weight:
-			_cancel_mining("Bag hits 100%% weight capacity! Head to the Refinery.")
+			_cancel_mining("Bag hits 100%% weight capacity! Head to a Refinery.")
 			return
 
 
@@ -590,7 +661,7 @@ func _refine_and_pay_debt() -> void:
 	var wallet_gain := total_fc - debt_paid
 	wallet_credits += wallet_gain
 
-	var f: Dictionary = FACTIONS[faction_index]
+	var f := _faction_dict()
 	event_logged.emit("Refined %d Farr -> %d FC! Paid %d toward %s, +%d FC to Wallet." % [
 		units_refined, total_fc, debt_paid, f["debt_name"], wallet_gain
 	])
@@ -615,11 +686,11 @@ func cycle_faction() -> void:
 	if fravashi_instance and is_instance_valid(fravashi_instance):
 		fravashi_instance.visible = false
 
-	faction_index = (faction_index + 1) % FACTIONS.size()
+	faction_index = (faction_index + 1) % GameData.FACTIONS.size()
 	_recalc_vital_stats()
 	_apply_faction_tint()
-	var f: Dictionary = FACTIONS[faction_index]
-	event_logged.emit("Switched Race -> %s (%s). Exclusive [4]: %s" % [f["name"], f["debt_name"], f["skill4"]])
+	var f := _faction_dict()
+	event_logged.emit("Switched Race -> %s (%s). Press [H] to warp to %s!" % [f["name"], f["debt_name"], f["hq_name"]])
 
 
 func simulate_death() -> void:
@@ -646,15 +717,15 @@ func simulate_death() -> void:
 		bag.setup(drop_units, drop_weight, drop_val)
 		event_logged.emit("CHINVAT BRIDGE: You died! Dropped %d Unrefined Farr at your death spot." % drop_units)
 	else:
-		event_logged.emit("CHINVAT BRIDGE: Respawned at Base Refinery.")
+		event_logged.emit("CHINVAT BRIDGE: Respawned at %s." % _faction_dict()["hq_name"])
 
-	global_position = respawn_point
+	global_position = _faction_dict()["hq_spawn"]
 	velocity = Vector3.ZERO
 
 
 func _apply_faction_tint() -> void:
 	if sprite:
-		var f: Dictionary = FACTIONS[faction_index]
+		var f := _faction_dict()
 		sprite.accent_color = f["color"]
 		sprite.texture = sprite._make_placeholder_sheet(64)
 
@@ -695,7 +766,12 @@ func _camera_relative(input: Vector2) -> Vector3:
 
 
 func _emit_state() -> void:
-	var f: Dictionary = FACTIONS[faction_index]
+	var f := _faction_dict()
+	var c := _class_dict()
+	var g := _gear_dict()
+	var s2: Dictionary = c["skill2"]
+	var s3: Dictionary = c["skill3"]
+
 	var target_name := ""
 	var target_hp := 0
 	var target_max_hp := 1
@@ -709,7 +785,10 @@ func _emit_state() -> void:
 	state_updated.emit({
 		"faction": f["name"],
 		"debt_name": f["debt_name"],
+		"job_title": _active_job_title(),
+		"gear_name": g["name"],
 		"level": level,
+		"is_leader": is_ascended_leader,
 		"hp": current_hp,
 		"max_hp": max_hp,
 		"atk": _effective_attack_damage(),
@@ -727,9 +806,9 @@ func _emit_state() -> void:
 		"target_max_hp": target_max_hp,
 		"auto_attacking": auto_attacking,
 		"sig_active": sig_active,
-		"skill2_label": f["skill2"],
-		"skill3_label": f["skill3"],
-		"skill4_label": f["skill4"],
+		"skill2_label": s2["name"],
+		"skill3_label": s3["name"],
+		"skill4_label": f["signature_name"],
 		"skill2_cd": _skill2_cd,
 		"skill3_cd": _skill3_cd,
 	})
