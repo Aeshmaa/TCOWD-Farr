@@ -67,9 +67,10 @@ var combat_hp_healed_last := 0
 ## - Bags, equipment, wallet, debt, level, position & carried Farr ore all persist.
 ## - On death only unrefined Farr ore drops; you respawn at your bound Rebirth NPC (or HQ default).
 const SAVE_PATH := "user://farr_character_save.txt"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 @export var autosave_interval := 5.0
-var bind_points: Dictionary = {} # faction_id -> {"pos": Vector3, "name": String}
+var current_map_id := "svel_hq"
+var bind_points: Dictionary = {} # faction_id -> {"map_id": String, "pos": Vector3, "name": String}
 var last_saved_text := "Never"
 var _autosave_timer := 5.0
 var _save_disabled := false
@@ -122,19 +123,75 @@ func _ready() -> void:
 	var loaded := load_game()
 	_recalc_vital_stats()
 	if not loaded:
+		current_map_id = str(_faction_dict()["hq_map_id"])
+		global_position = _faction_dict()["hq_spawn"]
 		current_hp = max_hp
 		current_fp = max_fp
 		current_sp = max_sp
+	_sync_world_to_current_map()
 	_apply_faction_tint()
 	_connect_world_enemies()
 	_emit_state()
+	var cur_map_name: String = GameData.MAPS.get(current_map_id, {}).get("name", current_map_id)
 	if loaded:
-		event_logged.emit("Welcome back! Lv.%d %s restored where you logged out (last save: %s). Rebirth Point: %s." % [
-			level, _faction_dict()["name"], last_saved_text, _respawn_name()
+		event_logged.emit("Welcome back! Lv.%d %s restored in [%s] (saved: %s). Rebirth: %s." % [
+			level, _faction_dict()["name"], cur_map_name, last_saved_text, _respawn_name()
 		])
 	else:
-		event_logged.emit("New character created! Click HQ Side NPCs to trade, [I] Equipment & Bags, Rebirth NPC to bind respawn.")
+		event_logged.emit("Entered [%s]! Press [M] for 9-Map World Warp, click 3D Portals or HQ Side NPCs!" % cur_map_name)
 		save_game()
+
+
+func _sync_world_to_current_map() -> void:
+	var world_mgr := get_tree().get_first_node_in_group("world_zone_manager")
+	if world_mgr and world_mgr.has_method("load_map"):
+		world_mgr.call("load_map", current_map_id)
+
+
+func travel_to_map(target_map_id: String, custom_pos: Variant = null, silent: bool = false) -> bool:
+	if not GameData.MAPS.has(target_map_id):
+		return false
+	var mdata: Dictionary = GameData.MAPS[target_map_id]
+	var f := _faction_dict()
+	var my_fid: String = str(f["id"])
+	var owner_fid: String = str(mdata.get("owner_faction", "all"))
+	if owner_fid != "all" and owner_fid != my_fid:
+		event_logged.emit("ACCESS DENIED: [%s] is restricted territory! %s cannot enter another faction's HQ or Basic Ground." % [
+			mdata["name"], f["name"]
+		])
+		return false
+
+	if is_mining:
+		_cancel_mining("")
+	siege_mode = false
+	auto_attacking = false
+	active_vendor_npc = null
+	_set_selected_enemy(null)
+	_clear_click_target()
+	_interact_target = null
+
+	current_map_id = target_map_id
+	_sync_world_to_current_map()
+
+	var dest_pos: Vector3 = f["hq_spawn"]
+	if typeof(custom_pos) == TYPE_VECTOR3:
+		dest_pos = custom_pos
+	else:
+		var spawns: Dictionary = mdata.get("spawns", {})
+		dest_pos = spawns.get(my_fid, Vector3(0.0, 0.1, 14.0))
+
+	global_position = dest_pos
+	velocity = Vector3.ZERO
+	if fravashi_instance and is_instance_valid(fravashi_instance) and fravashi_instance.visible:
+		fravashi_instance.global_position = global_position + Vector3(1.5, 0.0, 1.0)
+		fravashi_instance.assigned_target = null
+
+	_connect_world_enemies()
+	save_game()
+	_emit_state()
+	if not silent:
+		event_logged.emit("Warped to [%s] (%s)!" % [mdata["name"], mdata.get("level_band", "")])
+	return true
 
 
 func _init_equipment_and_bags() -> void:
@@ -680,21 +737,14 @@ func use_teleport_scroll() -> void:
 		event_logged.emit("Out of Teleport Scrolls in Bags! Walk to the HQ Utility NPC to buy more.")
 		return
 	var f := _faction_dict()
-	var hq_pos: Vector3 = f["hq_spawn"]
+	var hq_map: String = str(f["hq_map_id"])
 	var left := get_item_count("SCROLL_HQ")
-	if global_position.distance_to(hq_pos) > 15.0:
-		teleport_to_hq()
-		event_logged.emit("Used Return Scroll -> Warped to %s (%d left in Bags)." % [f["hq_name"], left])
+	if current_map_id != hq_map:
+		travel_to_map(hq_map, f["hq_spawn"], true)
+		event_logged.emit("Used Return Scroll -> Warped to [%s] (%d Scrolls left in Bags)." % [f["hq_name"], left])
 	else:
-		if is_mining:
-			_cancel_mining("")
-		siege_mode = false
-		auto_attacking = false
-		active_vendor_npc = null
-		_clear_click_target()
-		global_position = Vector3(0.0, 0.1, 6.0)
-		velocity = Vector3.ZERO
-		event_logged.emit("Used Scar Portal Scroll -> Warped to Contested Center (%d left in Bags)." % left)
+		travel_to_map("farr_mining_ground", null, true)
+		event_logged.emit("Used Crack Portal Scroll -> Warped to [The Crack — Central Farr Mining Ground] (%d Scrolls left)." % left)
 	_emit_state()
 
 
@@ -798,10 +848,15 @@ func execute_vendor_action(action_index: int) -> void:
 		match action_index:
 			0:
 				var bind_pos := active_vendor_npc.global_position + Vector3(0.0, 0.1, 2.2)
-				bind_points[fid] = {"pos": bind_pos, "name": active_vendor_npc.npc_name}
+				var map_title: String = GameData.MAPS.get(current_map_id, {}).get("name", current_map_id)
+				bind_points[fid] = {
+					"map_id": current_map_id,
+					"pos": bind_pos,
+					"name": "%s [%s]" % [active_vendor_npc.npc_name, map_title],
+				}
 				save_game()
-				event_logged.emit("%s: Bound your Rebirth Spawn Point here! On death you will respawn at %s." % [
-					active_vendor_npc.npc_name, active_vendor_npc.npc_name
+				event_logged.emit("%s: Bound your Rebirth Spawn Point here in [%s]!" % [
+					active_vendor_npc.npc_name, map_title
 				])
 			1:
 				bind_points.erase(fid)
@@ -959,17 +1014,9 @@ func dev_boost_level() -> void:
 
 
 func teleport_to_hq() -> void:
-	if is_mining:
-		_cancel_mining("")
-	siege_mode = false
-	auto_attacking = false
-	active_vendor_npc = null
-	_clear_click_target()
-	_interact_target = null
 	var f := _faction_dict()
-	global_position = f["hq_spawn"]
-	velocity = Vector3.ZERO
-	event_logged.emit("Arrived at %s (%s). Click any HQ Side Vendor NPC to trade!" % [f["hq_name"], f["name"]])
+	travel_to_map(str(f["hq_map_id"]), f["hq_spawn"], true)
+	event_logged.emit("Arrived at [%s] (%s). Click any HQ Side Vendor NPC to trade or [M] to Warp!" % [f["hq_name"], f["name"]])
 
 
 func _handle_click(delta: float) -> void:
@@ -997,7 +1044,7 @@ func _handle_click(delta: float) -> void:
 			auto_attacking = true
 			event_logged.emit("Targeted & engaging %s." % enemy.enemy_name)
 			_holding_world_click = false
-		elif collider is FarrVein or collider is RefineryStation or collider is DroppedOreBag or collider is VendorNpc:
+		elif collider is FarrVein or collider is RefineryStation or collider is DroppedOreBag or collider is VendorNpc or (collider is Node3D and (collider as Node3D).is_in_group("warp_portal")):
 			var node := collider as Node3D
 			if siege_mode:
 				event_logged.emit("Cannot walk while in Siege Mode! Press [4] to undeploy.")
@@ -1510,6 +1557,9 @@ func _trigger_interaction(target: Node3D) -> void:
 		_refine_and_pay_debt()
 	elif target is DroppedOreBag:
 		_loot_dropped_bag(target as DroppedOreBag)
+	elif target.is_in_group("warp_portal"):
+		var dest_map := str(target.get("target_map_id"))
+		travel_to_map(dest_map)
 
 
 func _process_mining(delta: float) -> void:
@@ -1598,8 +1648,24 @@ func cycle_faction() -> void:
 	_recalc_vital_stats()
 	_apply_faction_tint()
 	var f := _faction_dict()
+	var cur_mdata: Dictionary = GameData.MAPS.get(current_map_id, {})
+	if str(cur_mdata.get("owner_faction", "all")) != "all":
+		travel_to_map(str(f["hq_map_id"]), f["hq_spawn"], true)
 	var shared_note := "Chassis-Only Gear" if f["equip_group"] == GameData.EQUIP_CHASSIS_SVEL else "Shares Organic/Relic Gear between Order & Druj"
-	event_logged.emit("Switched Race -> %s | Currency: %s (%s) | %s" % [f["name"], f["currency_name"], f["currency_code"], shared_note])
+	event_logged.emit("Switched Race -> %s | HQ Map: %s | Currency: %s (%s) | %s" % [
+		f["name"], f["hq_name"], f["currency_name"], f["currency_code"], shared_note
+	])
+
+
+func _respawn_map_id() -> String:
+	var f := _faction_dict()
+	var fid: String = str(f["id"])
+	if bind_points.has(fid):
+		var bp: Dictionary = bind_points[fid]
+		var b_map := str(bp.get("map_id", f["hq_map_id"]))
+		if GameData.MAPS.has(b_map):
+			return b_map
+	return str(f["hq_map_id"])
 
 
 func _respawn_position() -> Vector3:
@@ -1616,7 +1682,7 @@ func _respawn_name() -> String:
 	var fid: String = str(f["id"])
 	if bind_points.has(fid):
 		var bp: Dictionary = bind_points[fid]
-		return "%s (Bound Rebirth NPC)" % str(bp.get("name", f["hq_name"]))
+		return "%s (Bound Rebirth)" % str(bp.get("name", f["hq_name"]))
 	return "%s (HQ Default)" % str(f["hq_name"])
 
 
@@ -1632,32 +1698,43 @@ func simulate_death() -> void:
 	current_fp = max_fp
 	current_sp = max_sp
 
+	var spawn_map := _respawn_map_id()
 	var spawn_dest := _respawn_position()
 	var spawn_label := _respawn_name()
+	var death_pos := global_position
+	var same_map := (spawn_map == current_map_id)
 
 	# RF / FARR Rule: All Bag items (Potions, Scrolls, Ammo, Gear) stay 100% in your Bags!
 	# Only Unrefined Farr Ore drops at your death coordinate so anyone can loot it.
 	var drop_units := int(ceil(unrefined_units * 0.5))
+	var drop_weight := 0.0
+	var drop_val := 0
 	if drop_units > 0:
 		var ratio := float(drop_units) / float(unrefined_units)
-		var drop_weight := current_weight * ratio
-		var drop_val := int(round(unrefined_value * ratio))
+		drop_weight = current_weight * ratio
+		drop_val = int(round(unrefined_value * ratio))
 		unrefined_units -= drop_units
 		current_weight = maxf(0.0, current_weight - drop_weight)
 		unrefined_value = maxi(0, unrefined_value - drop_val)
 
-		var bag := DROPPED_BAG_SCENE.instantiate() as DroppedOreBag
-		get_parent().add_child(bag)
-		bag.global_position = Vector3(global_position.x, 0.0, global_position.z)
-		bag.setup(drop_units, drop_weight, drop_val)
+	if not same_map:
+		travel_to_map(spawn_map, spawn_dest, true)
+	else:
+		global_position = spawn_dest
+		velocity = Vector3.ZERO
+		if drop_units > 0 and get_parent():
+			var bag := DROPPED_BAG_SCENE.instantiate() as DroppedOreBag
+			get_parent().add_child(bag)
+			bag.global_position = Vector3(death_pos.x, 0.0, death_pos.z)
+			bag.setup(drop_units, drop_weight, drop_val)
+
+	if drop_units > 0:
 		event_logged.emit("CHINVAT REBIRTH: Slain! Dropped %d Unrefined Farr (All Bag items kept!) -> Respawned at %s." % [
 			drop_units, spawn_label
 		])
 	else:
 		event_logged.emit("CHINVAT REBIRTH: Respawned at %s (All Bag items & Equipment kept!)." % spawn_label)
 
-	global_position = spawn_dest
-	velocity = Vector3.ZERO
 	save_game()
 
 
@@ -1678,6 +1755,7 @@ func save_game() -> void:
 	var saved_pos := global_position if is_inside_tree() else position
 	var data := {
 		"version": SAVE_VERSION,
+		"map_id": current_map_id,
 		"pos": saved_pos,
 		"faction_index": faction_index,
 		"class_index": class_index,
@@ -1727,6 +1805,9 @@ func load_game() -> bool:
 		return false
 
 	faction_index = clampi(int(d.get("faction_index", 0)), 0, GameData.FACTIONS.size() - 1)
+	var default_hq_map := str(GameData.FACTIONS[faction_index]["hq_map_id"])
+	var saved_map := str(d.get("map_id", default_hq_map))
+	current_map_id = saved_map if GameData.MAPS.has(saved_map) else default_hq_map
 	class_index = clampi(int(d.get("class_index", 0)), 0, 3)
 	job_branch = clampi(int(d.get("job_branch", 0)), 0, 1)
 	is_ascended_leader = bool(d.get("is_ascended_leader", false))
@@ -1851,8 +1932,13 @@ func _emit_state() -> void:
 			"quest_farr": unrefined_units,
 		}
 
+	var cur_mdata: Dictionary = GameData.MAPS.get(current_map_id, {})
 	state_updated.emit({
 		"faction": f["name"],
+		"faction_id": f["id"],
+		"current_map_id": current_map_id,
+		"current_map_name": cur_mdata.get("name", current_map_id),
+		"current_map_band": cur_mdata.get("level_band", ""),
 		"equip_group": f["equip_group"],
 		"currency_name": f["currency_name"],
 		"currency_code": f["currency_code"],

@@ -1,0 +1,40 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/warp_portal.gd" id="1_portal"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ring"]
+top_radius = 1.8
+bottom_radius = 2.0
+height = 0.35
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_core"]
+top_radius = 1.35
+bottom_radius = 1.35
+height = 3.2
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_col"]
+height = 3.4
+radius = 1.9
+
+[node name="WarpPortal" type="StaticBody3D"]
+script = ExtResource("1_portal")
+
+[node name="RingMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+mesh = SubResource("CylinderMesh_ring")
+
+[node name="CoreMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+mesh = SubResource("CylinderMesh_core")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+shape = SubResource("CylinderShape3D_col")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.85, 0)
+billboard = 1
+no_depth_test = true
+text = "[WARP PORTAL]"
+font_size = 26
+outline_size = 8

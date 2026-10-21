@@ -530,7 +530,7 @@ offset_top = 46.0
 offset_right = 1120.0
 offset_bottom = 92.0
 text = "Camera: Hold [Space] + Slide Trackpad (or Right-Drag) = 360° Orbit  |  [Q/E] Rotate  |  [Z/X] or Pinch = Zoom
-HQ Side NPCs: Click any 3D Vendor NPC at HQ Sides to Trade  |  [I] Equipment Slots, Auto-Chargers & Bags  |  [O] Auto-Arrange Bags"
+Zones: Press [M] (or click 3D Warp Portals) to travel across 9 Maps (3 Faction HQs, 3 Basic Grounds, 2 Contested Upper, 1 Central Mining Ground)!"
 
 [node name="ShopPanel" type="PanelContainer" parent="HUD"]
 visible = false

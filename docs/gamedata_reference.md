@@ -78,3 +78,21 @@ They can **only** be obtained from:
 | **`+5`** | `1.70x` (`+70%`) | **18%** | Overload resets upgrade to **`+0`**! | Standard |
 | **`+6`** | `1.84x` (`+84%`) | **8%** | Overload resets upgrade to **`+0`**! | **Glowing Masterwork Aura** |
 | **`+7`** | `1.98x` (`+98%`) | **3%** | Overload resets upgrade to **`+0`**! | **Sovereign Masterwork Aura** |
+
+---
+
+## 6. 9-Map World Zone Architecture (`GameData.MAPS`)
+
+Players travel between zones by walking into physical **3D Warp Portals** ([`WarpPortal`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/scripts/warp_portal.gd)) or opening the **World Map & Warp Atlas (`[M]`)**.
+
+| Map ID | Zone Name | Category & Access | Level Band | Key Features, Bosses & Ore Nodes |
+| :--- | :--- | :--- | :--- | :--- |
+| **`svel_hq`** | **Ark-Zero Bastion** | **Sveleitre HQ** (`sveleitre` only) | Safe HQ / `Lv.1–12` | Core Refinery, 4 Side Vendor NPCs, HQ Rebirth NPC, Starter Vein, `Lv.3–10` Starter Mobs |
+| **`svel_basic`** | **Cryo-Scrap Frontier** | **Sveleitre Basic Ground** (`sveleitre` only) | `Lv.12–28` | Forward Relay Rebirth NPC, 2 Frontier Veins, `Lv.14–25` Mobs + **`Sub-Core Overseer MK-IV (Mini-Boss Lv.28)`** |
+| **`order_hq`** | **Asha High Sanctuary** | **Order HQ** (`order` only) | Safe HQ / `Lv.1–12` | Sacred Refinery, 4 Side Vendor NPCs, HQ Rebirth NPC, Starter Vein, `Lv.3–10` Starter Mobs |
+| **`order_basic`** | **Sun-Bleached Terraces** | **Order Basic Ground** (`order` only) | `Lv.12–28` | Flame-Keeper Rebirth NPC, 2 Terrace Veins, `Lv.14–25` Mobs + **`Disgraced High Inquisitor (Mini-Boss Lv.28)`** |
+| **`legion_hq`** | **Druj Obsidian Citadel** | **Legion HQ** (`legion` only) | Safe HQ / `Lv.1–12` | Blood Refinery, 4 Side Vendor NPCs, HQ Rebirth NPC, Starter Vein, `Lv.3–10` Starter Mobs |
+| **`legion_basic`** | **Ashen Blood-Basin** | **Legion Basic Ground** (`legion` only) | `Lv.12–28` | Soul-Binder Rebirth NPC, 2 Basin Veins, `Lv.14–25` Mobs + **`Aka-Manah War-Executioner (Mini-Boss Lv.28)`** |
+| **`contested_steppes`** | **Shattered Persepolis Steppes** | **Contested Upper Ground 1** (All 3 Factions) | `Lv.28–38` + Boss | 3 Faction Outpost Rebirth NPCs, 4 Contested Grinding Spots (`Lv.28–38`), World Boss **`Yima, the Hollow King (Lv.50)`** |
+| **`contested_cauldron`** | **Scorched Var Cauldron** | **Contested Upper Ground 2** (All 3 Factions) | `Lv.36–45` + Bosses | Endgame Contested Grinding Spots (`Lv.38–44`), World Bosses **`Aeshma, the Wrath Unbound (Lv.50)`** & **`The Orphan Process (Lv.50)`** |
+| **`farr_mining_ground`** | **The Crack — Central Farr Mining Ground** | **Central Ore War Zone** (All 3 Factions) | `Lv.25–50` PvPvE Ore War | 3 Faction Breach Camps, **3x Contested Rich Farr Veins**, **2x Scar Megavein Cores**, **Contested Field Refinery**, **`Crack Core Arch-Leviathan (Lv.45)`** |

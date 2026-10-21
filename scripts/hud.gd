@@ -64,11 +64,15 @@ var _bag_tab_btns: Array[Button] = []
 var _auto_arrange_btn: Button
 var _bag_slot_btns: Array[Button] = []
 var _reset_meter_btn: Button
+var _map_top_btn: Button
+var _map_panel: PanelContainer
+var _map_btns: Dictionary = {}
 var _log_lines: Array[String] = []
 
 
 func _ready() -> void:
 	_build_inventory_window()
+	_build_world_map_window()
 	_build_combat_meter_controls()
 
 	_rig = get_node_or_null(camera_rig_path)
@@ -118,6 +122,48 @@ func _build_combat_meter_controls() -> void:
 				_player.reset_combat_telemetry()
 		)
 		econ_vbox.add_child(_reset_meter_btn)
+
+
+func _build_world_map_window() -> void:
+	var top_bar := get_node_or_null("TopBar") as HBoxContainer
+	if top_bar:
+		_map_top_btn = Button.new()
+		_map_top_btn.focus_mode = Control.FOCUS_NONE
+		_map_top_btn.modulate = Color(1.0, 0.88, 0.45)
+		_map_top_btn.text = "World Map (9 Zones) [M]"
+		_map_top_btn.pressed.connect(func() -> void: _map_panel.visible = not _map_panel.visible)
+		top_bar.add_child(_map_top_btn)
+
+	_map_panel = PanelContainer.new()
+	_map_panel.visible = false
+	_map_panel.offset_left = 605.0
+	_map_panel.offset_top = 155.0
+	_map_panel.offset_right = 1195.0
+	_map_panel.offset_bottom = 670.0
+	add_child(_map_panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 5)
+	_map_panel.add_child(vbox)
+
+	var title := Label.new()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.modulate = Color(1.0, 0.88, 0.42)
+	title.text = "=== 9-MAP WORLD ZONE ATLAS & WARP GATE [M] ===\n(3 Faction HQs + 3 Basic Leveling + 2 Contested Upper + 1 Central Mining Ground)"
+	vbox.add_child(title)
+
+	for map_id in GameData.MAP_ORDER:
+		var btn := Button.new()
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var captured_map: String = map_id
+		btn.pressed.connect(func() -> void:
+			if _player and _player.has_method("travel_to_map"):
+				if _player.travel_to_map(captured_map):
+					_map_panel.visible = false
+		)
+		vbox.add_child(btn)
+		_map_btns[map_id] = btn
 
 
 func _build_inventory_window() -> void:
@@ -246,6 +292,8 @@ func _build_inventory_window() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_inventory"):
 		_inv_panel.visible = not _inv_panel.visible
+	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M:
+		_map_panel.visible = not _map_panel.visible
 
 
 func _on_mode_changed(mode_name: String, proj_name: String) -> void:
@@ -262,7 +310,8 @@ func _on_player_state(d: Dictionary) -> void:
 	var overburden := " [OVERBURDENED]" if wt >= max_wt * 0.8 else ""
 	var leader_tag := " [ARCHON]" if d["is_leader"] else ""
 	economy_label.text = (
-		"Lv.%d%s  |  %s  |  ATK: %d  |  Saved: %s\n" % [d["level"], leader_tag, d["job_title"], d["atk"], d.get("last_saved", "Auto")]
+		"Zone: [%s] (%s)\n" % [d.get("current_map_name", "HQ"), d.get("current_map_band", "")]
+		+ "Lv.%d%s  |  %s  |  ATK: %d  |  Saved: %s\n" % [d["level"], leader_tag, d["job_title"], d["atk"], d.get("last_saved", "Auto")]
 		+ "Equipped: %s\n" % d["gear_name"]
 		+ "Rebirth Spawn: %s\n" % d.get("respawn_name", "HQ Default")
 		+ "HP: %d/%d   |   FP: %d/%d   |   SP: %d/%d\n" % [d["hp"], d["max_hp"], d["fp"], d["max_fp"], d["sp"], d["max_sp"]]
@@ -317,6 +366,41 @@ func _on_player_state(d: Dictionary) -> void:
 
 	_update_physical_vendor_panel(d["vendor_info"], code)
 	_update_inventory_window(d)
+	_update_world_map_window(d)
+
+
+func _update_world_map_window(d: Dictionary) -> void:
+	var cur_map: String = str(d.get("current_map_id", "svel_hq"))
+	var my_fid: String = str(d.get("faction_id", "sveleitre"))
+	if _map_top_btn:
+		_map_top_btn.text = "Map [M]: %s" % str(d.get("current_map_name", "HQ"))
+
+	for map_id_var in GameData.MAP_ORDER:
+		var map_id: String = str(map_id_var)
+		var btn: Button = _map_btns.get(map_id)
+		if btn == null:
+			continue
+		var mdata: Dictionary = GameData.MAPS[map_id]
+		var owner_fid: String = str(mdata.get("owner_faction", "all"))
+		var cat: String = str(mdata.get("category", ""))
+		var is_cur: bool = (map_id == cur_map)
+		var tag := ""
+		if is_cur:
+			tag = "  <-- [CURRENT ZONE]"
+			btn.modulate = Color(0.45, 1.0, 0.55)
+		elif owner_fid != "all" and owner_fid != my_fid:
+			tag = "  [LOCKED - Enemy Faction]"
+			btn.modulate = Color(0.6, 0.45, 0.45)
+		elif cat == "MINING_WAR":
+			tag = "  [ALL 3 FACTIONS ORE WAR!]"
+			btn.modulate = Color(1.0, 0.72, 0.28)
+		elif cat == "CONTESTED_UPPER":
+			tag = "  [ALL 3 FACTIONS CONTESTED]"
+			btn.modulate = Color(1.0, 0.88, 0.45)
+		else:
+			tag = "  [Your Faction Territory]"
+			btn.modulate = Color(0.75, 0.95, 1.0)
+		btn.text = "%s  —  %s%s" % [mdata["name"], mdata.get("level_band", ""), tag]
 
 
 func _update_physical_vendor_panel(vinfo: Dictionary, code: String) -> void:
