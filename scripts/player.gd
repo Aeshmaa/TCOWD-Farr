@@ -49,6 +49,8 @@ var auto_sp_pct := 45
 ## Currently open physical 3D Vendor NPC (null when not standing next to an NPC)
 var active_vendor_npc: VendorNpc = null
 var _armor_vendor_slot_cursor := 1 # Cycles HELMET..SHOES when buying individual armor pieces
+var _upgrade_slot_cursor := 0      # Cycles WEAPON..SHOES for +1..+7 Farr Talic upgrading
+var _shield_buff_timer := 0.0      # Tank Job Fortify Buff (40% damage reduction)
 
 ## Persistent Character Save (RF-style: log back in exactly where you left off)
 ## - Bags, equipment, wallet, debt, level, position & carried Farr ore all persist.
@@ -138,6 +140,7 @@ func _init_equipment_and_bags() -> void:
 	add_item_to_bags(GameData.make_consumable_item("POT_SP", 10))
 	add_item_to_bags(GameData.make_consumable_item("AMMO_PACK", 120))
 	add_item_to_bags(GameData.make_consumable_item("SCROLL_HQ", 3))
+	add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 5))
 
 
 func _connect_world_enemies() -> void:
@@ -195,6 +198,7 @@ func _physics_process(delta: float) -> void:
 	_skill2_cd = maxf(0.0, _skill2_cd - delta)
 	_skill3_cd = maxf(0.0, _skill3_cd - delta)
 	_potion_cd = maxf(0.0, _potion_cd - delta)
+	_shield_buff_timer = maxf(0.0, _shield_buff_timer - delta)
 	_wipe_confirm_timer = maxf(0.0, _wipe_confirm_timer - delta)
 
 	# Periodic autosave (protects progress even if the game is force-stopped from the editor)
@@ -334,6 +338,79 @@ func _active_job_title() -> String:
 		var jobs: Array = c["jobs"]
 		return "%s -> %s" % [c["base"], jobs[job_branch]]
 	return "%s (%s)" % [c["base"], c["role"]]
+
+
+func _active_skill_2() -> Dictionary:
+	var c := _class_dict()
+	if level >= 30 and c.has("job_skills"):
+		var j_skills: Array = c["job_skills"]
+		return j_skills[job_branch]["skill2"]
+	return c["skill2"]
+
+
+func _active_skill_3() -> Dictionary:
+	var c := _class_dict()
+	if level >= 30 and c.has("job_skills"):
+		var j_skills: Array = c["job_skills"]
+		return j_skills[job_branch]["skill3"]
+	return c["skill3"]
+
+
+func cycle_upgrade_target_slot() -> void:
+	_upgrade_slot_cursor = (_upgrade_slot_cursor + 1) % GameData.EQUIP_SLOTS.size()
+	var slot_name: String = GameData.EQUIP_SLOTS[_upgrade_slot_cursor]
+	event_logged.emit("Selected [%s] slot for Farr Talic Upgrading (+1 to +7)." % GameData.EQUIP_SLOT_LABELS.get(slot_name, slot_name))
+	_emit_state()
+
+
+func upgrade_selected_slot_with_talic() -> void:
+	var slot_name: String = GameData.EQUIP_SLOTS[_upgrade_slot_cursor]
+	var slot_lbl: String = GameData.EQUIP_SLOT_LABELS.get(slot_name, slot_name)
+	var active_slots := _active_equipment_slots()
+	var cur_item: Dictionary = active_slots.get(slot_name, {})
+	if cur_item.is_empty():
+		event_logged.emit("No item equipped in [%s] slot to upgrade!" % slot_lbl)
+		return
+
+	var cur_plus: int = int(cur_item.get("upgrade_plus", 0))
+	if cur_plus >= GameData.MAX_UPGRADE_PLUS:
+		event_logged.emit("%s is already at Maximum +7 Sovereign Masterwork!" % cur_item["name"])
+		return
+
+	if not consume_item_from_bags("TALIC_FARR", 1):
+		event_logged.emit("Need 1x Farr Talic Crystal in your Bags! Buy from HQ Utility NPC or slay Elites/Forsworn Bosses.")
+		return
+
+	var target_plus := cur_plus + 1
+	var chance: float = float(GameData.UPGRADE_SUCCESS_RATES.get(target_plus, 0.25))
+	var tier_idx: int = int(cur_item.get("tier_idx", 0))
+	var eq_group: String = str(cur_item.get("equip_group", _faction_dict()["equip_group"]))
+
+	if randf() <= chance:
+		var upgraded := GameData.make_equipment_item(tier_idx, slot_name, eq_group, target_plus)
+		active_slots[slot_name] = upgraded
+		_recalc_vital_stats()
+		_apply_faction_tint()
+		var aura_note := " [GLOWING MASTERWORK AURA!]" if target_plus >= 6 else ""
+		event_logged.emit("TALIC UPGRADE SUCCESS (%.0f%%)! %s -> +%d%s (%d Talics left)." % [
+			chance * 100.0, upgraded["name"], target_plus, aura_note, get_item_count("TALIC_FARR")
+		])
+	else:
+		var fallback_plus := maxi(3, cur_plus - 1) if cur_plus >= 5 else cur_plus
+		var after_fail := GameData.make_equipment_item(tier_idx, slot_name, eq_group, fallback_plus)
+		active_slots[slot_name] = after_fail
+		_recalc_vital_stats()
+		_apply_faction_tint()
+		if fallback_plus < cur_plus:
+			event_logged.emit("TALIC UPGRADE FAILED (%.0f%%)! High-tier backlash stepped gear to +%d (%s)." % [
+				chance * 100.0, fallback_plus, after_fail["name"]
+			])
+		else:
+			event_logged.emit("TALIC UPGRADE FAILED (%.0f%%)! %s remained safely at +%d." % [
+				chance * 100.0, after_fail["name"], cur_plus
+			])
+	save_game()
+	_emit_state()
 
 
 # --- Multi-Bag Inventory, Auto-Arrange & Equipment Slot Functions ------------
@@ -480,6 +557,8 @@ func interact_bag_slot(local_slot_idx: int) -> void:
 			use_potion("SP", false)
 		elif id == "SCROLL_HQ":
 			use_teleport_scroll()
+		elif id == "TALIC_FARR":
+			upgrade_selected_slot_with_talic()
 		else:
 			event_logged.emit("%s (%d) is used automatically when firing Ranged/Force attacks." % [item["name"], item["count"]])
 	elif cat == "EQUIP":
@@ -689,16 +768,7 @@ func execute_vendor_action(action_index: int) -> void:
 			2:
 				_sell_all_bag_equipment()
 			3:
-				if current_debt <= 0:
-					event_logged.emit("%s: Your %s is already 0!" % [active_vendor_npc.npc_name, f["debt_name"]])
-					return
-				var pay := mini(500, mini(current_debt, wallet_credits))
-				if pay <= 0:
-					event_logged.emit("%s: You have 0 %s in Wallet to pay down debt." % [active_vendor_npc.npc_name, code])
-					return
-				wallet_credits -= pay
-				current_debt -= pay
-				event_logged.emit("%s: Paid %d %s toward %s!" % [active_vendor_npc.npc_name, pay, code, f["debt_name"]])
+				_buy_stackable_from_npc("TALIC_FARR", 3, 180, "Farr Talic Crystal x3")
 	elif vtype == "REBIRTH":
 		var fid: String = str(f["id"])
 		match action_index:
@@ -957,7 +1027,7 @@ func _cast_skill_2() -> void:
 	if selected_enemy == null:
 		event_logged.emit("No target in range for Skill 2.")
 		return
-	var s2: Dictionary = _class_dict()["skill2"]
+	var s2: Dictionary = _active_skill_2()
 	var fp_cost: int = s2.get("fp_cost", 20)
 	var sp_cost: int = s2.get("sp_cost", 15)
 	if current_fp < fp_cost or current_sp < sp_cost:
@@ -975,15 +1045,21 @@ func _cast_skill_2() -> void:
 	_skill2_cd = float(s2["cd"])
 	sprite.set_facing(selected_enemy.global_position - global_position)
 	var dmg := int(round(_effective_attack_damage() * float(s2["mult"])))
+	var effect: String = str(s2.get("effect", "NONE"))
+	if effect == "ARMOR_PIERCE":
+		dmg = int(round(dmg * 1.22))
 	selected_enemy.receive_damage(dmg, self)
-	event_logged.emit("%s hit %s for %d DMG (-%d FP, -%d SP)!" % [s2["name"], selected_enemy.enemy_name, dmg, fp_cost, sp_cost])
+	var fx_note := _apply_skill_effect(effect, dmg)
+	event_logged.emit("%s hit %s for %d DMG%s (-%d FP, -%d SP)!" % [
+		s2["name"], selected_enemy.enemy_name, dmg, fx_note, fp_cost, sp_cost
+	])
 
 
 func _cast_skill_3() -> void:
 	if _skill3_cd > 0.0:
 		event_logged.emit("Skill 3 on cooldown (%.1fs)." % _skill3_cd)
 		return
-	var s3: Dictionary = _class_dict()["skill3"]
+	var s3: Dictionary = _active_skill_3()
 	var fp_cost: int = s3.get("fp_cost", 30)
 	var sp_cost: int = s3.get("sp_cost", 20)
 	if current_fp < fp_cost or current_sp < sp_cost:
@@ -996,8 +1072,42 @@ func _cast_skill_3() -> void:
 	var center := selected_enemy.global_position if (selected_enemy and not selected_enemy.is_dead) else global_position
 	_skill3_cd = float(s3["cd"])
 	var dmg := int(round(_effective_attack_damage() * float(s3["mult"])))
+	var effect: String = str(s3.get("effect", "NONE"))
 	var hits := _deal_aoe_damage(center, float(s3["radius"]), dmg)
-	event_logged.emit("%s hit %d enemy(s) for %d AoE DMG (-%d FP, -%d SP)!" % [s3["name"], hits, dmg, fp_cost, sp_cost])
+	var fx_note := _apply_skill_effect(effect, dmg * maxi(1, hits))
+	event_logged.emit("%s hit %d enemy(s) for %d AoE DMG%s (-%d FP, -%d SP)!" % [
+		s3["name"], hits, dmg, fx_note, fp_cost, sp_cost
+	])
+
+
+func _apply_skill_effect(effect: String, dmg_dealt: int) -> String:
+	match effect:
+		"SHIELD_TAUNT":
+			_shield_buff_timer = 8.0
+			var heal := int(round(max_hp * 0.18))
+			current_hp = mini(max_hp, current_hp + heal)
+			return " [Tank Fortify: -40%% Dmg Taken 8s & +%d HP]" % heal
+		"LIFESTEAL":
+			var drain := maxi(15, int(round(dmg_dealt * 0.32)))
+			current_hp = mini(max_hp, current_hp + drain)
+			return " [Drained +%d HP]" % drain
+		"HEAL_SELF":
+			var heal_s := int(round(max_hp * 0.28))
+			var sp_s := int(round(max_sp * 0.20))
+			current_hp = mini(max_hp, current_hp + heal_s)
+			current_sp = mini(max_sp, current_sp + sp_s)
+			return " [Self-Repair: +%d HP, +%d SP]" % [heal_s, sp_s]
+		"HEAL_PULSE":
+			var heal_p := int(round(max_hp * 0.45))
+			var sp_p := int(round(max_sp * 0.25))
+			current_hp = mini(max_hp, current_hp + heal_p)
+			current_sp = mini(max_sp, current_sp + sp_p)
+			if fravashi_instance and is_instance_valid(fravashi_instance) and fravashi_instance.visible:
+				fravashi_instance.current_hp = fravashi_instance.max_hp
+			return " [Sanctuary Heal Pulse: +%d HP, +%d SP]" % [heal_p, sp_p]
+		"ARMOR_PIERCE":
+			return " [Armor-Piercing Crit!]"
+	return ""
 
 
 func _cast_signature_4() -> void:
@@ -1086,7 +1196,8 @@ func _deal_aoe_damage(center: Vector3, radius: float, dmg: int) -> int:
 func receive_damage(amount: int, attacker: Node3D) -> void:
 	if is_mining:
 		_cancel_mining("Mining interrupted by enemy attack!")
-	current_hp = maxi(0, current_hp - amount)
+	var final_dmg := int(round(amount * 0.6)) if _shield_buff_timer > 0.0 else amount
+	current_hp = maxi(0, current_hp - final_dmg)
 	if frame_mounted:
 		current_debt += 18
 	if selected_enemy == null and attacker is EnemyUnit:
@@ -1119,8 +1230,13 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 	_emit_state()
 
 
-## Low-probability monster equipment drop placed directly into your Bag!
+## Low-probability monster equipment & Farr Talic drop placed directly into your Bag!
 func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
+	if enemy.level >= 50:
+		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 2))
+	elif enemy.level >= 25 and randf() < 0.45:
+		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 1))
+
 	var drop_chance := 1.0 if enemy.level >= 50 else (0.55 if enemy.level >= 25 else 0.30)
 	if randf() > drop_chance:
 		return
@@ -1131,7 +1247,8 @@ func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
 	var dropped_item := GameData.make_equipment_item(dropped_tier_idx, random_slot, rolled_group)
 
 	if add_item_to_bags(dropped_item):
-		event_logged.emit("LOOT DROP -> Bag: %s! Open [I] to equip or sell at HQ NPC." % dropped_item["name"])
+		var talic_note := " + Farr Talic Crystal!" if enemy.level >= 25 else "!"
+		event_logged.emit("LOOT DROP -> Bag: %s%s Open [I] to equip/upgrade." % [dropped_item["name"], talic_note])
 	else:
 		event_logged.emit("LOOT LOST: %s dropped, but your Bags are full! Press [O] or buy more Bags." % dropped_item["name"])
 
@@ -1495,7 +1612,15 @@ func load_game() -> bool:
 func _apply_faction_tint() -> void:
 	if sprite:
 		var f := _faction_dict()
-		sprite.accent_color = f["color"]
+		var slots := _active_equipment_slots()
+		var wpn_plus := int(slots.get("WEAPON", {}).get("upgrade_plus", 0))
+		var up_plus := int(slots.get("UPPER", {}).get("upgrade_plus", 0))
+		if maxi(wpn_plus, up_plus) >= 6:
+			sprite.accent_color = Color(1.0, 0.95, 0.45)
+			sprite.body_color = Color(0.82, 0.78, 0.65)
+		else:
+			sprite.accent_color = f["color"]
+			sprite.body_color = Color(0.55, 0.6, 0.66)
 		sprite.texture = sprite._make_placeholder_sheet(64)
 
 
@@ -1536,9 +1661,12 @@ func _camera_relative(input: Vector2) -> Vector3:
 
 func _emit_state() -> void:
 	var f := _faction_dict()
-	var c := _class_dict()
-	var s2: Dictionary = c["skill2"]
-	var s3: Dictionary = c["skill3"]
+	var s2: Dictionary = _active_skill_2()
+	var s3: Dictionary = _active_skill_3()
+	var upg_slot: String = GameData.EQUIP_SLOTS[_upgrade_slot_cursor]
+	var upg_lbl: String = GameData.EQUIP_SLOT_LABELS.get(upg_slot, upg_slot)
+	var upg_item: Dictionary = _active_equipment_slots().get(upg_slot, {})
+	var cur_plus: int = int(upg_item.get("upgrade_plus", 0))
 
 	var target_name := ""
 	var target_hp := 0
@@ -1573,6 +1701,10 @@ func _emit_state() -> void:
 		"respawn_name": _respawn_name(),
 		"last_saved": last_saved_text,
 		"equipped_slots": _active_equipment_slots(),
+		"upgrade_slot_label": upg_lbl,
+		"upgrade_cur_plus": cur_plus,
+		"talics": get_item_count("TALIC_FARR"),
+		"shield_buff": _shield_buff_timer,
 		"unlocked_bags": unlocked_bags,
 		"active_bag_tab": active_bag_tab,
 		"bag_slots": bag_slots,

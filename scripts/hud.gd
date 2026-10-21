@@ -58,6 +58,8 @@ var _auto_hp_btn: Button
 var _auto_fp_btn: Button
 var _auto_sp_btn: Button
 var _equip_slot_btns: Dictionary = {}
+var _talic_slot_btn: Button
+var _talic_upgrade_btn: Button
 var _bag_tab_btns: Array[Button] = []
 var _auto_arrange_btn: Button
 var _bag_slot_btns: Array[Button] = []
@@ -168,6 +170,23 @@ func _build_inventory_window() -> void:
 		b.pressed.connect(func() -> void: if _player: _player.unequip_equipment_slot(captured_slot))
 		eq_grid.add_child(b)
 		_equip_slot_btns[slot_name] = b
+
+	# 2b. RF-Style Farr Talic Upgrading Bar (+1 to +7)
+	var talic_row := HBoxContainer.new()
+	talic_row.add_theme_constant_override("separation", 6)
+	vbox.add_child(talic_row)
+
+	_talic_slot_btn = Button.new()
+	_talic_slot_btn.focus_mode = Control.FOCUS_NONE
+	_talic_slot_btn.pressed.connect(func() -> void: if _player: _player.cycle_upgrade_target_slot())
+	talic_row.add_child(_talic_slot_btn)
+
+	_talic_upgrade_btn = Button.new()
+	_talic_upgrade_btn.focus_mode = Control.FOCUS_NONE
+	_talic_upgrade_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_talic_upgrade_btn.modulate = Color(1.0, 0.88, 0.45)
+	_talic_upgrade_btn.pressed.connect(func() -> void: if _player: _player.upgrade_selected_slot_with_talic())
+	talic_row.add_child(_talic_upgrade_btn)
 
 	# 3. Multi-Bag Tabs (Bag 1 .. Bag 5) + Auto-Arrange [O] Button
 	var bag_header := HBoxContainer.new()
@@ -308,7 +327,7 @@ func _update_physical_vendor_panel(vinfo: Dictionary, code: String) -> void:
 		else:
 			npc_btn_1.text = "All 5 Bags Unlocked (40 Slots Max)"
 		npc_btn_2.text = "Sell / Salvage All Unequipped Gear in Bags"
-		npc_btn_3.text = "Pay Down 500 Faction Debt (500 %s)" % code
+		npc_btn_3.text = "Buy Farr Talic Crystal x3 (+1..+7 Upgrade) (180 %s)" % code
 	elif vtype == "REBIRTH":
 		npc_btn_0.text = "1. Bind Respawn Point Here (Rebirth NPC Coordinate)"
 		npc_btn_1.text = "2. Reset Respawn to Faction HQ Default Coordinate"
@@ -333,6 +352,17 @@ func _update_inventory_window(d: Dictionary) -> void:
 			btn.text = "[%s]: (Empty)" % slot_lbl
 		else:
 			btn.text = "[%s]: %s" % [slot_lbl, item["name"]]
+
+	var upg_lbl: String = d.get("upgrade_slot_label", "Weapon")
+	var cur_p: int = int(d.get("upgrade_cur_plus", 0))
+	var talic_cnt: int = int(d.get("talics", 0))
+	_talic_slot_btn.text = "Target: [%s (+%d)]" % [upg_lbl, cur_p]
+	if cur_p >= GameData.MAX_UPGRADE_PLUS:
+		_talic_upgrade_btn.text = "[%s is MAX +7 Sovereign Masterwork!]" % upg_lbl
+	else:
+		var next_p := cur_p + 1
+		var rate := int(round(float(GameData.UPGRADE_SUCCESS_RATES.get(next_p, 0.25)) * 100.0))
+		_talic_upgrade_btn.text = "Slot Farr Talic -> +%d (%d%% Success) (%d Talics)" % [next_p, rate, talic_cnt]
 
 	var unlocked: int = d["unlocked_bags"]
 	var cur_tab: int = d["active_bag_tab"]
