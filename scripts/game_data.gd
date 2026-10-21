@@ -25,13 +25,13 @@ const MAX_BAGS := 5
 const MAX_UPGRADE_PLUS := 7
 
 const UPGRADE_SUCCESS_RATES := {
-	1: 1.00, # +1: 100% Safe
-	2: 1.00, # +2: 100% Safe
-	3: 1.00, # +3: 100% Safe
-	4: 0.78, # +4: 78%
-	5: 0.58, # +5: 58%
-	6: 0.40, # +6: 40% (Glowing Aura!)
-	7: 0.25, # +7: 25% (Sovereign Masterwork Aura!)
+	1: 0.85, # +1: 85% (Fail = stays +0)
+	2: 0.68, # +2: 68% (Fail = stays +1)
+	3: 0.50, # +3: 50% (Fail = drops to +1)
+	4: 0.32, # +4: 32% (Fail = resets to +0!)
+	5: 0.18, # +5: 18% (Fail = resets to +0!)
+	6: 0.08, # +6: 8%  (Fail = resets to +0! Success = Glowing Aura)
+	7: 0.03, # +7: 3%  (Fail = resets to +0! Success = Sovereign Masterwork Aura)
 }
 
 const FACTIONS := [

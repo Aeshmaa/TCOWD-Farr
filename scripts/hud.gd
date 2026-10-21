@@ -327,7 +327,9 @@ func _update_physical_vendor_panel(vinfo: Dictionary, code: String) -> void:
 		else:
 			npc_btn_1.text = "All 5 Bags Unlocked (40 Slots Max)"
 		npc_btn_2.text = "Sell / Salvage All Unequipped Gear in Bags"
-		npc_btn_3.text = "Buy Farr Talic Crystal x3 (+1..+7 Upgrade) (180 %s)" % code
+		var q_k: int = int(vinfo.get("quest_kills", 0))
+		var q_f: int = int(vinfo.get("quest_farr", 0))
+		npc_btn_3.text = "Faction Quest [Kills:%d/3, Farr:%d/10] -> +1 Talic & +350 %s" % [q_k, q_f, code]
 	elif vtype == "REBIRTH":
 		npc_btn_0.text = "1. Bind Respawn Point Here (Rebirth NPC Coordinate)"
 		npc_btn_1.text = "2. Reset Respawn to Faction HQ Default Coordinate"

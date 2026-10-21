@@ -51,6 +51,7 @@ var active_vendor_npc: VendorNpc = null
 var _armor_vendor_slot_cursor := 1 # Cycles HELMET..SHOES when buying individual armor pieces
 var _upgrade_slot_cursor := 0      # Cycles WEAPON..SHOES for +1..+7 Farr Talic upgrading
 var _shield_buff_timer := 0.0      # Tank Job Fortify Buff (40% damage reduction)
+var quest_kills := 0               # Repeatable Faction Bounty Quest kill counter (3 Kills + 10 Farr -> 1 Talic)
 
 ## Persistent Character Save (RF-style: log back in exactly where you left off)
 ## - Bags, equipment, wallet, debt, level, position & carried Farr ore all persist.
@@ -140,7 +141,6 @@ func _init_equipment_and_bags() -> void:
 	add_item_to_bags(GameData.make_consumable_item("POT_SP", 10))
 	add_item_to_bags(GameData.make_consumable_item("AMMO_PACK", 120))
 	add_item_to_bags(GameData.make_consumable_item("SCROLL_HQ", 3))
-	add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 5))
 
 
 func _connect_world_enemies() -> void:
@@ -378,11 +378,11 @@ func upgrade_selected_slot_with_talic() -> void:
 		return
 
 	if not consume_item_from_bags("TALIC_FARR", 1):
-		event_logged.emit("Need 1x Farr Talic Crystal in your Bags! Buy from HQ Utility NPC or slay Elites/Forsworn Bosses.")
+		event_logged.emit("Need 1x Farr Talic Crystal! Talics ONLY drop from Mini-Bosses, Bosses, World Bosses, or Faction Quests.")
 		return
 
 	var target_plus := cur_plus + 1
-	var chance: float = float(GameData.UPGRADE_SUCCESS_RATES.get(target_plus, 0.25))
+	var chance: float = float(GameData.UPGRADE_SUCCESS_RATES.get(target_plus, 0.03))
 	var tier_idx: int = int(cur_item.get("tier_idx", 0))
 	var eq_group: String = str(cur_item.get("equip_group", _faction_dict()["equip_group"]))
 
@@ -396,17 +396,27 @@ func upgrade_selected_slot_with_talic() -> void:
 			chance * 100.0, upgraded["name"], target_plus, aura_note, get_item_count("TALIC_FARR")
 		])
 	else:
-		var fallback_plus := maxi(3, cur_plus - 1) if cur_plus >= 5 else cur_plus
+		# Hardcore RF-style failure penalty:
+		# Attempting +1 or +2 -> stays at current +level
+		# Attempting +3 -> drops to +1
+		# Attempting +4, +5, +6, +7 -> Talic overload resets upgrade back to +0!
+		var fallback_plus := 0
+		if target_plus <= 2:
+			fallback_plus = cur_plus
+		elif target_plus == 3:
+			fallback_plus = 1
+		else:
+			fallback_plus = 0
 		var after_fail := GameData.make_equipment_item(tier_idx, slot_name, eq_group, fallback_plus)
 		active_slots[slot_name] = after_fail
 		_recalc_vital_stats()
 		_apply_faction_tint()
 		if fallback_plus < cur_plus:
-			event_logged.emit("TALIC UPGRADE FAILED (%.0f%%)! High-tier backlash stepped gear to +%d (%s)." % [
+			event_logged.emit("TALIC OVERLOAD FAILURE (%.0f%%)! Upgrade shattered back to +%d (%s)." % [
 				chance * 100.0, fallback_plus, after_fail["name"]
 			])
 		else:
-			event_logged.emit("TALIC UPGRADE FAILED (%.0f%%)! %s remained safely at +%d." % [
+			event_logged.emit("TALIC UPGRADE FAILED (%.0f%%)! Talic consumed, %s stayed at +%d." % [
 				chance * 100.0, after_fail["name"], cur_plus
 			])
 	save_game()
@@ -768,7 +778,7 @@ func execute_vendor_action(action_index: int) -> void:
 			2:
 				_sell_all_bag_equipment()
 			3:
-				_buy_stackable_from_npc("TALIC_FARR", 3, 180, "Farr Talic Crystal x3")
+				_complete_faction_talic_quest()
 	elif vtype == "REBIRTH":
 		var fid: String = str(f["id"])
 		match action_index:
@@ -857,6 +867,28 @@ func _sell_all_bag_equipment() -> void:
 		event_logged.emit("%s: Sold %d unequipped gear piece(s) from Bags for +%d %s!" % [
 			active_vendor_npc.npc_name, sold_count, total_earned, code
 		])
+
+
+func _complete_faction_talic_quest() -> void:
+	var code: String = _faction_dict()["currency_code"]
+	var req_kills := 3
+	var req_farr := 10
+	if quest_kills < req_kills or unrefined_units < req_farr:
+		event_logged.emit("%s [Faction Quest]: Need %d/3 Mob Kills & %d/10 Unrefined Farr Ore to earn 1x Farr Talic Crystal!" % [
+			active_vendor_npc.npc_name, quest_kills, unrefined_units
+		])
+		return
+	var talic_item := GameData.make_consumable_item("TALIC_FARR", 1)
+	if not add_item_to_bags(talic_item):
+		event_logged.emit("%s: Your Bags are full! Make space before turning in the Faction Quest." % active_vendor_npc.npc_name)
+		return
+	quest_kills -= req_kills
+	var ratio := float(req_farr) / float(maxi(1, unrefined_units))
+	unrefined_units = maxi(0, unrefined_units - req_farr)
+	current_weight = maxf(0.0, current_weight * (1.0 - ratio))
+	unrefined_value = maxi(0, int(round(unrefined_value * (1.0 - ratio))))
+	wallet_credits += 350
+	event_logged.emit("QUEST COMPLETE! Turned in 3 Kills + 10 Farr -> Rewarded +1x Farr Talic Crystal & +350 %s!" % code)
 
 
 func cycle_class() -> void:
@@ -1213,6 +1245,7 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 		auto_attacking = false
 	var f := _faction_dict()
 	wallet_credits += enemy.bounty_reward
+	quest_kills += 3 if enemy.level >= 50 else 1
 	xp += 55
 	var needed := level * 90
 	if xp >= needed and level < 45:
@@ -1224,21 +1257,33 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 		current_sp = max_sp
 		event_logged.emit("LEVEL UP! Reached Level %d (Cap 45 / Leader 50)." % level)
 	else:
-		event_logged.emit("Slain %s! +%d %s Bounty & dropped Farr bag." % [enemy.enemy_name, enemy.bounty_reward, f["currency_code"]])
+		event_logged.emit("Slain %s! +%d %s Bounty (Quest Kills: %d/3) & dropped Farr bag." % [
+			enemy.enemy_name, enemy.bounty_reward, f["currency_code"], quest_kills
+		])
 
 	_roll_rare_equipment_drop(enemy)
+	save_game()
 	_emit_state()
 
 
 ## Low-probability monster equipment & Farr Talic drop placed directly into your Bag!
+## Talics ONLY drop from Mini-Bosses (Lv.25-39), Bosses (Lv.40-49), and World Bosses (Lv.50) (or Faction Quests)!
 func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
+	var dropped_talics := 0
 	if enemy.level >= 50:
-		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 2))
-	elif enemy.level >= 25 and randf() < 0.45:
+		dropped_talics = 2 if randf() < 0.40 else 1
+		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", dropped_talics))
+	elif enemy.level >= 35 and randf() < 0.45:
+		dropped_talics = 1
+		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 1))
+	elif enemy.level >= 25 and randf() < 0.22:
+		dropped_talics = 1
 		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 1))
 
-	var drop_chance := 1.0 if enemy.level >= 50 else (0.55 if enemy.level >= 25 else 0.30)
+	var drop_chance := 1.0 if enemy.level >= 50 else (0.45 if enemy.level >= 25 else 0.22)
 	if randf() > drop_chance:
+		if dropped_talics > 0:
+			event_logged.emit("TALIC DROP -> Bag: +%dx Farr Talic Crystal from %s!" % [dropped_talics, enemy.enemy_name])
 		return
 
 	var dropped_tier_idx := 4 if enemy.level >= 35 else (3 if enemy.level >= 25 else 1)
@@ -1247,7 +1292,7 @@ func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
 	var dropped_item := GameData.make_equipment_item(dropped_tier_idx, random_slot, rolled_group)
 
 	if add_item_to_bags(dropped_item):
-		var talic_note := " + Farr Talic Crystal!" if enemy.level >= 25 else "!"
+		var talic_note := (" + %dx Farr Talic Crystal!" % dropped_talics) if dropped_talics > 0 else "!"
 		event_logged.emit("LOOT DROP -> Bag: %s%s Open [I] to equip/upgrade." % [dropped_item["name"], talic_note])
 	else:
 		event_logged.emit("LOOT LOST: %s dropped, but your Bags are full! Press [O] or buy more Bags." % dropped_item["name"])
@@ -1544,6 +1589,7 @@ func save_game() -> void:
 		"auto_hp_pct": auto_hp_pct,
 		"auto_fp_pct": auto_fp_pct,
 		"auto_sp_pct": auto_sp_pct,
+		"quest_kills": quest_kills,
 		"bind_points": bind_points,
 		"last_saved_text": last_saved_text,
 	}
@@ -1595,6 +1641,7 @@ func load_game() -> bool:
 	auto_hp_pct = int(d.get("auto_hp_pct", 55))
 	auto_fp_pct = int(d.get("auto_fp_pct", 45))
 	auto_sp_pct = int(d.get("auto_sp_pct", 45))
+	quest_kills = maxi(0, int(d.get("quest_kills", 0)))
 	if d.has("bind_points") and typeof(d["bind_points"]) == TYPE_DICTIONARY:
 		bind_points = d["bind_points"]
 	last_saved_text = str(d.get("last_saved_text", "Restored"))
@@ -1688,6 +1735,8 @@ func _emit_state() -> void:
 			"armor_slot_label": GameData.EQUIP_SLOT_LABELS.get(sel_slot, sel_slot),
 			"next_bag_num": unlocked_bags + 1,
 			"next_bag_cost": 350 * unlocked_bags,
+			"quest_kills": quest_kills,
+			"quest_farr": unrefined_units,
 		}
 
 	state_updated.emit({
