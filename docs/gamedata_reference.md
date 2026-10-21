@@ -119,5 +119,27 @@ Every Faction HQ (`svel_hq`, `order_hq`, `legion_hq`) now features its **3D Fact
   1. **`Closest to Mouse Cursor`** *(Default)* — projects each enemy's 3D position onto your 2D viewport and locks onto the living enemy nearest your mouse cursor.
   2. **`Lowest HP First (Finish Off)`** — locks onto the enemy with the lowest current HP percentage within `28m`.
   3. **`Closest to Character (3D Distance)`** — locks onto the nearest enemy to your character's 3D position.
-- **Audio & Special Effects (`scripts/sfx_manager.gd`):** Synthesizes 10 16-bit PCM `AudioStreamWAV` effects in memory (`target_lock`, `attack_hit`, `skill_cast`, `damage_taken`, `heal`, `mine_ore`, `upgrade_success`, `upgrade_fail`, `warp_portal`, `level_up`) and automatically overrides any cue if you drop a matching `.wav` or `.ogg` file into `res://assets/sfx/`.
+- **Audio & Special Effects (`scripts/sfx_manager.gd`):** Synthesizes 12 16-bit PCM `AudioStreamWAV` effects in memory (`target_lock`, `attack_hit`, `ranged_shot`, `skill_cast`, `buff_cast`, `damage_taken`, `heal`, `mine_ore`, `upgrade_success`, `upgrade_fail`, `warp_portal`, `level_up`) and automatically overrides any cue if you drop a matching `.wav` or `.ogg` file into `res://assets/sfx/`.
+
+---
+
+## 9. Weapon Class Stances (`[Z]`), Cross-Class Ranged Limits, 3D Projectile/Slash VFX & RF Buff Suite (`[B]`)
+
+### 9.1 Weapon Class Stances (`[Z]` / `Weap [Z]` Button)
+Just like RF Online where any class can equip a Melee weapon up close or a Ranged bow/rifle to pull enemies from a distance (with cross-class range/damage limits), press **`[Z]`** (or click **`Weap [Z]`** on the bottom Skill Bar) to cycle between 4 Weapon Modes (`GameData.WEAPON_STANCES`):
+
+| Weapon Stance (`[Z]`) | Native Class Range & ATK | Cross-Class Range & ATK Limit | Ammo / Force Cost | 3D Attack Visual (`scripts/combat_vfx.gd`) |
+|---|---|---|---|---|
+| **`AUTO (Class Native)`** | `100%` Class Range (`2.6m`–`9.5m`) & `100%` ATK | None (`100%` Synergy) | Per Class | Automatic per Class |
+| **`MELEE (Blade/Mace/Lance)`** | **`2.8m` Close Distance**, `100%` ATK | **`2.8m` Close Distance**, `82%` ATK *(Rangers/Mages can fight up close with 0 Ammo!)* | **`0 Ammo`** | **3D Glowing Melee Slash Arc + Character Forward Lunge** |
+| **`RANGED (Bow/Rifle/Launcher)`** | **`10.5m` Full Distance**, `100%` ATK | **`7.5m` Limited Distance**, `82%` ATK *(Melee Tanks/Warriors can pull & kite from range!)* | `-1 Ammo / Shot` | **3D High-Velocity Tracer Bolt / Arrow + Firing Kickback** |
+| **`FORCE (Staff/Seal-Rod)`** | **`9.0m` Full Distance**, `100%` ATK | **`6.8m` Limited Distance**, `82%` ATK | `-1 Force Cell / Bolt` | **3D Luminous Force Orb + Tail Trail** |
+
+### 9.2 RF Online-Style Self-Buff Suite (`[B]` or `[9]` / `9: RF Buffs [B]`)
+Press **`[B]`** or **`[9]`** (or click **`9: RF Buffs [B]`** on the Skill Bar) to consume `25 FP` & `20 SP` and activate your faction's **120-second RF Combat & Force Buff Suite** (`GameData.FACTION_BUFF_SUITES`), spawning a **3D rising aura ring and light pillar**:
+- **Sveleitre:** *Overclock Actuator + Reactive Gyro-Aegis + Telemetry Link*
+- **Order of the Oracle:** *Verethragna Might + Sacred Asha Ward + Haoma Vital Grace*
+- **Legion of the Druj:** *Aeshma Bloodlust + Obsidian Scale Pact + Serpent Dark Sight*
+- **Active Buff Bonuses (`120s`):** **`+22% ATK`**, **`+20% Attack Speed`**, **`-22% Damage Taken`** *(stacks with Tank Fortify)*, **`+15% Move Speed`**, **`+18% Max HP & Max FP`**, **`+1.5m Ranged/Force Distance`**, and **`+10 HP / +8 FP` periodic regeneration**.
+
 

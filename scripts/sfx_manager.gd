@@ -43,7 +43,9 @@ func _build_sound_bank() -> void:
 	# otherwise synthesize procedural waveforms in memory.
 	_register_sfx("target_lock", _synth_tone(0.09, 780.0, 1180.0, 0.05, "sine"))
 	_register_sfx("attack_hit", _synth_tone(0.13, 210.0, 72.0, 0.45, "punch"))
+	_register_sfx("ranged_shot", _synth_tone(0.14, 920.0, 210.0, 0.25, "saw"))
 	_register_sfx("skill_cast", _synth_chord(0.28, [320.0, 480.0, 640.0], 180.0, 0.30))
+	_register_sfx("buff_cast", _synth_arpeggio(0.38, [392.0, 493.88, 587.33, 783.99, 987.77]))
 	_register_sfx("damage_taken", _synth_tone(0.16, 155.0, 58.0, 0.55, "saw"))
 	_register_sfx("heal", _synth_arpeggio(0.26, [440.0, 554.37, 659.25, 880.0]))
 	_register_sfx("mine_ore", _synth_arpeggio(0.20, [880.0, 1174.66, 1318.5]))

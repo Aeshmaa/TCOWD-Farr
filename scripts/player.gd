@@ -13,6 +13,7 @@ const DROPPED_BAG_SCENE := preload("res://scenes/dropped_ore_bag.tscn")
 const FRAVASHI_SCENE := preload("res://scenes/fravashi_companion.tscn")
 const FLOATING_TEXT := preload("res://scripts/floating_combat_text.gd")
 const SFX_MANAGER_SCRIPT := preload("res://scripts/sfx_manager.gd")
+const COMBAT_VFX := preload("res://scripts/combat_vfx.gd")
 
 @export var base_move_speed := 6.0
 @export var overburdened_speed_mult := 0.6
@@ -53,6 +54,11 @@ var active_vendor_npc: VendorNpc = null
 var _armor_vendor_slot_cursor := 1 # Cycles HELMET..SHOES when buying individual armor pieces
 var _upgrade_slot_cursor := 0      # Cycles WEAPON..SHOES for +1..+7 Farr Talic upgrading
 var _shield_buff_timer := 0.0      # Tank Job Fortify Buff (40% damage reduction)
+var weapon_stance_index := 0       # 0 = Class Native, 1 = Melee (2.8m), 2 = Ranged (Bow/Rifle), 3 = Force Staff
+var _rf_buff_timer := 0.0          # RF-Style 120s Faction Combat & Force Buff Suite
+var _buff_regen_accum := 0.0       # Periodic HP/FP regeneration tick while RF Buffs active
+var _attack_lunge_timer := 0.0     # Brief visual sprite lunge/recoil during Melee/Ranged attacks
+var _attack_lunge_dir := Vector3.ZERO
 var quest_kills := 0               # Repeatable Faction Bounty Quest kill counter (3 Kills + 10 Farr -> 1 Talic)
 
 ## Main Story Campaign Progress (Chapters I-V per Faction) & Lore Codex Cursor
@@ -371,6 +377,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		use_potion("SP", false)
 	elif event.is_action_pressed("use_scroll"):
 		use_teleport_scroll()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_Z:
+			cycle_weapon_stance()
+		elif event.keycode == KEY_B or event.keycode == KEY_9:
+			cast_rf_buff_suite()
 
 
 func _physics_process(delta: float) -> void:
@@ -383,6 +394,26 @@ func _physics_process(delta: float) -> void:
 	_potion_cd = maxf(0.0, _potion_cd - delta)
 	_shield_buff_timer = maxf(0.0, _shield_buff_timer - delta)
 	_wipe_confirm_timer = maxf(0.0, _wipe_confirm_timer - delta)
+	if _rf_buff_timer > 0.0:
+		_rf_buff_timer = maxf(0.0, _rf_buff_timer - delta)
+		_buff_regen_accum += delta
+		if _buff_regen_accum >= 2.0:
+			_buff_regen_accum = 0.0
+			current_hp = mini(max_hp, current_hp + 10)
+			current_fp = mini(max_fp, current_fp + 8)
+		if _rf_buff_timer <= 0.0:
+			_recalc_vital_stats()
+			event_logged.emit("RF Combat & Force Buff Suite expired! Press [B] or [9] to recast.")
+
+	if _attack_lunge_timer > 0.0:
+		_attack_lunge_timer = maxf(0.0, _attack_lunge_timer - delta)
+		var l_t := _attack_lunge_timer / 0.18
+		if sprite:
+			sprite.position.x = _attack_lunge_dir.x * 0.36 * sin(l_t * PI)
+			sprite.position.z = _attack_lunge_dir.z * 0.36 * sin(l_t * PI)
+	elif sprite and (absf(sprite.position.x) > 0.001 or absf(sprite.position.z) > 0.001):
+		sprite.position.x = 0.0
+		sprite.position.z = 0.0
 
 	# Periodic autosave (protects progress even if the game is force-stopped from the editor)
 	_autosave_timer -= delta
@@ -474,6 +505,8 @@ func _physics_process(delta: float) -> void:
 		_process_auto_attack()
 
 	var speed := base_move_speed
+	if _rf_buff_timer > 0.0:
+		speed *= 1.15
 	if current_weight >= max_weight * 0.8:
 		speed *= overburdened_speed_mult
 
@@ -1370,7 +1403,119 @@ func use_skill(slot: int) -> void:
 		_cast_skill_3()
 	elif slot == 4:
 		_cast_signature_4()
+	elif slot == 9:
+		cast_rf_buff_suite()
 	_emit_state()
+
+
+func _resolved_weapon_mode() -> String:
+	var c := _class_dict()
+	var stance_id: String = str(GameData.WEAPON_STANCES[clampi(weapon_stance_index, 0, GameData.WEAPON_STANCES.size() - 1)]["id"])
+	if stance_id == "AUTO":
+		if bool(c.get("uses_force", false)):
+			return "FORCE"
+		if bool(c.get("uses_ammo", false)):
+			return "RANGED"
+		return "MELEE"
+	return stance_id
+
+
+func _is_cross_class_weapon() -> bool:
+	var c := _class_dict()
+	var w_mode := _resolved_weapon_mode()
+	if weapon_stance_index == 0:
+		return false
+	if w_mode == "RANGED":
+		return not bool(c.get("uses_ammo", false))
+	if w_mode == "FORCE":
+		return not bool(c.get("uses_force", false))
+	if w_mode == "MELEE":
+		return bool(c.get("uses_ammo", false)) or bool(c.get("uses_force", false))
+	return false
+
+
+func _weapon_mode_summary() -> String:
+	var w_mode := _resolved_weapon_mode()
+	var cross := _is_cross_class_weapon()
+	var rng := _effective_attack_range()
+	if w_mode == "MELEE":
+		return "Melee Close (%.1fm%s)" % [rng, " Cross-Class" if cross else ""]
+	if w_mode == "RANGED":
+		return "Ranged Bow/Rifle (%.1fm%s)" % [rng, " Limited Cross-Class" if cross else ""]
+	return "Force Staff (%.1fm%s)" % [rng, " Limited Cross-Class" if cross else ""]
+
+
+func cycle_weapon_stance() -> void:
+	weapon_stance_index = (weapon_stance_index + 1) % GameData.WEAPON_STANCES.size()
+	_play_sfx("target_lock")
+	save_game()
+	var cross_note := " [Cross-Class Range/ATK Limit Active]" if _is_cross_class_weapon() else " [100% Class Synergy]"
+	event_logged.emit("Weapon Mode [Z] -> %s%s" % [_weapon_mode_summary(), cross_note])
+	_emit_state()
+
+
+func cast_rf_buff_suite() -> void:
+	var f := _faction_dict()
+	var fid: String = str(f["id"])
+	var suite: Dictionary = GameData.FACTION_BUFF_SUITES.get(fid, {})
+	if suite.is_empty():
+		return
+	var fp_cost: int = int(suite.get("fp_cost", 25))
+	var sp_cost: int = int(suite.get("sp_cost", 20))
+	if current_fp < fp_cost or current_sp < sp_cost:
+		event_logged.emit("Need %d FP & %d SP to cast RF Buff Suite (%s)! Use [6] FP or [7] SP Potion." % [
+			fp_cost, sp_cost, suite["suite_name"]
+		])
+		return
+	current_fp -= fp_cost
+	current_sp -= sp_cost
+	var was_unbuffed := (_rf_buff_timer <= 0.0)
+	_rf_buff_timer = float(suite.get("duration", 120.0))
+	_buff_regen_accum = 0.0
+	_recalc_vital_stats()
+	var bonus_heal := int(round(max_hp * 0.14)) if was_unbuffed else int(round(max_hp * 0.06))
+	current_hp = mini(max_hp, current_hp + bonus_heal)
+	_play_sfx("buff_cast")
+	COMBAT_VFX.spawn_buff_aura(self, suite.get("aura_color", f["color"]))
+	FLOATING_TEXT.spawn(
+		self,
+		global_position + Vector3(0.0, 2.55, 0.0),
+		"BUFFS ON! +22% ATK / +20% ASPD / -22% DMG / +18% HP (120s)",
+		suite.get("aura_color", Color(1.0, 0.92, 0.38)),
+		36,
+		1.9
+	)
+	save_game()
+	event_logged.emit("RF BUFF SUITE ACTIVE (120s): %s -> +22%% ATK, +20%% ASPD, -22%% Dmg Taken, +15%% SPD, +18%% Max HP/FP!" % suite["suite_name"])
+	_emit_state()
+
+
+func _trigger_attack_vfx(target: Node3D, is_skill: bool = false) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	var f := _faction_dict()
+	var col: Color = f["color"]
+	var to_t := target.global_position - global_position
+	to_t.y = 0.0
+	if to_t.length_squared() > 0.001:
+		var dir := to_t.normalized()
+		var w_mode := _resolved_weapon_mode()
+		# Melee lunges forward; Ranged/Force has slight firing kickback
+		_attack_lunge_dir = dir if (w_mode == "MELEE" and not siege_mode) else (-dir * 0.55)
+		_attack_lunge_timer = 0.18
+
+	var from_pos := global_position + Vector3(0.0, 1.85 if frame_mounted else 1.25, 0.0)
+	if siege_mode:
+		COMBAT_VFX.spawn_projectile(self, from_pos, target, col, false, true)
+		COMBAT_VFX.spawn_aoe_blast(self, target.global_position, 4.0, col)
+	else:
+		var w_mode := _resolved_weapon_mode()
+		if w_mode == "RANGED":
+			COMBAT_VFX.spawn_projectile(self, from_pos, target, col.lightened(0.2 if is_skill else 0.0), false, is_skill)
+		elif w_mode == "FORCE":
+			COMBAT_VFX.spawn_projectile(self, from_pos, target, col.lightened(0.25 if is_skill else 0.05), true, is_skill)
+		else:
+			COMBAT_VFX.spawn_melee_slash(self, global_position, target.global_position, col, 1.35 if is_skill else 1.0)
 
 
 func _cast_skill_2() -> void:
@@ -1389,7 +1534,7 @@ func _cast_skill_2() -> void:
 		event_logged.emit("Not enough FP/SP for %s! Use [6] FP or [7] SP Potion." % s2["name"])
 		return
 	var dist := Vector2(global_position.x - selected_enemy.global_position.x, global_position.z - selected_enemy.global_position.z).length()
-	var max_dist := maxf(float(s2["range"]), 15.0 if siege_mode else 0.0)
+	var max_dist := maxf(maxf(float(s2["range"]), _effective_attack_range() + 1.5), 15.0 if siege_mode else 0.0)
 	if dist > max_dist:
 		event_logged.emit("Target too far for %s (move within %.1fm)." % [s2["name"], max_dist])
 		return
@@ -1399,6 +1544,7 @@ func _cast_skill_2() -> void:
 	current_sp -= sp_cost
 	_skill2_cd = float(s2["cd"])
 	sprite.set_facing(selected_enemy.global_position - global_position)
+	_trigger_attack_vfx(selected_enemy, true)
 	var dmg := int(round(_effective_attack_damage() * float(s2["mult"])))
 	var effect: String = str(s2.get("effect", "NONE"))
 	var hit_tag := "[SKILL]"
@@ -1430,9 +1576,13 @@ func _cast_skill_3() -> void:
 	current_sp -= sp_cost
 	var center := selected_enemy.global_position if (selected_enemy and not selected_enemy.is_dead) else global_position
 	_skill3_cd = float(s3["cd"])
+	var blast_rad := float(s3["radius"])
+	if selected_enemy and not selected_enemy.is_dead:
+		_trigger_attack_vfx(selected_enemy, true)
+	COMBAT_VFX.spawn_aoe_blast(self, center, blast_rad, _faction_dict()["color"])
 	var dmg := int(round(_effective_attack_damage() * float(s3["mult"])))
 	var effect: String = str(s3.get("effect", "NONE"))
-	var hits := _deal_aoe_damage(center, float(s3["radius"]), dmg, true, "[AoE SKILL]")
+	var hits := _deal_aoe_damage(center, blast_rad, dmg, true, "[AoE SKILL]")
 	_play_sfx("skill_cast", 0.92)
 	var fx_note := _apply_skill_effect(effect, dmg * maxi(1, hits))
 	event_logged.emit("%s hit %d enemy(s) for %d AoE DMG%s (-%d FP, -%d SP)!" % [
@@ -1535,17 +1685,21 @@ func _process_auto_attack() -> void:
 	if _attack_cd > 0.0:
 		return
 
-	var c := _class_dict()
-	var needs_charge := bool(c.get("uses_ammo", false)) or bool(c.get("uses_force", false)) or siege_mode
+	var w_mode := _resolved_weapon_mode()
+	var needs_charge := (w_mode == "RANGED") or (w_mode == "FORCE") or siege_mode
 	if needs_charge:
 		if not consume_item_from_bags("AMMO_PACK", 1):
 			auto_attacking = false
-			event_logged.emit("Out of Ammo / Force Cells in Bags! Restock at the HQ Weapon & Force NPC.")
+			event_logged.emit("Out of Ammo / Force Cells! Restock at HQ Weapon NPC or press [Z] to swap to Melee Weapon (0 Ammo).")
 			return
 
-	_attack_cd = 1.05
+	_attack_cd = 0.85 if _rf_buff_timer > 0.0 else 1.05
 	sprite.set_facing(to_enemy)
-	_play_sfx("attack_hit")
+	_trigger_attack_vfx(selected_enemy, false)
+	if siege_mode or w_mode != "MELEE":
+		_play_sfx("ranged_shot")
+	else:
+		_play_sfx("attack_hit")
 	var dmg := _effective_attack_damage()
 	if siege_mode:
 		current_debt += 15
@@ -1553,9 +1707,10 @@ func _process_auto_attack() -> void:
 		event_logged.emit("Siege Artillery hit %d target(s) for %d DMG (-1 Ammo, +15 CYC Debt)." % [hits, dmg])
 	else:
 		var enemy_name_before := selected_enemy.enemy_name
-		selected_enemy.receive_damage(dmg, self, false, "")
+		var atk_tag := "[RANGED]" if w_mode == "RANGED" else ("[FORCE]" if w_mode == "FORCE" else "")
+		selected_enemy.receive_damage(dmg, self, false, atk_tag)
 		record_damage_dealt(dmg)
-		event_logged.emit("Hit %s for -%d DMG!" % [enemy_name_before, dmg])
+		event_logged.emit("Hit %s (%s) for -%d DMG!" % [enemy_name_before, w_mode, dmg])
 
 
 func _deal_aoe_damage(center: Vector3, radius: float, dmg: int, is_skill: bool = true, hit_tag: String = "[AoE]") -> int:
@@ -1575,13 +1730,15 @@ func receive_damage(amount: int, attacker: Node3D) -> void:
 	if is_mining:
 		_cancel_mining("Mining interrupted by enemy attack!")
 	var shielded := _shield_buff_timer > 0.0
-	var final_dmg := int(round(amount * 0.6)) if shielded else amount
+	var rf_buffed := _rf_buff_timer > 0.0
+	var mult := (0.6 if shielded else 1.0) * (0.78 if rf_buffed else 1.0)
+	var final_dmg := maxi(1, int(round(amount * mult)))
 	current_hp = maxi(0, current_hp - final_dmg)
-	record_damage_taken(final_dmg, shielded)
+	record_damage_taken(final_dmg, shielded or rf_buffed)
 	if frame_mounted:
 		current_debt += 18
 	var atk_name := (attacker as EnemyUnit).enemy_name if (attacker is EnemyUnit) else "Enemy"
-	var shield_note := " [Fortify -40%]" if shielded else ""
+	var shield_note := " [Fortify -40%]" if shielded else (" [Buff Ward -22%]" if rf_buffed else "")
 	event_logged.emit("Took -%d DMG%s from %s (HP: %d/%d)!" % [final_dmg, shield_note, atk_name, current_hp, max_hp])
 	if selected_enemy == null and attacker is EnemyUnit:
 		_set_selected_enemy(attacker as EnemyUnit)
@@ -1752,6 +1909,10 @@ func _effective_attack_damage() -> int:
 	var c := _class_dict()
 	var g := _total_gear_bonuses()
 	var base_atk := (24 + (level - 1) * 5 + int(g["atk"])) * float(c["atk_mult"])
+	if _is_cross_class_weapon():
+		base_atk *= 0.82
+	if _rf_buff_timer > 0.0:
+		base_atk *= 1.22
 	if level >= 30:
 		base_atk *= 1.25
 	if is_ascended_leader:
@@ -1765,9 +1926,20 @@ func _effective_attack_damage() -> int:
 
 func _effective_attack_range() -> float:
 	if siege_mode:
-		return 15.0
+		return 16.5 if _rf_buff_timer > 0.0 else 15.0
 	var c := _class_dict()
+	var w_mode := _resolved_weapon_mode()
+	var cross := _is_cross_class_weapon()
 	var r := float(c["range"])
+	if weapon_stance_index != 0:
+		if w_mode == "MELEE":
+			r = 2.8
+		elif w_mode == "RANGED":
+			r = 7.5 if cross else maxf(r, 10.5)
+		elif w_mode == "FORCE":
+			r = 6.8 if cross else maxf(r, 9.0)
+	if _rf_buff_timer > 0.0 and w_mode != "MELEE":
+		r += 1.5
 	if frame_mounted:
 		r = maxf(r, 3.6)
 	return r
@@ -1778,9 +1950,10 @@ func _recalc_vital_stats() -> void:
 	var g := _total_gear_bonuses()
 	var job_mult := 1.2 if level >= 30 else 1.0
 	var archon_mult := 1.35 if is_ascended_leader else 1.0
+	var buff_hp_fp_mult := 1.18 if _rf_buff_timer > 0.0 else 1.0
 
-	var raw_hp := (280 + (level - 1) * 28 + int(g["hp"])) * float(c["hp_mult"]) * job_mult * archon_mult
-	var raw_fp := (160 + (level - 1) * 16 + int(g["fp"])) * float(c["fp_mult"]) * job_mult * archon_mult
+	var raw_hp := (280 + (level - 1) * 28 + int(g["hp"])) * float(c["hp_mult"]) * job_mult * archon_mult * buff_hp_fp_mult
+	var raw_fp := (160 + (level - 1) * 16 + int(g["fp"])) * float(c["fp_mult"]) * job_mult * archon_mult * buff_hp_fp_mult
 	var raw_sp := (150 + (level - 1) * 14 + int(g["sp"])) * float(c["sp_mult"]) * job_mult * archon_mult
 	if frame_mounted:
 		raw_hp += 400
@@ -2073,6 +2246,8 @@ func save_game() -> void:
 		"story_farr_mined": story_farr_mined,
 		"story_boss_kills": story_boss_kills,
 		"codex_cursor": codex_cursor,
+		"weapon_stance_index": weapon_stance_index,
+		"rf_buff_timer": _rf_buff_timer,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -2141,6 +2316,8 @@ func load_game() -> bool:
 	story_farr_mined = maxi(0, int(d.get("story_farr_mined", 0)))
 	story_boss_kills = maxi(0, int(d.get("story_boss_kills", 0)))
 	codex_cursor = clampi(int(d.get("codex_cursor", 0)), 0, maxi(0, GameData.LORE_CODEX_ENTRIES.size() - 1))
+	weapon_stance_index = clampi(int(d.get("weapon_stance_index", 0)), 0, GameData.WEAPON_STANCES.size() - 1)
+	_rf_buff_timer = maxf(0.0, float(d.get("rf_buff_timer", 0.0)))
 
 	_recalc_vital_stats()
 	current_hp = clampi(int(d.get("current_hp", max_hp)), 1, max_hp)
@@ -2259,6 +2436,8 @@ func _emit_state() -> void:
 		"codex_total": codex_list.size(),
 		"codex_entry": cur_codex,
 	}
+	var suite: Dictionary = GameData.FACTION_BUFF_SUITES.get(fid, {})
+	var stance_dict: Dictionary = GameData.WEAPON_STANCES[clampi(weapon_stance_index, 0, GameData.WEAPON_STANCES.size() - 1)]
 	state_updated.emit({
 		"faction": f["name"],
 		"faction_id": f["id"],
@@ -2271,6 +2450,11 @@ func _emit_state() -> void:
 		"debt_name": f["debt_name"],
 		"job_title": _active_job_title(),
 		"gear_name": _active_gear_summary(),
+		"weapon_mode_summary": _weapon_mode_summary(),
+		"weapon_stance_label": str(stance_dict.get("label", "Class Native Weapon")),
+		"attack_range": _effective_attack_range(),
+		"rf_buff_timer": _rf_buff_timer,
+		"rf_buff_short": str(suite.get("short_tag", "RF Buffs")),
 		"respawn_name": _respawn_name(),
 		"last_saved": last_saved_text,
 		"equipped_slots": _active_equipment_slots(),

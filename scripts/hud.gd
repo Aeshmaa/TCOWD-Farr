@@ -64,6 +64,8 @@ var _bag_tab_btns: Array[Button] = []
 var _auto_arrange_btn: Button
 var _bag_slot_btns: Array[Button] = []
 var _reset_meter_btn: Button
+var _weapon_stance_btn: Button
+var _rf_buff_btn: Button
 var _map_top_btn: Button
 var _map_panel: PanelContainer
 var _map_btns: Dictionary = {}
@@ -147,6 +149,28 @@ func _build_combat_meter_controls() -> void:
 				_player.reset_combat_telemetry()
 		)
 		econ_vbox.add_child(_reset_meter_btn)
+
+	var skill_bar := get_node_or_null("SkillBar") as HBoxContainer
+	if skill_bar:
+		_rf_buff_btn = Button.new()
+		_rf_buff_btn.focus_mode = Control.FOCUS_NONE
+		_rf_buff_btn.modulate = Color(0.55, 1.0, 0.72)
+		_rf_buff_btn.text = "9: RF Buffs [B]"
+		_rf_buff_btn.pressed.connect(func() -> void:
+			if _player and _player.has_method("cast_rf_buff_suite"):
+				_player.cast_rf_buff_suite()
+		)
+		skill_bar.add_child(_rf_buff_btn)
+
+		_weapon_stance_btn = Button.new()
+		_weapon_stance_btn.focus_mode = Control.FOCUS_NONE
+		_weapon_stance_btn.modulate = Color(0.75, 0.92, 1.0)
+		_weapon_stance_btn.text = "Weap [Z]: Native"
+		_weapon_stance_btn.pressed.connect(func() -> void:
+			if _player and _player.has_method("cycle_weapon_stance"):
+				_player.cycle_weapon_stance()
+		)
+		skill_bar.add_child(_weapon_stance_btn)
 
 
 func _build_world_map_window() -> void:
@@ -616,11 +640,19 @@ func _on_player_state(d: Dictionary) -> void:
 	var max_wt: float = d["max_weight"]
 	var overburden := " [OVERBURDENED]" if wt >= max_wt * 0.8 else ""
 	var leader_tag := " [ARCHON]" if d["is_leader"] else ""
+	var rf_t := float(d.get("rf_buff_timer", 0.0))
+	var sh_t := float(d.get("shield_buff", 0.0))
+	var buff_parts: Array[String] = []
+	if rf_t > 0.0:
+		buff_parts.append("%s (+22%% ATK/ASPD/DEF/HP: %.0fs)" % [str(d.get("rf_buff_short", "RF Buffs")), rf_t])
+	if sh_t > 0.0:
+		buff_parts.append("Tank Fortify (-40%% DMG: %.0fs)" % sh_t)
+	var buff_status := "  |  ".join(buff_parts) if not buff_parts.is_empty() else "None (Press [B] or [9] for 120s RF Buffs!)"
 	economy_label.text = (
 		"Zone: [%s] (%s)\n" % [d.get("current_map_name", "HQ"), d.get("current_map_band", "")]
 		+ "Lv.%d%s  |  %s  |  ATK: %d  |  Saved: %s\n" % [d["level"], leader_tag, d["job_title"], d["atk"], d.get("last_saved", "Auto")]
-		+ "Equipped: %s\n" % d["gear_name"]
-		+ "Rebirth Spawn: %s\n" % d.get("respawn_name", "HQ Default")
+		+ "Weapon Mode [Z]: %s  |  Equipped: %s\n" % [str(d.get("weapon_mode_summary", "Native")), d["gear_name"]]
+		+ "Active Buffs [B]: %s  |  Rebirth: %s\n" % [buff_status, d.get("respawn_name", "HQ Default")]
 		+ "HP: %d/%d   |   FP: %d/%d   |   SP: %d/%d\n" % [d["hp"], d["max_hp"], d["fp"], d["max_fp"], d["sp"], d["max_sp"]]
 		+ "%s: %d %s   |   Wallet: %d %s (%s)\n" % [d["debt_name"], d["debt"], code, d["wallet"], code, d["currency_name"]]
 		+ "Ammo/Force: %d   |   Farr: %d (%d %s)   |   Wt: %.0f/%.0f%s\n" % [
@@ -664,6 +696,17 @@ func _on_player_state(d: Dictionary) -> void:
 	pot_fp_btn.text = "6: FP Pot (%d)" % d["fp_potions"]
 	pot_sp_btn.text = "7: SP Pot (%d)" % d["sp_potions"]
 	scroll_btn.text = "8: Scroll (%d)" % d["scrolls"]
+
+	if _rf_buff_btn:
+		if rf_t > 0.0:
+			_rf_buff_btn.text = "9: Buffs [ON %.0fs]" % rf_t
+			_rf_buff_btn.modulate = Color(0.45, 1.0, 0.55)
+		else:
+			_rf_buff_btn.text = "9: RF Buffs [B]"
+			_rf_buff_btn.modulate = Color(1.0, 0.9, 0.45)
+
+	if _weapon_stance_btn:
+		_weapon_stance_btn.text = "Weap [Z]: %s" % str(d.get("weapon_mode_summary", "Native"))
 
 	var mining: bool = d["is_mining"]
 	mining_panel.visible = mining
@@ -726,8 +769,7 @@ func _update_story_window(d: Dictionary) -> void:
 		_story_dialogue_lbl.text = str(ch.get("dialogue", ""))
 		var boss_prog := ("  |  Boss Kills: %d/%d" % [cur_b, req_b]) if req_b > 0 else ""
 		_story_progress_lbl.text = (
-			"Objective: %s\n" % str(ch.get("objective_summary", ""))
-			+ "Progress -> Level: %d/%d  |  Kills: %d/%d  |  Mined Farr: %d/%d%s\n" % [cur_lv, req_lv, cur_k, req_k, cur_f, req_f, boss_prog]
+			"Progress -> Level: %d/%d  |  Kills: %d/%d  |  Mined Farr: %d/%d%s\n" % [cur_lv, req_lv, cur_k, req_k, cur_f, req_f, boss_prog]
 			+ "Rewards -> +%d %s, -%d Debt, +%dx Farr Talic, Boost to Lv.%d" % [
 				int(ch.get("reward_currency", 0)),
 				code,
@@ -745,12 +787,15 @@ func _update_story_window(d: Dictionary) -> void:
 	var c_idx: int = int(sinfo.get("codex_index", 0))
 	var c_tot: int = int(sinfo.get("codex_total", 1))
 	if not c_entry.is_empty():
+		var p_path := str(c_entry.get("portrait", c_entry.get("portrait_path", "")))
+		var e_name := str(c_entry.get("name", c_entry.get("title", "")))
+		var e_lore := str(c_entry.get("lore", c_entry.get("bio", "")))
 		if _codex_portrait:
-			_codex_portrait.texture = _load_portrait_texture(str(c_entry.get("portrait_path", "")))
+			_codex_portrait.texture = _load_portrait_texture(p_path)
 		_codex_title_lbl.text = "[%d / %d] %s  —  %s" % [
-			c_idx + 1, c_tot, str(c_entry.get("title", "")), str(c_entry.get("role", ""))
+			c_idx + 1, c_tot, e_name, str(c_entry.get("role", ""))
 		]
-		_codex_bio_lbl.text = str(c_entry.get("bio", ""))
+		_codex_bio_lbl.text = e_lore
 
 
 func _update_settings_window(d: Dictionary) -> void:

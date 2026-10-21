@@ -34,6 +34,79 @@ const UPGRADE_SUCCESS_RATES := {
 	7: 0.03, # +7: 3%  (Fail = resets to +0! Success = Sovereign Masterwork Aura)
 }
 
+## RF-Style Weapon Class Stances [Z]:
+## Any character can swap between Class-Native Weapon, Melee Weapon (close range, 0 ammo),
+## Ranged Bow/Rifle (distance attack; limited range/ATK if non-Ranged class), or Force Staff.
+const WEAPON_STANCES := [
+	{
+		"id": "AUTO",
+		"label": "Class Native Weapon",
+		"short": "Native",
+	},
+	{
+		"id": "MELEE",
+		"label": "Melee Blade/Mace (Close 2.8m, 0 Ammo)",
+		"short": "Melee (2.8m)",
+	},
+	{
+		"id": "RANGED",
+		"label": "Ranged Bow/Rifle (10.5m Native / 7.5m Cross-Class Limit)",
+		"short": "Ranged Bow/Rifle",
+	},
+	{
+		"id": "FORCE",
+		"label": "Force Staff/Rod (9.0m Native / 6.8m Cross-Class Limit)",
+		"short": "Force Staff",
+	},
+]
+
+## RF-Style Faction Combat & Force Buff Suites [B] (120s Duration):
+## Grants +22% ATK, +20% Attack Speed, -22% Damage Taken, +15% Move Speed, +18% Max HP/FP, +1.5m Ranged Sight & Regen.
+const FACTION_BUFF_SUITES := {
+	"sveleitre": {
+		"suite_name": "Overclock + Gyro-Aegis + Telemetry",
+		"short_tag": "Overclock/Aegis/Sight",
+		"duration": 120.0,
+		"fp_cost": 25,
+		"sp_cost": 20,
+		"atk_mult": 1.22,
+		"aspd_mult": 1.20,
+		"dmg_taken_mult": 0.78,
+		"move_mult": 1.15,
+		"hp_fp_mult": 1.18,
+		"ranged_bonus_m": 1.5,
+		"aura_color": Color(0.28, 0.94, 1.0),
+	},
+	"order": {
+		"suite_name": "Verethragna Might + Asha Ward + Haoma Grace",
+		"short_tag": "Might/Ward/Grace",
+		"duration": 120.0,
+		"fp_cost": 25,
+		"sp_cost": 20,
+		"atk_mult": 1.22,
+		"aspd_mult": 1.20,
+		"dmg_taken_mult": 0.78,
+		"move_mult": 1.15,
+		"hp_fp_mult": 1.18,
+		"ranged_bonus_m": 1.5,
+		"aura_color": Color(1.0, 0.88, 0.35),
+	},
+	"legion": {
+		"suite_name": "Aeshma Bloodlust + Obsidian Scale + Serpent Sight",
+		"short_tag": "Bloodlust/Scale/Sight",
+		"duration": 120.0,
+		"fp_cost": 25,
+		"sp_cost": 20,
+		"atk_mult": 1.22,
+		"aspd_mult": 1.20,
+		"dmg_taken_mult": 0.78,
+		"move_mult": 1.15,
+		"hp_fp_mult": 1.18,
+		"ranged_bonus_m": 1.5,
+		"aura_color": Color(1.0, 0.28, 0.38),
+	},
+}
+
 const FACTIONS := [
 	{
 		"id": "sveleitre",

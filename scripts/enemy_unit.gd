@@ -7,6 +7,7 @@ signal died(enemy: EnemyUnit, killer: Node3D)
 
 const DROPPED_BAG_SCENE := preload("res://scenes/dropped_ore_bag.tscn")
 const FLOATING_TEXT := preload("res://scripts/floating_combat_text.gd")
+const COMBAT_VFX := preload("res://scripts/combat_vfx.gd")
 
 @export var enemy_name := "Rival Strip-Miner"
 @export var level := 12
@@ -80,6 +81,10 @@ func _physics_process(delta: float) -> void:
 			sprite.set_facing(to_target)
 			if _attack_timer <= 0.0:
 				_attack_timer = attack_interval
+				if attack_range > 3.5:
+					COMBAT_VFX.spawn_projectile(self, global_position + Vector3(0.0, 1.3, 0.0), aggro_target, accent_color, true, level >= 45)
+				else:
+					COMBAT_VFX.spawn_melee_slash(self, global_position, aggro_target.global_position, accent_color, 1.5 if level >= 45 else 0.9)
 				if aggro_target.has_method("receive_damage"):
 					aggro_target.call("receive_damage", attack_damage, self)
 	elif dist_from_home > 0.6:
