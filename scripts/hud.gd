@@ -94,6 +94,12 @@ var _codex_next_btn: Button
 var _portrait_cache: Dictionary = {}
 var _log_lines: Array[String] = []
 
+var _beacon_panel: PanelContainer
+var _beacon_title: Label
+var _beacon_wave_btn: Button
+var _beacon_boss_btn: Button
+var _beacon_clear_btn: Button
+
 
 func _ready() -> void:
 	_build_inventory_window()
@@ -101,6 +107,7 @@ func _ready() -> void:
 	_build_story_window()
 	_build_settings_window()
 	_build_combat_meter_controls()
+	_build_beacon_window()
 
 	_rig = get_node_or_null(camera_rig_path)
 	if _rig:
@@ -715,6 +722,7 @@ func _on_player_state(d: Dictionary) -> void:
 		mining_bar.value = float(d["mining_progress"]) * 100.0
 
 	_update_physical_vendor_panel(d["vendor_info"], code)
+	_update_beacon_panel(d.get("active_beacon"))
 	_update_inventory_window(d)
 	_update_world_map_window(d)
 	_update_story_window(d)
@@ -957,6 +965,88 @@ func _update_inventory_window(d: Dictionary) -> void:
 				var tag := "[Click to Equip]" if compat else "[Incompatible - Sell at NPC]"
 				sb.text = "%d. %s %s" % [i + 1, it["name"], tag]
 				sb.modulate = Color(0.95, 0.85, 0.45) if compat else Color(1.0, 0.55, 0.55)
+
+
+# ------------------------------------------------------------------------------
+# RIFT SUMMON BEACON TERMINAL WINDOW
+# ------------------------------------------------------------------------------
+func _build_beacon_window() -> void:
+	_beacon_panel = PanelContainer.new()
+	_beacon_panel.visible = false
+	_beacon_panel.offset_left = 370.0
+	_beacon_panel.offset_top = 180.0
+	_beacon_panel.offset_right = 910.0
+	_beacon_panel.offset_bottom = 440.0
+	add_child(_beacon_panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	_beacon_panel.add_child(vbox)
+
+	_beacon_title = Label.new()
+	_beacon_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_beacon_title.modulate = Color(1.0, 0.88, 0.42)
+	_beacon_title.text = "=== RIFT SUMMON BEACON TERMINAL ==="
+	vbox.add_child(_beacon_title)
+
+	var desc := Label.new()
+	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc.modulate = Color(0.85, 0.90, 0.95)
+	desc.text = "Harness zone rift energy to materialize monster grinding packs or awaken the zone's Pit Boss!"
+	vbox.add_child(desc)
+
+	_beacon_wave_btn = Button.new()
+	_beacon_wave_btn.focus_mode = Control.FOCUS_NONE
+	_beacon_wave_btn.modulate = Color(0.40, 0.95, 1.0)
+	_beacon_wave_btn.text = "★ [1] Summon Grinding Pack (3x Hostile Mobs) ★"
+	_beacon_wave_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("interact_beacon_summon_wave"):
+			_player.interact_beacon_summon_wave()
+	)
+	vbox.add_child(_beacon_wave_btn)
+
+	_beacon_boss_btn = Button.new()
+	_beacon_boss_btn.focus_mode = Control.FOCUS_NONE
+	_beacon_boss_btn.modulate = Color(1.0, 0.85, 0.35)
+	_beacon_boss_btn.text = "★ [2] Awaken Zone Pit Boss ★"
+	_beacon_boss_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("interact_beacon_summon_boss"):
+			_player.interact_beacon_summon_boss()
+	)
+	vbox.add_child(_beacon_boss_btn)
+
+	_beacon_clear_btn = Button.new()
+	_beacon_clear_btn.focus_mode = Control.FOCUS_NONE
+	_beacon_clear_btn.modulate = Color(0.88, 0.60, 0.60)
+	_beacon_clear_btn.text = "Clear Summoned Wave Mobs"
+	_beacon_clear_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("interact_beacon_clear_summons"):
+			_player.interact_beacon_clear_summons()
+	)
+	vbox.add_child(_beacon_clear_btn)
+
+	var close_btn := Button.new()
+	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn.text = "Close Beacon Terminal"
+	close_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("close_beacon_menu"):
+			_player.close_beacon_menu()
+		_beacon_panel.visible = false
+	)
+	vbox.add_child(close_btn)
+
+
+func _update_beacon_panel(binfo: Variant) -> void:
+	if _beacon_panel == null:
+		return
+	if binfo != null and binfo is Dictionary and not (binfo as Dictionary).is_empty():
+		_beacon_panel.visible = true
+		_beacon_title.text = "=== %s ===" % (binfo as Dictionary).get("name", "Summon Beacon")
+		var pb_name: String = str((binfo as Dictionary).get("pit_boss_name", "Pit Boss"))
+		_beacon_boss_btn.text = "★ [2] Awaken Zone Pit Boss: [%s] ★" % pb_name
+	else:
+		_beacon_panel.visible = false
+
 
 
 func _on_event_logged(msg: String) -> void:

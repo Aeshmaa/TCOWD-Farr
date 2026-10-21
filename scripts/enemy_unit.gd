@@ -24,6 +24,7 @@ const COMBAT_VFX := preload("res://scripts/combat_vfx.gd")
 @export var respawn_seconds := 14.0
 @export var body_color := Color(0.68, 0.22, 0.25)
 @export var accent_color := Color(1.0, 0.4, 0.2)
+@export var is_pit_boss := false
 
 @onready var sprite: DirectionalSprite = $Sprite
 @onready var label_3d: Label3D = $Label3D
@@ -184,5 +185,11 @@ func _find_target_in_aggro() -> Node3D:
 
 func _refresh_label() -> void:
 	if label_3d and not is_dead:
-		label_3d.modulate = Color(1.0, 0.55, 0.5)
-		label_3d.text = "Lv.%d %s\nHP: %d / %d" % [level, enemy_name, current_hp, max_hp]
+		if is_pit_boss:
+			label_3d.modulate = Color(1.0, 0.88, 0.35)
+			label_3d.font_size = 32
+			label_3d.text = "★ [PIT BOSS] Lv.%d %s ★\nHP: %d / %d" % [level, enemy_name, current_hp, max_hp]
+		else:
+			label_3d.modulate = Color(1.0, 0.55, 0.5)
+			label_3d.font_size = 24
+			label_3d.text = "Lv.%d %s\nHP: %d / %d" % [level, enemy_name, current_hp, max_hp]

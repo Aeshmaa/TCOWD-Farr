@@ -142,4 +142,45 @@ Press **`[B]`** or **`[9]`** (or click **`9: RF Buffs [B]`** on the Skill Bar) t
 - **Legion of the Druj:** *Aeshma Bloodlust + Obsidian Scale Pact + Serpent Dark Sight*
 - **Active Buff Bonuses (`120s`):** **`+22% ATK`**, **`+20% Attack Speed`**, **`-22% Damage Taken`** *(stacks with Tank Fortify)*, **`+15% Move Speed`**, **`+18% Max HP & Max FP`**, **`+1.5m Ranged/Force Distance`**, and **`+10 HP / +8 FP` periodic regeneration**.
 
+---
+
+## 10. Expansive 3D Terrain, Themed Landmarks, Dedicated Boss Pits & Summon Beacons
+
+### 10.1 Perimeter Mountain Cliff Barriers & Themed Landmarks
+Every one of the 9 maps features procedural physical barriers and themed architectural structures dynamically built by [`WorldZoneManager`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/scripts/world.gd):
+- **Perimeter Ring Cliffs (68 Rock Bastions):** An unbroken ring of rocky mountain cliffs enclosing the `230m x 230m` boundaries (coordinates `X, Z = ±115m`), keeping players and mobs safely inside the playable area and creating a dramatic mountain canyon rim.
+- **Themed Architectural Landmarks:**
+  - `TECH_ARK` (`svel_hq`): Giant crashed alloy bulkheads, high-tech energy conduit pylons with neon cyan strips, and coolant vents.
+  - `FROZEN_SCRAP` (`svel_basic`): Glacial ice spires (11m-16m tall, translucent cyan-blue crystal), frost-covered scrap hulls.
+  - `HOLY_TEMPLE` (`order_hq`): Ivory-gold marble peristyle colonnade, central Sacred Fire Altar with burning holy flame and OmniLight3D.
+  - `DESERT_RUINS` (`order_basic`): Weathered Persian sandstone obelisks with gold runes, ruined bull-capital columns and crumbling stone walls.
+  - `OBSIDIAN_CITADEL` (`legion_hq`): Sharp jagged black basalt monolith blades (12m-15m tall) and dark cauldron braziers with violet-crimson flame.
+  - `VOLCANIC_BASIN` (`legion_basic`): Smoldering brimstone crags with glowing red magma fissures and volcanic chimney cones.
+  - `PERSEPOLIS_STEPPES` (`contested_steppes`): Colossal Persepolis hypostyle columns with double-bull capitals (8.5m tall) and stepped stone terrace dais.
+  - `SCORCHED_CAULDRON` (`contested_cauldron`): Abyssal demonic spires (15m-17m tall) and twisted brimstone arches.
+  - `CRACK_MINING` (`farr_mining_ground`): Colossal 14m Central Raw Amber Farr Crystal Megaspire with 24m light radiance and 4 heavy industrial mining rig scaffolding towers.
+
+### 10.2 Dedicated Boss Pits & Zone Pit Bosses
+Each zone has a dedicated **Boss Pit Arena** platform with 8 monolithic stone pillars, fire braziers, glowing inner rune circles, and a floating 3D title plate:
+
+| Map ID | Boss Pit Name | Pit Boss Name | Level | HP | ATK | Guaranteed Loot & Talics |
+|---|---|---|---|---|---|---|
+| `svel_hq` | Sub-Core Scrap Pit | **ARC-REACTOR OVERSEER** | `Lv.12` | `1,350` | `28` | Guaranteed 2-3 Farr Talics + Lv.12 Rare Equipment + `950 CYC` Bounty |
+| `svel_basic` | Cryo-Rift Boss Pit | **CRYO-CONDUIT DREADNOUGHT** | `Lv.28` | `3,100` | `64` | Guaranteed 2-3 Farr Talics + Lv.20 Rare Equipment + `1,950 CYC` Bounty |
+| `order_hq` | Sanctuary Cleansing Pit | **SANCTUARY CORRUPTED GOLEM** | `Lv.12` | `1,400` | `27` | Guaranteed 2-3 Farr Talics + Lv.12 Rare Equipment + `950 DRC` Bounty |
+| `order_basic` | Sun-Temple Boss Pit | **AZUR-FRAVASHI ZEALOT** | `Lv.28` | `3,200` | `62` | Guaranteed 2-3 Farr Talics + Lv.20 Rare Equipment + `1,950 DRC` Bounty |
+| `legion_hq` | Citadel Trench Pit | **OBSIDIAN BLOOD-GARGANT`** | `Lv.12` | `1,450` | `30` | Guaranteed 2-3 Farr Talics + Lv.12 Rare Equipment + `950 SGL` Bounty |
+| `legion_basic` | Boiling Blood Crater Pit | **AKA-MANAH WAR-EXECUTIONER** | `Lv.28` | `3,300` | `66` | Guaranteed 2-3 Farr Talics + Lv.20 Rare Equipment + `1,950 SGL` Bounty |
+| `contested_steppes` | Throne Pit of King Yima | **PERSEPOLIS RUIN GOLIATH** | `Lv.38` | `4,500` | `96` | Guaranteed 2-3 Farr Talics + Lv.35 Rare Equipment + `2,900 Currency` |
+| `contested_cauldron` | Forsworn Crucible Pit | **ABYSSAL DAEVA OVERLORD** | `Lv.44` | `5,200` | `112` | Guaranteed 2-3 Farr Talics + Lv.35 Rare Equipment + `3,600 Currency` |
+| `farr_mining_ground` | Central Core Megavein Pit | **CRACK CORE ARCH-LEVIATHAN** | `Lv.45` | `5,800` | `128` | Guaranteed 2-3 Farr Talics + Lv.35-45 Rare Gear + `4,200 Currency` |
+
+### 10.3 3D Interactive Monster Summon Beacon (`SummonBeacon`)
+Every map has an interactive 3D monument ([`SummonBeacon`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/scripts/summon_beacon.gd)) featuring a floating rotating prism crystal core and light beam:
+- **Left-Click to Approach & Activate:** Walking up to the beacon opens the **Rift Summon Beacon Terminal** GUI window.
+- **`[1] Summon Grinding Pack`**: Materializes a wave of 3 hostile zone monsters around the beacon with AoE blast VFX for instant leveling and grinding.
+- **`[2] Awaken Zone Pit Boss`**: Awaken or resurrect the zone's dedicated Pit Boss immediately in the Boss Pit arena with full combat fanfare.
+- **`[3] Clear Summoned Wave`**: Cleans up any active summoned mobs if players want to reset the grinding grounds.
+
+
 

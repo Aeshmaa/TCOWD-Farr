@@ -51,6 +51,7 @@ var auto_sp_pct := 45
 
 ## Currently open physical 3D Vendor NPC (null when not standing next to an NPC)
 var active_vendor_npc: VendorNpc = null
+var active_summon_beacon: Node3D = null
 var _armor_vendor_slot_cursor := 1 # Cycles HELMET..SHOES when buying individual armor pieces
 var _upgrade_slot_cursor := 0      # Cycles WEAPON..SHOES for +1..+7 Farr Talic upgrading
 var _shield_buff_timer := 0.0      # Tank Job Fortify Buff (40% damage reduction)
@@ -205,6 +206,7 @@ func travel_to_map(target_map_id: String, custom_pos: Variant = null, silent: bo
 	siege_mode = false
 	auto_attacking = false
 	active_vendor_npc = null
+	active_summon_beacon = null
 	_set_selected_enemy(null)
 	_clear_click_target()
 	_interact_target = null
@@ -433,6 +435,20 @@ func _physics_process(delta: float) -> void:
 				var closed_name := active_vendor_npc.npc_name
 				active_vendor_npc = null
 				event_logged.emit("Walked away from %s — shop closed." % closed_name)
+
+	# Close summon beacon terminal if player walks away from the monument
+	if active_summon_beacon != null:
+		if not is_instance_valid(active_summon_beacon):
+			active_summon_beacon = null
+		else:
+			var beacon_dist := Vector2(
+				global_position.x - active_summon_beacon.global_position.x,
+				global_position.z - active_summon_beacon.global_position.z
+			).length()
+			var max_bdist: float = float(active_summon_beacon.get("interact_distance")) if active_summon_beacon.get("interact_distance") != null else 3.6
+			if beacon_dist > max_bdist + 2.0:
+				active_summon_beacon = null
+				_emit_state()
 
 	# Natural HP / FP / SP recovery + Automatic HP/FP/SP Charger Storage
 	if not auto_attacking:
@@ -903,6 +919,7 @@ func use_teleport_scroll() -> void:
 
 func close_vendor_shop() -> void:
 	active_vendor_npc = null
+	active_summon_beacon = null
 	_emit_state()
 
 
@@ -1295,11 +1312,12 @@ func _handle_click(delta: float) -> void:
 				_cancel_mining("Switched to combat.")
 			_interact_target = null
 			active_vendor_npc = null
+			active_summon_beacon = null
 			_set_selected_enemy(enemy)
 			auto_attacking = true
 			event_logged.emit("Targeted & engaging %s." % enemy.enemy_name)
 			_holding_world_click = false
-		elif collider is FarrVein or collider is RefineryStation or collider is DroppedOreBag or collider is VendorNpc or (collider is Node3D and (collider as Node3D).is_in_group("warp_portal")):
+		elif collider is FarrVein or collider is RefineryStation or collider is DroppedOreBag or collider is VendorNpc or (collider is Node3D and ((collider as Node3D).is_in_group("warp_portal") or (collider as Node3D).is_in_group("summon_beacon"))):
 			var node := collider as Node3D
 			if siege_mode:
 				event_logged.emit("Cannot walk while in Siege Mode! Press [4] to undeploy.")
@@ -1833,6 +1851,11 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 	if enemy.level >= 28:
 		story_boss_kills += 1
 	xp += 55
+	if enemy.is_pit_boss:
+		_play_sfx("level_up")
+		event_logged.emit("★★★ CONQUERED ZONE PIT BOSS [%s]! +%d %s Bounty ★★★" % [
+			enemy.enemy_name, enemy.bounty_reward, f["currency_code"]
+		])
 	var needed := level * 90
 	if xp >= needed and level < 45:
 		xp -= needed
@@ -1863,6 +1886,21 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 ## Low-probability monster equipment & Farr Talic drop placed directly into your Bag!
 ## Talics ONLY drop from Mini-Bosses (Lv.25-39), Bosses (Lv.40-49), and World Bosses (Lv.50) (or Faction Quests)!
 func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
+	if enemy.is_pit_boss:
+		# GUARANTEED BOUNTIFUL PIT BOSS LOOT:
+		var pb_talics := 2 if randf() < 0.5 else 3
+		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", pb_talics))
+
+		var pb_tier := 4 if enemy.level >= 35 else (3 if enemy.level >= 20 else 2)
+		var pb_group := GameData.EQUIP_CHASSIS_SVEL if randf() < 0.35 else GameData.EQUIP_ORGANIC_VAR
+		var pb_slot: String = GameData.EQUIP_SLOTS[randi() % GameData.EQUIP_SLOTS.size()]
+		var pb_gear := GameData.make_equipment_item(pb_tier, pb_slot, pb_group)
+		if add_item_to_bags(pb_gear):
+			event_logged.emit("★ PIT BOSS LOOT: +%dx Farr Talics & [%s] awarded to your Bags!" % [pb_talics, pb_gear["name"]])
+		else:
+			event_logged.emit("★ PIT BOSS LOOT: +%dx Farr Talics awarded! Bags full for [%s]." % [pb_talics, pb_gear["name"]])
+		return
+
 	var dropped_talics := 0
 	if enemy.level >= 50:
 		dropped_talics = 2 if randf() < 0.40 else 1
@@ -2011,6 +2049,11 @@ func _trigger_interaction(target: Node3D) -> void:
 	elif target.is_in_group("warp_portal"):
 		var dest_map := str(target.get("target_map_id"))
 		travel_to_map(dest_map)
+	elif target.is_in_group("summon_beacon"):
+		active_summon_beacon = target
+		var bname: String = str(target.get("beacon_name")) if target.get("beacon_name") != null else "Summon Beacon"
+		event_logged.emit("Activated %s. Ready to summon grinding waves or awaken Pit Boss!" % bname)
+		_emit_state()
 
 
 func _process_mining(delta: float) -> void:
@@ -2093,6 +2136,7 @@ func cycle_faction() -> void:
 	siege_mode = false
 	frame_mounted = false
 	active_vendor_npc = null
+	active_summon_beacon = null
 	sprite.scale = Vector3.ONE
 	sprite.position.y = 0.8
 	if fravashi_instance and is_instance_valid(fravashi_instance):
@@ -2146,6 +2190,7 @@ func simulate_death() -> void:
 	auto_attacking = false
 	siege_mode = false
 	active_vendor_npc = null
+	active_summon_beacon = null
 	_clear_click_target()
 	_interact_target = null
 	current_hp = max_hp
@@ -2438,7 +2483,17 @@ func _emit_state() -> void:
 	}
 	var suite: Dictionary = GameData.FACTION_BUFF_SUITES.get(fid, {})
 	var stance_dict: Dictionary = GameData.WEAPON_STANCES[clampi(weapon_stance_index, 0, GameData.WEAPON_STANCES.size() - 1)]
+
+	var beacon_info: Variant = null
+	if active_summon_beacon and is_instance_valid(active_summon_beacon):
+		beacon_info = {
+			"name": str(active_summon_beacon.get("beacon_name")),
+			"zone_id": str(active_summon_beacon.get("zone_id")),
+			"pit_boss_name": active_summon_beacon.get_pit_boss_name() if active_summon_beacon.has_method("get_pit_boss_name") else "Zone Pit Boss",
+		}
+
 	state_updated.emit({
+		"active_beacon": beacon_info,
 		"faction": f["name"],
 		"faction_id": f["id"],
 		"current_map_id": current_map_id,
@@ -2516,3 +2571,38 @@ func _emit_state() -> void:
 		"cam_sensitivity_mult": cam_sensitivity_mult,
 		"story_info": story_info,
 	})
+
+
+# ------------------------------------------------------------------------------
+# SUMMON BEACON ACTIONS
+# ------------------------------------------------------------------------------
+func interact_beacon_summon_wave() -> void:
+	if active_summon_beacon and is_instance_valid(active_summon_beacon):
+		var count: int = active_summon_beacon.summon_monster_wave(self) if active_summon_beacon.has_method("summon_monster_wave") else 0
+		if count > 0:
+			event_logged.emit("Summoned grinding wave of %d hostile mobs around the Beacon!" % count)
+			_play_sfx("ability_cast")
+
+
+func interact_beacon_summon_boss() -> void:
+	if active_summon_beacon and is_instance_valid(active_summon_beacon):
+		var pb_name: String = active_summon_beacon.get_pit_boss_name() if active_summon_beacon.has_method("get_pit_boss_name") else "Zone Pit Boss"
+		var success: bool = active_summon_beacon.summon_pit_boss(self) if active_summon_beacon.has_method("summon_pit_boss") else false
+		if success:
+			event_logged.emit("ROAR! Awakened Pit Boss [%s] in the Boss Pit arena!" % pb_name)
+			_play_sfx("level_up")
+		else:
+			event_logged.emit("Pit Boss [%s] is already active in the Boss Pit!" % pb_name)
+
+
+func interact_beacon_clear_summons() -> void:
+	var world_mgr := get_tree().get_first_node_in_group("world_zone_manager")
+	if world_mgr and world_mgr.has_method("clear_summoned_mobs"):
+		var cleared: int = world_mgr.clear_summoned_mobs()
+		event_logged.emit("Cleared %d summoned wave mobs." % cleared)
+
+
+func close_beacon_menu() -> void:
+	active_summon_beacon = null
+	_emit_state()
+
