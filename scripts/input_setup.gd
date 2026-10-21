@@ -36,12 +36,14 @@ func _enter_tree() -> void:
 	_add_key("faction_cycle", KEY_F)
 	_add_key("class_cycle", KEY_J)
 	_add_key("job_branch_toggle", KEY_B)
-	_add_key("upgrade_gear", KEY_U)
 	_add_key("dev_level_up", KEY_L)
 	_add_key("teleport_hq", KEY_H)
 	_add_key("simulate_death", KEY_K)
 	_add_key("target_cycle", KEY_TAB)
-	_add_key("toggle_shop", KEY_P)
+
+	# Inventory, Equipment Slots, Auto-Charger & Auto-Arrange Bags
+	_add_key("toggle_inventory", KEY_I)
+	_add_key("auto_arrange_bags", KEY_O)
 
 	# Combat skills [1]-[4] + Potion & Utility Belt [5]-[8]
 	_add_key("skill_1", KEY_1)

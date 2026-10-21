@@ -1,10 +1,10 @@
 extends CharacterBody3D
 ## Data-Driven Player Controller:
-## - HP / FP / SP pools with class-specific ratios + Potions ([5] HP, [6] FP, [7] SP) + Auto-Potion (<45%)
-## - Faction-specific Currencies: CYC (Sveleitre), DRC (Order), SGL (Legion)
-## - Shared Organic/Relic Equipment for Order & Legion vs. Chassis-Only Equipment for Sveleitre
-## - Low-probability Monster/Boss Equipment Drops + 4 HQ Vendor NPCs ([P] Shop Window)
-## - Utility Teleport Scrolls ([8]) & Ammo / Force Reams
+## - Physical 3D HQ Vendor NPCs stationed at the sides of each Faction HQ (must walk up to trade!)
+## - 6 Equipment Slots (WEAPON, HELMET, UPPER, LOWER, GLOVES, SHOES)
+##   with Order+Druj Shared (ORGANIC_VAR) vs. Sveleitre-Only (CHASSIS_SVEL) compatibility
+## - Automatic HP / FP / SP Charger Storage with adjustable % thresholds pulling from Bag stacks
+## - Multi-Bag Inventory (starts with 2 Bags = 16 slots, expandable to 5 Bags = 40 slots) + Auto-Arrange [O]
 
 signal state_updated(status_data: Dictionary)
 signal event_logged(message: String)
@@ -30,11 +30,25 @@ var class_index := 0
 var job_branch := 0
 var is_ascended_leader := false
 
-## Equipment Compatibility:
-## - Order & Legion share `equipped_organic_tier` (they can wear the same organic/relic gear!)
-## - Sveleitre uses `equipped_chassis_tier` (mechanical frames cannot wear organic gear!)
-var equipped_organic_tier := 0
-var equipped_chassis_tier := 0
+## 6 Equipment Slots per compatibility group:
+## - Order & Legion share `equipped_organic_slots`
+## - Sveleitre uses `equipped_chassis_slots`
+var equipped_organic_slots: Dictionary = {}
+var equipped_chassis_slots: Dictionary = {}
+
+## Multi-Bag System (RF Online style: 1 to 5 bags, 8 slots per bag)
+var unlocked_bags := 2
+var active_bag_tab := 0
+var bag_slots: Array = []
+
+## Automatic HP / FP / SP Charger Thresholds (0 = OFF, otherwise % threshold)
+var auto_hp_pct := 55
+var auto_fp_pct := 45
+var auto_sp_pct := 45
+
+## Currently open physical 3D Vendor NPC (null when not standing next to an NPC)
+var active_vendor_npc: VendorNpc = null
+var _armor_vendor_slot_cursor := 1 # Cycles HELMET..SHOES when buying individual armor pieces
 
 var level := 1
 var xp := 0
@@ -46,19 +60,11 @@ var current_fp := 180
 var max_sp := 160
 var current_sp := 160
 
-# Consumables & Utility Inventory
-var hp_potions := 5
-var fp_potions := 5
-var sp_potions := 5
-var ammo_or_force_charges := 120
-var teleport_scrolls := 2
-var auto_potion_enabled := true
-
 var unrefined_units := 0
 var current_weight := 0.0
 var unrefined_value := 0
 var current_debt := 5000
-var wallet_credits := 600
+var wallet_credits := 900
 
 var is_mining := false
 var mining_progress := 0.0
@@ -87,6 +93,7 @@ func _ready() -> void:
 	add_to_group("friendly_combatant")
 	current_debt = starting_debt
 	_upkeep_timer = upkeep_interval
+	_init_equipment_and_bags()
 	_recalc_vital_stats()
 	current_hp = max_hp
 	current_fp = max_fp
@@ -94,7 +101,23 @@ func _ready() -> void:
 	_apply_faction_tint()
 	_connect_world_enemies()
 	_emit_state()
-	event_logged.emit("Ready! [5/6/7] HP/FP/SP Potions, [8] Warp Scroll, [P] Open HQ NPC Vendors.")
+	event_logged.emit("Ready! Click any HQ Side NPC to trade, [I] Equipment & Bags, [O] Auto-Arrange.")
+
+
+func _init_equipment_and_bags() -> void:
+	for slot in GameData.EQUIP_SLOTS:
+		equipped_organic_slots[slot] = GameData.make_equipment_item(0, slot, GameData.EQUIP_ORGANIC_VAR)
+		equipped_chassis_slots[slot] = GameData.make_equipment_item(0, slot, GameData.EQUIP_CHASSIS_SVEL)
+
+	bag_slots.clear()
+	for i in range(unlocked_bags * GameData.BAG_SLOTS_PER_BAG):
+		bag_slots.append({})
+
+	add_item_to_bags(GameData.make_consumable_item("POT_HP", 10))
+	add_item_to_bags(GameData.make_consumable_item("POT_FP", 10))
+	add_item_to_bags(GameData.make_consumable_item("POT_SP", 10))
+	add_item_to_bags(GameData.make_consumable_item("AMMO_PACK", 120))
+	add_item_to_bags(GameData.make_consumable_item("SCROLL_HQ", 3))
 
 
 func _connect_world_enemies() -> void:
@@ -116,8 +139,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		cycle_class()
 	elif event.is_action_pressed("job_branch_toggle"):
 		toggle_job_branch()
-	elif event.is_action_pressed("upgrade_gear"):
-		npc_buy_equipment_bracket()
 	elif event.is_action_pressed("dev_level_up"):
 		dev_boost_level()
 	elif event.is_action_pressed("teleport_hq"):
@@ -126,6 +147,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		simulate_death()
 	elif event.is_action_pressed("target_cycle"):
 		cycle_target()
+	elif event.is_action_pressed("auto_arrange_bags"):
+		auto_arrange_bags()
 	elif event.is_action_pressed("skill_1"):
 		use_skill(1)
 	elif event.is_action_pressed("skill_2"):
@@ -153,18 +176,32 @@ func _physics_process(delta: float) -> void:
 	_skill3_cd = maxf(0.0, _skill3_cd - delta)
 	_potion_cd = maxf(0.0, _potion_cd - delta)
 
-	# Natural HP / FP / SP recovery + RF-style Auto-Potion (<45% threshold)
+	# Close physical NPC shop if player walks away from the NPC booth
+	if active_vendor_npc != null:
+		if not is_instance_valid(active_vendor_npc):
+			active_vendor_npc = null
+		else:
+			var npc_dist := Vector2(
+				global_position.x - active_vendor_npc.global_position.x,
+				global_position.z - active_vendor_npc.global_position.z
+			).length()
+			if npc_dist > active_vendor_npc.interact_distance + 1.8:
+				var closed_name := active_vendor_npc.npc_name
+				active_vendor_npc = null
+				event_logged.emit("Walked away from %s — shop closed." % closed_name)
+
+	# Natural HP / FP / SP recovery + Automatic HP/FP/SP Charger Storage
 	if not auto_attacking:
 		current_hp = mini(max_hp, current_hp + int(ceil(max_hp * 0.02 * delta)))
 	current_fp = mini(max_fp, current_fp + int(ceil(max_fp * 0.025 * delta)))
 	current_sp = mini(max_sp, current_sp + int(ceil(max_sp * 0.03 * delta)))
 
-	if auto_potion_enabled and _potion_cd <= 0.0:
-		if current_hp < int(max_hp * 0.45) and hp_potions > 0:
+	if _potion_cd <= 0.0:
+		if auto_hp_pct > 0 and current_hp < int(max_hp * (float(auto_hp_pct) / 100.0)) and get_item_count("POT_HP") > 0:
 			use_potion("HP", true)
-		elif current_fp < int(max_fp * 0.35) and fp_potions > 0:
+		elif auto_fp_pct > 0 and current_fp < int(max_fp * (float(auto_fp_pct) / 100.0)) and get_item_count("POT_FP") > 0:
 			use_potion("FP", true)
-		elif current_sp < int(max_sp * 0.35) and sp_potions > 0:
+		elif auto_sp_pct > 0 and current_sp < int(max_sp * (float(auto_sp_pct) / 100.0)) and get_item_count("POT_SP") > 0:
 			use_potion("SP", true)
 
 	_upkeep_timer -= delta
@@ -250,21 +287,19 @@ func _class_dict() -> Dictionary:
 	return _faction_dict()["classes"][class_index]
 
 
-func _active_gear_tier_index() -> int:
+func _active_equipment_slots() -> Dictionary:
 	if _faction_dict()["equip_group"] == GameData.EQUIP_CHASSIS_SVEL:
-		return equipped_chassis_tier
-	return equipped_organic_tier
+		return equipped_chassis_slots
+	return equipped_organic_slots
 
 
-func _gear_dict() -> Dictionary:
-	return GameData.EQUIPMENT_TIERS[_active_gear_tier_index()]
-
-
-func _active_gear_name() -> String:
-	var g := _gear_dict()
-	if _faction_dict()["equip_group"] == GameData.EQUIP_CHASSIS_SVEL:
-		return "%s [Svel-Only]" % g["chassis_name"]
-	return "%s [Order/Druj Shared]" % g["organic_name"]
+func _active_gear_summary() -> String:
+	var slots := _active_equipment_slots()
+	var wpn: Dictionary = slots.get("WEAPON", {})
+	var upper: Dictionary = slots.get("UPPER", {})
+	var wpn_name: String = wpn.get("name", "Unarmed")
+	var up_name: String = upper.get("name", "None")
+	return "%s  |  %s" % [wpn_name, up_name]
 
 
 func _active_job_title() -> String:
@@ -275,134 +310,426 @@ func _active_job_title() -> String:
 	return "%s (%s)" % [c["base"], c["role"]]
 
 
-func use_potion(kind: String, is_auto: bool) -> void:
-	var tag := "[Auto-Potion] " if is_auto else ""
-	if kind == "HP":
-		if hp_potions <= 0:
-			if not is_auto:
-				event_logged.emit("Out of HP Potions! Buy more from the HQ Alchemist NPC [P].")
+# --- Multi-Bag Inventory, Auto-Arrange & Equipment Slot Functions ------------
+
+func get_item_count(item_id: String) -> int:
+	var total := 0
+	for slot in bag_slots:
+		if not slot.is_empty() and slot.get("id", "") == item_id:
+			total += int(slot.get("count", 1))
+	return total
+
+
+func consume_item_from_bags(item_id: String, amount: int = 1) -> bool:
+	if get_item_count(item_id) < amount:
+		return false
+	var remaining := amount
+	for i in range(bag_slots.size() - 1, -1, -1):
+		var slot: Dictionary = bag_slots[i]
+		if not slot.is_empty() and slot.get("id", "") == item_id:
+			var cnt: int = int(slot.get("count", 1))
+			var take := mini(cnt, remaining)
+			cnt -= take
+			remaining -= take
+			if cnt <= 0:
+				bag_slots[i] = {}
+			else:
+				slot["count"] = cnt
+			if remaining <= 0:
+				return true
+	return remaining <= 0
+
+
+func add_item_to_bags(item: Dictionary) -> bool:
+	if item.is_empty():
+		return false
+	if bool(item.get("stackable", false)):
+		var item_id: String = item["id"]
+		var max_stack: int = int(item.get("max_stack", 99))
+		var remaining: int = int(item.get("count", 1))
+		# 1. Fill existing partial stacks first
+		for i in range(bag_slots.size()):
+			var slot: Dictionary = bag_slots[i]
+			if not slot.is_empty() and slot.get("id", "") == item_id:
+				var cur: int = int(slot.get("count", 1))
+				if cur < max_stack:
+					var add := mini(max_stack - cur, remaining)
+					slot["count"] = cur + add
+					remaining -= add
+					if remaining <= 0:
+						return true
+		# 2. Place remaining into empty slots
+		for i in range(bag_slots.size()):
+			if bag_slots[i].is_empty():
+				var add := mini(max_stack, remaining)
+				var new_stack := item.duplicate(true)
+				new_stack["count"] = add
+				bag_slots[i] = new_stack
+				remaining -= add
+				if remaining <= 0:
+					return true
+		return false
+	else:
+		for i in range(bag_slots.size()):
+			if bag_slots[i].is_empty():
+				bag_slots[i] = item.duplicate(true)
+				return true
+		return false
+
+
+func auto_arrange_bags() -> void:
+	var stacked_map: Dictionary = {}
+	var non_stack_items: Array[Dictionary] = []
+
+	for slot in bag_slots:
+		if slot.is_empty():
+			continue
+		if bool(slot.get("stackable", false)):
+			var item_id: String = slot["id"]
+			if not stacked_map.has(item_id):
+				var base_copy: Dictionary = slot.duplicate(true)
+				base_copy["count"] = 0
+				stacked_map[item_id] = base_copy
+			stacked_map[item_id]["count"] = int(stacked_map[item_id]["count"]) + int(slot.get("count", 1))
+		else:
+			non_stack_items.append(slot.duplicate(true))
+
+	var rebuilt: Array[Dictionary] = []
+	for item_id in stacked_map.keys():
+		var template: Dictionary = stacked_map[item_id]
+		var total_cnt: int = int(template["count"])
+		var max_st: int = int(template.get("max_stack", 99))
+		while total_cnt > 0:
+			var chunk := mini(max_st, total_cnt)
+			var piece := template.duplicate(true)
+			piece["count"] = chunk
+			rebuilt.append(piece)
+			total_cnt -= chunk
+
+	rebuilt.append_array(non_stack_items)
+	rebuilt.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var ka: int = int(a.get("sort_key", 999))
+		var kb: int = int(b.get("sort_key", 999))
+		if ka != kb:
+			return ka < kb
+		return str(a.get("name", "")) < str(b.get("name", ""))
+	)
+
+	var total_capacity := unlocked_bags * GameData.BAG_SLOTS_PER_BAG
+	bag_slots.clear()
+	for i in range(total_capacity):
+		if i < rebuilt.size():
+			bag_slots.append(rebuilt[i])
+		else:
+			bag_slots.append({})
+
+	event_logged.emit("Auto-Arranged %d Bag(s): Stacked consumables & sorted equipment by slot/tier!" % unlocked_bags)
+	_emit_state()
+
+
+func select_bag_tab(bag_idx: int) -> void:
+	if bag_idx < 0 or bag_idx >= unlocked_bags:
+		event_logged.emit("Bag %d is locked! Visit the HQ Utility NPC to unlock up to 5 Bags." % (bag_idx + 1))
+		return
+	active_bag_tab = bag_idx
+	_emit_state()
+
+
+func interact_bag_slot(local_slot_idx: int) -> void:
+	var global_idx := active_bag_tab * GameData.BAG_SLOTS_PER_BAG + local_slot_idx
+	if global_idx < 0 or global_idx >= bag_slots.size():
+		return
+	var item: Dictionary = bag_slots[global_idx]
+	if item.is_empty():
+		return
+
+	var cat: String = item.get("category", "")
+	if cat == "CONSUMABLE":
+		var id: String = item.get("id", "")
+		if id == "POT_HP":
+			use_potion("HP", false)
+		elif id == "POT_FP":
+			use_potion("FP", false)
+		elif id == "POT_SP":
+			use_potion("SP", false)
+		elif id == "SCROLL_HQ":
+			use_teleport_scroll()
+		else:
+			event_logged.emit("%s (%d) is used automatically when firing Ranged/Force attacks." % [item["name"], item["count"]])
+	elif cat == "EQUIP":
+		# If standing at an NPC and holding Shift or if item is incompatible, allow quick equip or check compatibility
+		var my_group: String = _faction_dict()["equip_group"]
+		var item_group: String = item.get("equip_group", "")
+		if item_group != my_group:
+			if active_vendor_npc != null:
+				var price: int = int(item.get("sell_price", 100))
+				var code: String = _faction_dict()["currency_code"]
+				wallet_credits += price
+				bag_slots[global_idx] = {}
+				event_logged.emit("Sold incompatible %s to %s for +%d %s!" % [item["name"], active_vendor_npc.npc_name, price, code])
+				_emit_state()
+			else:
+				event_logged.emit("Incompatible Race Gear! %s cannot equip %s. Walk to any HQ NPC to sell it!" % [_faction_dict()["name"], item["name"]])
 			return
-		hp_potions -= 1
+
+		var req_lv: int = int(item.get("req_lv", 1))
+		if level < req_lv:
+			event_logged.emit("Need Level %d to equip %s (current Lv.%d)." % [req_lv, item["name"], level])
+			return
+
+		var slot_name: String = item["slot"]
+		var active_slots := _active_equipment_slots()
+		var prev_equipped: Dictionary = active_slots.get(slot_name, {})
+		active_slots[slot_name] = item
+		bag_slots[global_idx] = prev_equipped
+		_recalc_vital_stats()
+		event_logged.emit("Equipped %s into [%s] slot!" % [item["name"], GameData.EQUIP_SLOT_LABELS.get(slot_name, slot_name)])
+		_emit_state()
+
+
+func unequip_equipment_slot(slot_name: String) -> void:
+	var active_slots := _active_equipment_slots()
+	var cur: Dictionary = active_slots.get(slot_name, {})
+	if cur.is_empty():
+		return
+	if not add_item_to_bags(cur):
+		event_logged.emit("Cannot unequip %s — all unlocked Bags are full!" % cur["name"])
+		return
+	active_slots[slot_name] = {}
+	_recalc_vital_stats()
+	event_logged.emit("Unequipped %s to Bag." % cur["name"])
+	_emit_state()
+
+
+func cycle_auto_charger(kind: String) -> void:
+	if kind == "HP":
+		auto_hp_pct = 75 if auto_hp_pct == 55 else (35 if auto_hp_pct == 75 else (0 if auto_hp_pct == 35 else 55))
+		event_logged.emit("Auto-HP Charger set to: %s" % (("OFF" if auto_hp_pct == 0 else "<%d%% HP" % auto_hp_pct)))
+	elif kind == "FP":
+		auto_fp_pct = 65 if auto_fp_pct == 45 else (25 if auto_fp_pct == 65 else (0 if auto_fp_pct == 25 else 45))
+		event_logged.emit("Auto-FP Charger set to: %s" % (("OFF" if auto_fp_pct == 0 else "<%d%% FP" % auto_fp_pct)))
+	elif kind == "SP":
+		auto_sp_pct = 65 if auto_sp_pct == 45 else (25 if auto_sp_pct == 65 else (0 if auto_sp_pct == 25 else 45))
+		event_logged.emit("Auto-SP Charger set to: %s" % (("OFF" if auto_sp_pct == 0 else "<%d%% SP" % auto_sp_pct)))
+	_emit_state()
+
+
+func use_potion(kind: String, is_auto: bool) -> void:
+	var tag := "[Auto-Charger] " if is_auto else ""
+	if kind == "HP":
+		if not consume_item_from_bags("POT_HP", 1):
+			if not is_auto:
+				event_logged.emit("Out of HP Potions in Bags! Walk to the HQ Potion NPC to buy more.")
+			return
 		var heal := int(round(max_hp * 0.55))
 		current_hp = mini(max_hp, current_hp + heal)
 		_potion_cd = 1.2
-		event_logged.emit("%sUsed HP Potion (+%d HP, %d left)." % [tag, heal, hp_potions])
+		event_logged.emit("%sUsed HP Potion (+%d HP, %d left in Bags)." % [tag, heal, get_item_count("POT_HP")])
 	elif kind == "FP":
-		if fp_potions <= 0:
+		if not consume_item_from_bags("POT_FP", 1):
 			if not is_auto:
-				event_logged.emit("Out of FP Chargers! Buy more from the HQ Alchemist NPC [P].")
+				event_logged.emit("Out of FP Chargers in Bags! Walk to the HQ Potion NPC to buy more.")
 			return
-		fp_potions -= 1
 		var gain := int(round(max_fp * 0.6))
 		current_fp = mini(max_fp, current_fp + gain)
 		_potion_cd = 1.2
-		event_logged.emit("%sUsed FP Charger (+%d FP, %d left)." % [tag, gain, fp_potions])
+		event_logged.emit("%sUsed FP Charger (+%d FP, %d left in Bags)." % [tag, gain, get_item_count("POT_FP")])
 	elif kind == "SP":
-		if sp_potions <= 0:
+		if not consume_item_from_bags("POT_SP", 1):
 			if not is_auto:
-				event_logged.emit("Out of SP Stims! Buy more from the HQ Alchemist NPC [P].")
+				event_logged.emit("Out of SP Stims in Bags! Walk to the HQ Potion NPC to buy more.")
 			return
-		sp_potions -= 1
 		var gain := int(round(max_sp * 0.6))
 		current_sp = mini(max_sp, current_sp + gain)
 		_potion_cd = 1.2
-		event_logged.emit("%sUsed SP Stim (+%d SP, %d left)." % [tag, gain, sp_potions])
+		event_logged.emit("%sUsed SP Stim (+%d SP, %d left in Bags)." % [tag, gain, get_item_count("POT_SP")])
+	_emit_state()
 
 
 func use_teleport_scroll() -> void:
-	if teleport_scrolls <= 0:
-		event_logged.emit("Out of Teleport Scrolls! Buy more from the HQ Utility NPC [P].")
+	if not consume_item_from_bags("SCROLL_HQ", 1):
+		event_logged.emit("Out of Teleport Scrolls in Bags! Walk to the HQ Utility NPC to buy more.")
 		return
-	teleport_scrolls -= 1
 	var f := _faction_dict()
 	var hq_pos: Vector3 = f["hq_spawn"]
-	# If far from HQ, scroll warps to HQ; if already at HQ, scroll warps to Contested Center!
+	var left := get_item_count("SCROLL_HQ")
 	if global_position.distance_to(hq_pos) > 15.0:
 		teleport_to_hq()
-		event_logged.emit("Used Return Scroll -> Warped to %s (%d scrolls left)." % [f["hq_name"], teleport_scrolls])
+		event_logged.emit("Used Return Scroll -> Warped to %s (%d left in Bags)." % [f["hq_name"], left])
 	else:
 		if is_mining:
 			_cancel_mining("")
 		siege_mode = false
 		auto_attacking = false
+		active_vendor_npc = null
 		_clear_click_target()
 		global_position = Vector3(0.0, 0.1, 6.0)
 		velocity = Vector3.ZERO
-		event_logged.emit("Used Scar Portal Scroll -> Warped to Contested Center (%d scrolls left)." % teleport_scrolls)
+		event_logged.emit("Used Scar Portal Scroll -> Warped to Contested Center (%d left in Bags)." % left)
+	_emit_state()
 
 
-# --- 4 HQ Vendor NPC Functions (accessible via [P] NPC Vendor Window) -------
+# --- Physical 3D HQ Vendor NPC Transactions (Requires standing at the NPC!) ---
 
-func npc_buy_potions() -> void:
+func close_vendor_shop() -> void:
+	active_vendor_npc = null
+	_emit_state()
+
+
+func execute_vendor_action(action_index: int) -> void:
+	if active_vendor_npc == null or not is_instance_valid(active_vendor_npc):
+		event_logged.emit("You must walk up to an HQ Vendor NPC at the sides of HQ to trade!")
+		return
+	var dist := Vector2(
+		global_position.x - active_vendor_npc.global_position.x,
+		global_position.z - active_vendor_npc.global_position.z
+	).length()
+	if dist > active_vendor_npc.interact_distance + 1.8:
+		active_vendor_npc = null
+		event_logged.emit("Too far from the Vendor NPC! Walk closer to their booth.")
+		_emit_state()
+		return
+
 	var f := _faction_dict()
-	var cost := 120
+	var code: String = f["currency_code"]
+	var vtype: String = active_vendor_npc.vendor_type
+	var my_group: String = f["equip_group"]
+
+	if vtype == "POTION":
+		match action_index:
+			0:
+				_buy_stackable_from_npc("POT_HP", 10, 80, "HP Potion x10")
+			1:
+				_buy_stackable_from_npc("POT_FP", 10, 80, "FP Charger x10")
+			2:
+				_buy_stackable_from_npc("POT_SP", 10, 80, "SP Stim x10")
+			3:
+				if wallet_credits < 210:
+					event_logged.emit("%s: Need 210 %s for Combo Charger Pack." % [active_vendor_npc.npc_name, code])
+					return
+				wallet_credits -= 210
+				add_item_to_bags(GameData.make_consumable_item("POT_HP", 10))
+				add_item_to_bags(GameData.make_consumable_item("POT_FP", 10))
+				add_item_to_bags(GameData.make_consumable_item("POT_SP", 10))
+				event_logged.emit("%s: Stored +10 HP, +10 FP, +10 SP in your Bags (-210 %s)." % [active_vendor_npc.npc_name, code])
+	elif vtype == "WEAPON":
+		match action_index:
+			0:
+				_buy_stackable_from_npc("AMMO_PACK", 100, 90, "Ammo / Force Cell x100")
+			1:
+				_buy_equipment_piece_from_npc(1, "WEAPON", my_group)
+			2:
+				_buy_equipment_piece_from_npc(2, "WEAPON", my_group)
+			3:
+				_buy_equipment_piece_from_npc(3, "WEAPON", my_group)
+	elif vtype == "ARMOR":
+		# Cycles through the 5 Armor slots (HELMET, UPPER, LOWER, GLOVES, SHOES)
+		var armor_slot: String = GameData.EQUIP_SLOTS[_armor_vendor_slot_cursor]
+		match action_index:
+			0:
+				if _buy_equipment_piece_from_npc(1, armor_slot, my_group):
+					_advance_armor_cursor()
+			1:
+				if _buy_equipment_piece_from_npc(2, armor_slot, my_group):
+					_advance_armor_cursor()
+			2:
+				if _buy_equipment_piece_from_npc(3, armor_slot, my_group):
+					_advance_armor_cursor()
+			3:
+				_advance_armor_cursor()
+				var next_slot: String = GameData.EQUIP_SLOTS[_armor_vendor_slot_cursor]
+				event_logged.emit("%s: Switched armor slot selection to [%s]." % [
+					active_vendor_npc.npc_name, GameData.EQUIP_SLOT_LABELS.get(next_slot, next_slot)
+				])
+	elif vtype == "UTILITY":
+		match action_index:
+			0:
+				_buy_stackable_from_npc("SCROLL_HQ", 3, 90, "Teleport Scroll x3")
+			1:
+				if unlocked_bags >= GameData.MAX_BAGS:
+					event_logged.emit("%s: You already unlocked all 5 Bags (40 slots max)!" % active_vendor_npc.npc_name)
+					return
+				var bag_cost := 350 * unlocked_bags
+				if wallet_credits < bag_cost:
+					event_logged.emit("%s: Need %d %s to unlock Bag %d." % [active_vendor_npc.npc_name, bag_cost, code, unlocked_bags + 1])
+					return
+				wallet_credits -= bag_cost
+				unlocked_bags += 1
+				for i in range(GameData.BAG_SLOTS_PER_BAG):
+					bag_slots.append({})
+				event_logged.emit("%s: Unlocked Bag %d (%d total bag slots)! (-%d %s)" % [
+					active_vendor_npc.npc_name, unlocked_bags, unlocked_bags * GameData.BAG_SLOTS_PER_BAG, bag_cost, code
+				])
+			2:
+				_sell_all_bag_equipment()
+			3:
+				if current_debt <= 0:
+					event_logged.emit("%s: Your %s is already 0!" % [active_vendor_npc.npc_name, f["debt_name"]])
+					return
+				var pay := mini(500, mini(current_debt, wallet_credits))
+				if pay <= 0:
+					event_logged.emit("%s: You have 0 %s in Wallet to pay down debt." % [active_vendor_npc.npc_name, code])
+					return
+				wallet_credits -= pay
+				current_debt -= pay
+				event_logged.emit("%s: Paid %d %s toward %s!" % [active_vendor_npc.npc_name, pay, code, f["debt_name"]])
+	_emit_state()
+
+
+func _advance_armor_cursor() -> void:
+	_armor_vendor_slot_cursor += 1
+	if _armor_vendor_slot_cursor >= GameData.EQUIP_SLOTS.size():
+		_armor_vendor_slot_cursor = 1
+
+
+func _buy_stackable_from_npc(item_id: String, count: int, cost: int, label: String) -> void:
+	var code: String = _faction_dict()["currency_code"]
 	if wallet_credits < cost:
-		event_logged.emit("Potion NPC: Need %d %s (you have %d)." % [cost, f["currency_code"], wallet_credits])
+		event_logged.emit("%s: Need %d %s for %s (you have %d)." % [active_vendor_npc.npc_name, cost, code, label, wallet_credits])
+		return
+	var item := GameData.make_consumable_item(item_id, count)
+	if not add_item_to_bags(item):
+		event_logged.emit("%s: Your Bags are full! Auto-Arrange [O] or unlock another Bag at the Utility NPC." % active_vendor_npc.npc_name)
 		return
 	wallet_credits -= cost
-	hp_potions += 5
-	fp_potions += 5
-	sp_potions += 5
-	event_logged.emit("Potion NPC: Bought +5 HP, +5 FP, +5 SP Potions (-%d %s)." % [cost, f["currency_code"]])
+	event_logged.emit("%s: Bought %s -> stored in Bag (-%d %s)." % [active_vendor_npc.npc_name, label, cost, code])
 
 
-func npc_buy_ammo_force() -> void:
-	var f := _faction_dict()
-	var cost := 90
+func _buy_equipment_piece_from_npc(tier_idx: int, slot: String, equip_group: String) -> bool:
+	var code: String = _faction_dict()["currency_code"]
+	var tier_data: Dictionary = GameData.EQUIPMENT_TIERS[tier_idx]
+	var cost: int = int(tier_data["piece_cost"])
+	var item := GameData.make_equipment_item(tier_idx, slot, equip_group)
 	if wallet_credits < cost:
-		event_logged.emit("Ammo/Force NPC: Need %d %s (you have %d)." % [cost, f["currency_code"], wallet_credits])
-		return
+		event_logged.emit("%s: Need %d %s for %s (you have %d)." % [active_vendor_npc.npc_name, cost, code, item["name"], wallet_credits])
+		return false
+	if not add_item_to_bags(item):
+		event_logged.emit("%s: Your Bags are full! Make space or unlock another Bag." % active_vendor_npc.npc_name)
+		return false
 	wallet_credits -= cost
-	ammo_or_force_charges += 80
-	event_logged.emit("Weapon & Force NPC: Restocked +80 Ammo / Force Charges (-%d %s)." % [cost, f["currency_code"]])
+	event_logged.emit("%s: Purchased %s (-%d %s) -> Placed in Bag! Open [I] to equip." % [
+		active_vendor_npc.npc_name, item["name"], cost, code
+	])
+	return true
 
 
-func npc_buy_utility_scrolls() -> void:
-	var f := _faction_dict()
-	var cost := 100
-	if wallet_credits < cost:
-		event_logged.emit("Utility NPC: Need %d %s (you have %d)." % [cost, f["currency_code"], wallet_credits])
-		return
-	wallet_credits -= cost
-	teleport_scrolls += 3
-	event_logged.emit("Utility NPC: Bought +3 Teleport Scrolls (-%d %s). Press [8] to use!" % [cost, f["currency_code"]])
-
-
-func npc_buy_equipment_bracket() -> void:
-	var f := _faction_dict()
-	var cur_idx := _active_gear_tier_index()
-	if cur_idx + 1 >= GameData.EQUIPMENT_TIERS.size():
-		event_logged.emit("Equipment NPC: You already own maximum Tier 6 Archon Regalia!")
-		return
-	var next_idx := cur_idx + 1
-	var next_gear: Dictionary = GameData.EQUIPMENT_TIERS[next_idx]
-	# Skip Rare Drop-only tier (Tier 5 Lv.45 Intense) when buying from standard vendor unless player is Lv.50 Archon
-	if not bool(next_gear["vendor_sold"]):
-		if level < 50:
-			event_logged.emit("Equipment NPC: Lv.45 [RARE] Intense Gear cannot be bought — it only drops from Elites & Boss Aeshma!")
-			return
-		next_idx += 1
-		next_gear = GameData.EQUIPMENT_TIERS[next_idx]
-
-	var req_lv: int = next_gear["req_lv"]
-	var cost: int = next_gear["cost"]
-	var item_name: String = next_gear["chassis_name"] if f["equip_group"] == GameData.EQUIP_CHASSIS_SVEL else next_gear["organic_name"]
-	if level < req_lv:
-		event_logged.emit("Equipment NPC: Need Level %d for %s (%s bracket). Press [L] to test!" % [req_lv, item_name, next_gear["bracket"]])
-		return
-	if wallet_credits < cost:
-		event_logged.emit("Equipment NPC: Need %d %s for %s (you have %d)." % [cost, f["currency_code"], item_name, wallet_credits])
-		return
-	wallet_credits -= cost
-	if f["equip_group"] == GameData.EQUIP_CHASSIS_SVEL:
-		equipped_chassis_tier = next_idx
+func _sell_all_bag_equipment() -> void:
+	var sold_count := 0
+	var total_earned := 0
+	for i in range(bag_slots.size()):
+		var item: Dictionary = bag_slots[i]
+		if not item.is_empty() and item.get("category", "") == "EQUIP":
+			total_earned += int(item.get("sell_price", 80))
+			sold_count += 1
+			bag_slots[i] = {}
+	var code: String = _faction_dict()["currency_code"]
+	if sold_count == 0:
+		event_logged.emit("%s: No unequipped gear in your Bags to sell." % active_vendor_npc.npc_name)
 	else:
-		equipped_organic_tier = next_idx
-	_recalc_vital_stats()
-	current_hp = max_hp
-	current_fp = max_fp
-	current_sp = max_sp
-	event_logged.emit("Equipment NPC: Equipped %s (%s)!" % [item_name, next_gear["bracket"]])
+		wallet_credits += total_earned
+		event_logged.emit("%s: Sold %d unequipped gear piece(s) from Bags for +%d %s!" % [
+			active_vendor_npc.npc_name, sold_count, total_earned, code
+		])
 
 
 func cycle_class() -> void:
@@ -447,8 +774,6 @@ func dev_boost_level() -> void:
 	else:
 		is_ascended_leader = false
 		level = 1
-		equipped_organic_tier = 0
-		equipped_chassis_tier = 0
 		event_logged.emit("Reset back to Level 1 Recruit.")
 	_recalc_vital_stats()
 	current_hp = max_hp
@@ -461,12 +786,13 @@ func teleport_to_hq() -> void:
 		_cancel_mining("")
 	siege_mode = false
 	auto_attacking = false
+	active_vendor_npc = null
 	_clear_click_target()
 	_interact_target = null
 	var f := _faction_dict()
 	global_position = f["hq_spawn"]
 	velocity = Vector3.ZERO
-	event_logged.emit("Arrived at %s (%s)." % [f["hq_name"], f["name"]])
+	event_logged.emit("Arrived at %s (%s). Click any HQ Side Vendor NPC to trade!" % [f["hq_name"], f["name"]])
 
 
 func _handle_click(delta: float) -> void:
@@ -486,11 +812,12 @@ func _handle_click(delta: float) -> void:
 			if is_mining:
 				_cancel_mining("Switched to combat.")
 			_interact_target = null
+			active_vendor_npc = null
 			_set_selected_enemy(enemy)
 			auto_attacking = true
 			event_logged.emit("Targeted & engaging %s." % enemy.enemy_name)
 			_holding_world_click = false
-		elif collider is FarrVein or collider is RefineryStation or collider is DroppedOreBag:
+		elif collider is FarrVein or collider is RefineryStation or collider is DroppedOreBag or collider is VendorNpc:
 			var node := collider as Node3D
 			if siege_mode:
 				event_logged.emit("Cannot walk while in Siege Mode! Press [4] to undeploy.")
@@ -666,11 +993,10 @@ func _process_auto_attack() -> void:
 	var c := _class_dict()
 	var needs_charge := bool(c.get("uses_ammo", false)) or bool(c.get("uses_force", false)) or siege_mode
 	if needs_charge:
-		if ammo_or_force_charges <= 0:
+		if not consume_item_from_bags("AMMO_PACK", 1):
 			auto_attacking = false
-			event_logged.emit("Out of Ammo / Force Charges! Restock at HQ Weapon & Force NPC [P].")
+			event_logged.emit("Out of Ammo / Force Cells in Bags! Restock at the HQ Weapon & Force NPC.")
 			return
-		ammo_or_force_charges -= 1
 
 	_attack_cd = 1.05
 	sprite.set_facing(to_enemy)
@@ -731,42 +1057,40 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 	_emit_state()
 
 
-## Low-probability monster equipment drop with Order/Legion Shared vs. Sveleitre Chassis-Only rule!
+## Low-probability monster equipment drop placed directly into your Bag!
 func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
-	var drop_chance := 1.0 if enemy.level >= 50 else (0.45 if enemy.level >= 25 else 0.25)
+	var drop_chance := 1.0 if enemy.level >= 50 else (0.55 if enemy.level >= 25 else 0.30)
 	if randf() > drop_chance:
 		return
 
 	var dropped_tier_idx := 4 if enemy.level >= 35 else (3 if enemy.level >= 25 else 1)
-	var gear_entry: Dictionary = GameData.EQUIPMENT_TIERS[dropped_tier_idx]
 	var rolled_group := GameData.EQUIP_CHASSIS_SVEL if randf() < 0.35 else GameData.EQUIP_ORGANIC_VAR
-	var my_group: String = _faction_dict()["equip_group"]
-	var code: String = _faction_dict()["currency_code"]
+	var random_slot: String = GameData.EQUIP_SLOTS[randi() % GameData.EQUIP_SLOTS.size()]
+	var dropped_item := GameData.make_equipment_item(dropped_tier_idx, random_slot, rolled_group)
 
-	if rolled_group == my_group:
-		var item_name: String = gear_entry["chassis_name"] if rolled_group == GameData.EQUIP_CHASSIS_SVEL else gear_entry["organic_name"]
-		if rolled_group == GameData.EQUIP_CHASSIS_SVEL and dropped_tier_idx > equipped_chassis_tier:
-			equipped_chassis_tier = dropped_tier_idx
-			_recalc_vital_stats()
-			event_logged.emit("RARE DROP EQUIPPED: %s (Sveleitre Chassis)!" % item_name)
-		elif rolled_group == GameData.EQUIP_ORGANIC_VAR and dropped_tier_idx > equipped_organic_tier:
-			equipped_organic_tier = dropped_tier_idx
-			_recalc_vital_stats()
-			event_logged.emit("RARE DROP EQUIPPED: %s (Order/Druj Shared Gear)!" % item_name)
+	if add_item_to_bags(dropped_item):
+		event_logged.emit("LOOT DROP -> Bag: %s! Open [I] to equip or sell at HQ NPC." % dropped_item["name"])
 	else:
-		# Incompatible race group (e.g., Sveleitre found Order/Druj armor, or Order/Druj found Sveleitre chassis)
-		var salvage := 250 * dropped_tier_idx
-		wallet_credits += salvage
-		if my_group == GameData.EQUIP_CHASSIS_SVEL:
-			event_logged.emit("LOOT: Found Order/Druj Organic Armor (Incompatible with Sveleitre Chassis) -> Salvaged for +%d %s!" % [salvage, code])
-		else:
-			event_logged.emit("LOOT: Found Sveleitre Chassis Module (Incompatible with Order/Druj) -> Sold for +%d %s!" % [salvage, code])
+		event_logged.emit("LOOT LOST: %s dropped, but your Bags are full! Press [O] or buy more Bags." % dropped_item["name"])
+
+
+func _total_gear_bonuses() -> Dictionary:
+	var totals := {"atk": 0, "hp": 0, "fp": 0, "sp": 0}
+	var slots := _active_equipment_slots()
+	for slot_name in GameData.EQUIP_SLOTS:
+		var item: Dictionary = slots.get(slot_name, {})
+		if not item.is_empty():
+			totals["atk"] += int(item.get("bonus_atk", 0))
+			totals["hp"] += int(item.get("bonus_hp", 0))
+			totals["fp"] += int(item.get("bonus_fp", 0))
+			totals["sp"] += int(item.get("bonus_sp", 0))
+	return totals
 
 
 func _effective_attack_damage() -> int:
 	var c := _class_dict()
-	var g := _gear_dict()
-	var base_atk := (24 + (level - 1) * 5 + int(g["bonus_atk"])) * float(c["atk_mult"])
+	var g := _total_gear_bonuses()
+	var base_atk := (24 + (level - 1) * 5 + int(g["atk"])) * float(c["atk_mult"])
 	if level >= 30:
 		base_atk *= 1.25
 	if is_ascended_leader:
@@ -790,14 +1114,13 @@ func _effective_attack_range() -> float:
 
 func _recalc_vital_stats() -> void:
 	var c := _class_dict()
-	var g := _gear_dict()
+	var g := _total_gear_bonuses()
 	var job_mult := 1.2 if level >= 30 else 1.0
 	var archon_mult := 1.35 if is_ascended_leader else 1.0
 
-	var raw_hp := (280 + (level - 1) * 28 + int(g["bonus_hp"])) * float(c["hp_mult"]) * job_mult * archon_mult
-	var raw_fp := (160 + (level - 1) * 16 + int(g["bonus_fp"])) * float(c["fp_mult"]) * job_mult * archon_mult
-	var raw_sp := (150 + (level - 1) * 14 + int(g["bonus_sp"])) * float(c["sp_mult"]) * job_mult * archon_mult
-
+	var raw_hp := (280 + (level - 1) * 28 + int(g["hp"])) * float(c["hp_mult"]) * job_mult * archon_mult
+	var raw_fp := (160 + (level - 1) * 16 + int(g["fp"])) * float(c["fp_mult"]) * job_mult * archon_mult
+	var raw_sp := (150 + (level - 1) * 14 + int(g["sp"])) * float(c["sp_mult"]) * job_mult * archon_mult
 	if frame_mounted:
 		raw_hp += 400
 	max_hp = int(round(raw_hp))
@@ -827,7 +1150,11 @@ func _check_interact_arrival() -> bool:
 
 
 func _trigger_interaction(target: Node3D) -> void:
-	if target is FarrVein:
+	if target is VendorNpc:
+		active_vendor_npc = target as VendorNpc
+		event_logged.emit("Speaking with %s <%s>." % [active_vendor_npc.npc_name, active_vendor_npc.npc_title])
+		_emit_state()
+	elif target is FarrVein:
 		var vein := target as FarrVein
 		if not vein.can_mine():
 			event_logged.emit("%s is depleted. Waiting for regeneration..." % vein.vein_name)
@@ -921,6 +1248,7 @@ func _loot_dropped_bag(bag: DroppedOreBag) -> void:
 func cycle_faction() -> void:
 	siege_mode = false
 	frame_mounted = false
+	active_vendor_npc = null
 	sprite.scale = Vector3.ONE
 	sprite.position.y = 0.8
 	if fravashi_instance and is_instance_valid(fravashi_instance):
@@ -939,6 +1267,7 @@ func simulate_death() -> void:
 		_cancel_mining("")
 	auto_attacking = false
 	siege_mode = false
+	active_vendor_npc = null
 	_clear_click_target()
 	_interact_target = null
 	current_hp = max_hp
@@ -1024,13 +1353,34 @@ func _emit_state() -> void:
 
 	var sig_active := siege_mode or frame_mounted or (fravashi_instance != null and is_instance_valid(fravashi_instance) and fravashi_instance.visible)
 
+	var vendor_info := {}
+	if active_vendor_npc and is_instance_valid(active_vendor_npc):
+		var sel_slot: String = GameData.EQUIP_SLOTS[_armor_vendor_slot_cursor]
+		vendor_info = {
+			"name": active_vendor_npc.npc_name,
+			"title": active_vendor_npc.npc_title,
+			"type": active_vendor_npc.vendor_type,
+			"armor_slot_label": GameData.EQUIP_SLOT_LABELS.get(sel_slot, sel_slot),
+			"next_bag_num": unlocked_bags + 1,
+			"next_bag_cost": 350 * unlocked_bags,
+		}
+
 	state_updated.emit({
 		"faction": f["name"],
+		"equip_group": f["equip_group"],
 		"currency_name": f["currency_name"],
 		"currency_code": f["currency_code"],
 		"debt_name": f["debt_name"],
 		"job_title": _active_job_title(),
-		"gear_name": _active_gear_name(),
+		"gear_name": _active_gear_summary(),
+		"equipped_slots": _active_equipment_slots(),
+		"unlocked_bags": unlocked_bags,
+		"active_bag_tab": active_bag_tab,
+		"bag_slots": bag_slots,
+		"auto_hp_pct": auto_hp_pct,
+		"auto_fp_pct": auto_fp_pct,
+		"auto_sp_pct": auto_sp_pct,
+		"vendor_info": vendor_info,
 		"level": level,
 		"is_leader": is_ascended_leader,
 		"hp": current_hp,
@@ -1042,11 +1392,11 @@ func _emit_state() -> void:
 		"atk": _effective_attack_damage(),
 		"debt": current_debt,
 		"wallet": wallet_credits,
-		"hp_potions": hp_potions,
-		"fp_potions": fp_potions,
-		"sp_potions": sp_potions,
-		"ammo": ammo_or_force_charges,
-		"scrolls": teleport_scrolls,
+		"hp_potions": get_item_count("POT_HP"),
+		"fp_potions": get_item_count("POT_FP"),
+		"sp_potions": get_item_count("POT_SP"),
+		"ammo": get_item_count("AMMO_PACK"),
+		"scrolls": get_item_count("SCROLL_HQ"),
 		"unrefined_units": unrefined_units,
 		"unrefined_value": unrefined_value,
 		"weight": current_weight,

@@ -3,12 +3,26 @@ extends RefCounted
 ## Central data-driven registry for:
 ## - 3 Factions & their native currencies (CYC / DRC / SGL)
 ## - 12 Base Classes & 24 Lv.30 Advanced Jobs with HP / FP / SP ratios
-## - Equipment Brackets (Lv.1-15, Lv.15-25, Lv.30-45 Vendor + Rare Drops + Lv.50 Archon)
-## - Armor Compatibility rule: Order & Legion share "ORGANIC_VAR" armor; Sveleitre uses "CHASSIS_SVEL" only
-## - 4 HQ NPC Vendor catalogs (Potion NPC, Armor NPC, Weapon & Ammo/Force NPC, Utility/Scroll NPC)
+## - 6 Equipment Slots (WEAPON, HELMET, UPPER, LOWER, GLOVES, SHOES)
+## - Armor Compatibility rule: Order & Legion share "ORGANIC_VAR" gear; Sveleitre uses "CHASSIS_SVEL" only
+## - Multi-Bag Item definitions (Stackable Potions, Ammo/Force, Scrolls, and Equippable Gear)
+## - 4 Physical HQ NPC Vendor catalogs (POTION, WEAPON, ARMOR, UTILITY)
 
 const EQUIP_ORGANIC_VAR := "ORGANIC_VAR"   # Usable by BOTH Order of the Oracle & Legion of the Druj
 const EQUIP_CHASSIS_SVEL := "CHASSIS_SVEL" # Usable ONLY by Sveleitre
+
+const EQUIP_SLOTS := ["WEAPON", "HELMET", "UPPER", "LOWER", "GLOVES", "SHOES"]
+const EQUIP_SLOT_LABELS := {
+	"WEAPON": "Weapon",
+	"HELMET": "Helmet",
+	"UPPER": "Upper Body",
+	"LOWER": "Lower Body",
+	"GLOVES": "Gauntlets",
+	"SHOES": "Boots",
+}
+
+const BAG_SLOTS_PER_BAG := 8
+const MAX_BAGS := 5
 
 const FACTIONS := [
 	{
@@ -232,86 +246,182 @@ const FACTIONS := [
 	},
 ]
 
-## Equipment Brackets:
-## - Order & Legion share `ORGANIC_VAR` equipment; Sveleitre requires `CHASSIS_SVEL` equipment!
-## - Brackets: I (Lv.1-15), II (Lv.15-25), III (Lv.30-45 Vendor), IV (Lv.45 Intense Rare Drop), V (Lv.50 Archon)
 const EQUIPMENT_TIERS := [
 	{
 		"tier": 1,
 		"req_lv": 1,
 		"bracket": "Lv.1-15",
-		"organic_name": "Lv.1 Recruit Linen & Bronze",
-		"chassis_name": "Lv.1 Stock Frame MK-I",
-		"cost": 0,
+		"organic_prefix": "Lv.1 Recruit Bronze",
+		"chassis_prefix": "Lv.1 Stock MK-I",
+		"piece_cost": 0,
 		"vendor_sold": true,
-		"bonus_hp": 0,
-		"bonus_fp": 0,
-		"bonus_sp": 0,
-		"bonus_atk": 0,
+		"rarity": "Normal",
+		"bonus_hp": 10,
+		"bonus_fp": 5,
+		"bonus_sp": 5,
+		"bonus_atk": 4,
 	},
 	{
 		"tier": 2,
 		"req_lv": 10,
 		"bracket": "Lv.1-15",
-		"organic_name": "Lv.12 Outpost Scale Set",
-		"chassis_name": "Lv.12 Alloy Chassis MK-II",
-		"cost": 350,
+		"organic_prefix": "Lv.12 Outpost Scale",
+		"chassis_prefix": "Lv.12 Alloy MK-II",
+		"piece_cost": 140,
 		"vendor_sold": true,
-		"bonus_hp": 140,
-		"bonus_fp": 60,
-		"bonus_sp": 50,
+		"rarity": "Normal",
+		"bonus_hp": 35,
+		"bonus_fp": 15,
+		"bonus_sp": 14,
 		"bonus_atk": 18,
 	},
 	{
 		"tier": 3,
 		"req_lv": 15,
 		"bracket": "Lv.15-25",
-		"organic_name": "Lv.20 Var-Forged Lamellar",
-		"chassis_name": "Lv.20 Hardened Carapace MK-III",
-		"cost": 900,
+		"organic_prefix": "Lv.20 Var-Forged",
+		"chassis_prefix": "Lv.20 Carapace MK-III",
+		"piece_cost": 320,
 		"vendor_sold": true,
-		"bonus_hp": 320,
-		"bonus_fp": 140,
-		"bonus_sp": 110,
+		"rarity": "Normal",
+		"bonus_hp": 75,
+		"bonus_fp": 32,
+		"bonus_sp": 28,
 		"bonus_atk": 42,
 	},
 	{
 		"tier": 4,
 		"req_lv": 30,
 		"bracket": "Lv.30-45",
-		"organic_name": "Lv.35 Relic-Woven Panoply",
-		"chassis_name": "Lv.35 Quantum Chassis MK-IV",
-		"cost": 2200,
+		"organic_prefix": "Lv.35 Relic-Woven",
+		"chassis_prefix": "Lv.35 Quantum MK-IV",
+		"piece_cost": 750,
 		"vendor_sold": true,
-		"bonus_hp": 620,
-		"bonus_fp": 260,
-		"bonus_sp": 210,
-		"bonus_atk": 85,
+		"rarity": "Normal",
+		"bonus_hp": 145,
+		"bonus_fp": 65,
+		"bonus_sp": 55,
+		"bonus_atk": 88,
 	},
 	{
 		"tier": 5,
 		"req_lv": 45,
 		"bracket": "Lv.30-45 (Rare Drop)",
-		"organic_name": "Lv.45 [RARE] Intense Scar-Relic Set",
-		"chassis_name": "Lv.45 [RARE] Intense Overclocked Chassis",
-		"cost": 5500,
-		"vendor_sold": false, # Dropped by Elites/Bosses with low probability!
-		"bonus_hp": 1350,
-		"bonus_fp": 520,
-		"bonus_sp": 420,
-		"bonus_atk": 175,
+		"organic_prefix": "Lv.45 [RARE] Intense Scar",
+		"chassis_prefix": "Lv.45 [RARE] Intense Overclock",
+		"piece_cost": 1800,
+		"vendor_sold": false, # Monster/Boss Drop Only!
+		"rarity": "Intense [RARE]",
+		"bonus_hp": 310,
+		"bonus_fp": 135,
+		"bonus_sp": 110,
+		"bonus_atk": 180,
 	},
 	{
 		"tier": 6,
 		"req_lv": 50,
 		"bracket": "Lv.50 Archon",
-		"organic_name": "Lv.50 Ascended Herald Regalia",
-		"chassis_name": "Lv.50 Prime Instance Chassis",
-		"cost": 8000,
+		"organic_prefix": "Lv.50 Archon Herald",
+		"chassis_prefix": "Lv.50 Prime Instance",
+		"piece_cost": 2800,
 		"vendor_sold": true,
-		"bonus_hp": 2200,
-		"bonus_fp": 900,
-		"bonus_sp": 750,
-		"bonus_atk": 280,
+		"rarity": "Archon",
+		"bonus_hp": 500,
+		"bonus_fp": 220,
+		"bonus_sp": 185,
+		"bonus_atk": 290,
 	},
 ]
+
+
+static func make_consumable_item(item_id: String, count: int) -> Dictionary:
+	match item_id:
+		"POT_HP":
+			return {
+				"id": "POT_HP",
+				"name": "HP Potion",
+				"category": "CONSUMABLE",
+				"stackable": true,
+				"max_stack": 99,
+				"count": count,
+				"sort_key": 10,
+			}
+		"POT_FP":
+			return {
+				"id": "POT_FP",
+				"name": "FP Charger",
+				"category": "CONSUMABLE",
+				"stackable": true,
+				"max_stack": 99,
+				"count": count,
+				"sort_key": 11,
+			}
+		"POT_SP":
+			return {
+				"id": "POT_SP",
+				"name": "SP Stim",
+				"category": "CONSUMABLE",
+				"stackable": true,
+				"max_stack": 99,
+				"count": count,
+				"sort_key": 12,
+			}
+		"AMMO_PACK":
+			return {
+				"id": "AMMO_PACK",
+				"name": "Ammo / Force Cell",
+				"category": "CONSUMABLE",
+				"stackable": true,
+				"max_stack": 500,
+				"count": count,
+				"sort_key": 20,
+			}
+		"SCROLL_HQ":
+			return {
+				"id": "SCROLL_HQ",
+				"name": "Teleport Scroll",
+				"category": "CONSUMABLE",
+				"stackable": true,
+				"max_stack": 20,
+				"count": count,
+				"sort_key": 25,
+			}
+	return {}
+
+
+static func make_equipment_item(tier_idx: int, slot: String, equip_group: String) -> Dictionary:
+	var t: Dictionary = EQUIPMENT_TIERS[clampi(tier_idx, 0, EQUIPMENT_TIERS.size() - 1)]
+	var prefix: String = t["chassis_prefix"] if equip_group == EQUIP_CHASSIS_SVEL else t["organic_prefix"]
+	var slot_label: String = EQUIP_SLOT_LABELS.get(slot, slot)
+	var group_tag := "[Svel]" if equip_group == EQUIP_CHASSIS_SVEL else "[Order/Druj]"
+
+	var is_weapon := (slot == "WEAPON")
+	var atk_val := int(t["bonus_atk"]) if is_weapon else int(round(float(t["bonus_atk"]) * 0.12))
+	var hp_val := int(round(float(t["bonus_hp"]) * 0.35)) if is_weapon else int(t["bonus_hp"])
+	var fp_val := int(round(float(t["bonus_fp"]) * 0.4)) if is_weapon else int(t["bonus_fp"])
+	var sp_val := int(round(float(t["bonus_sp"]) * 0.4)) if is_weapon else int(t["bonus_sp"])
+
+	var slot_order := EQUIP_SLOTS.find(slot)
+	var sort_key := 100 + slot_order * 20 - int(t["tier"])
+
+	return {
+		"id": "EQ_%s_T%d_%s" % [equip_group, t["tier"], slot],
+		"name": "%s %s %s" % [prefix, slot_label, group_tag],
+		"category": "EQUIP",
+		"slot": slot,
+		"tier_idx": tier_idx,
+		"tier": int(t["tier"]),
+		"req_lv": int(t["req_lv"]),
+		"bracket": str(t["bracket"]),
+		"rarity": str(t["rarity"]),
+		"equip_group": equip_group,
+		"bonus_atk": atk_val,
+		"bonus_hp": hp_val,
+		"bonus_fp": fp_val,
+		"bonus_sp": sp_val,
+		"sell_price": maxi(35, int(round(float(t["piece_cost"]) * 0.45)) + int(t["tier"]) * 30),
+		"stackable": false,
+		"max_stack": 1,
+		"count": 1,
+		"sort_key": sort_key,
+	}

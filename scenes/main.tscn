@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/farr_vein.tscn" id="5_vein"]
 [ext_resource type="PackedScene" path="res://scenes/refinery_station.tscn" id="6_refinery"]
 [ext_resource type="PackedScene" path="res://scenes/enemy_unit.tscn" id="7_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/vendor_npc.tscn" id="8_vendor"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.12, 0.15, 0.22, 1)
@@ -122,6 +123,110 @@ station_name = "Order Sanctuary HQ Refinery (SE)"
 [node name="LegionHQRefinery" parent="World" instance=ExtResource("6_refinery")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 0, -42)
 station_name = "Legion Citadel HQ Refinery (NE)"
+
+[node name="SvelNpcPotion" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 0, 35)
+npc_name = "Injector Unit V-01"
+npc_title = "Ark Potion & Charger NPC"
+vendor_type = "POTION"
+faction_id = "sveleitre"
+accent_color = Color(0.25, 0.95, 0.75, 1)
+
+[node name="SvelNpcWeapon" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 0, 41)
+npc_name = "Ordnance Unit W-02"
+npc_title = "Weapon & Ammo/Force NPC"
+vendor_type = "WEAPON"
+faction_id = "sveleitre"
+accent_color = Color(0.35, 0.85, 1, 1)
+
+[node name="SvelNpcArmor" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32, 0, 35)
+npc_name = "Chassis Foundry A-03"
+npc_title = "Svel Chassis Armor NPC (Lv.1-45)"
+vendor_type = "ARMOR"
+faction_id = "sveleitre"
+accent_color = Color(0.45, 0.75, 1, 1)
+
+[node name="SvelNpcUtility" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32, 0, 41)
+npc_name = "Logistics Node U-04"
+npc_title = "Scrolls, Bags & Salvage NPC"
+vendor_type = "UTILITY"
+faction_id = "sveleitre"
+accent_color = Color(0.75, 0.9, 1, 1)
+
+[node name="OrderNpcPotion" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, 35)
+npc_name = "Haoma Alchemist Darius"
+npc_title = "Sanctuary Potion NPC"
+vendor_type = "POTION"
+faction_id = "order"
+body_color = Color(0.45, 0.38, 0.22, 1)
+accent_color = Color(1, 0.88, 0.35, 1)
+
+[node name="OrderNpcWeapon" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, 41)
+npc_name = "Atar Forgemaster Kaveh"
+npc_title = "Weapon & Force Charge NPC"
+vendor_type = "WEAPON"
+faction_id = "order"
+body_color = Color(0.45, 0.38, 0.22, 1)
+accent_color = Color(1, 0.78, 0.28, 1)
+
+[node name="OrderNpcArmor" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, 35)
+npc_name = "Royal Armorer Bahram"
+npc_title = "Order/Druj Shared Armor NPC"
+vendor_type = "ARMOR"
+faction_id = "order"
+body_color = Color(0.45, 0.38, 0.22, 1)
+accent_color = Color(1, 0.85, 0.45, 1)
+
+[node name="OrderNpcUtility" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, 41)
+npc_name = "Scribe of the Seal"
+npc_title = "Scrolls, Bags & Tithe NPC"
+vendor_type = "UTILITY"
+faction_id = "order"
+body_color = Color(0.45, 0.38, 0.22, 1)
+accent_color = Color(1, 0.92, 0.55, 1)
+
+[node name="LegionNpcPotion" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, -41)
+npc_name = "Bloodbrewer Zarik"
+npc_title = "Citadel Potion NPC"
+vendor_type = "POTION"
+faction_id = "legion"
+body_color = Color(0.38, 0.16, 0.2, 1)
+accent_color = Color(0.98, 0.3, 0.38, 1)
+
+[node name="LegionNpcWeapon" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, -35)
+npc_name = "Aka-Warpsmith Vartan"
+npc_title = "Weapon & Force Charge NPC"
+vendor_type = "WEAPON"
+faction_id = "legion"
+body_color = Color(0.38, 0.16, 0.2, 1)
+accent_color = Color(0.95, 0.25, 0.45, 1)
+
+[node name="LegionNpcArmor" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, -41)
+npc_name = "Obsidian Armorer Sorush"
+npc_title = "Order/Druj Shared Armor NPC"
+vendor_type = "ARMOR"
+faction_id = "legion"
+body_color = Color(0.38, 0.16, 0.2, 1)
+accent_color = Color(1, 0.38, 0.35, 1)
+
+[node name="LegionNpcUtility" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, -35)
+npc_name = "Pact-Keeper Narseh"
+npc_title = "Scrolls, Bags & Pact Debt NPC"
+vendor_type = "UTILITY"
+faction_id = "legion"
+body_color = Color(0.38, 0.16, 0.2, 1)
+accent_color = Color(0.95, 0.45, 0.5, 1)
 
 [node name="SveleitreOutpostVein" parent="World" instance=ExtResource("5_vein")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 0, 28)
@@ -291,7 +396,7 @@ text = "Lv.30 Job [B]"
 [node name="ShopButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
 focus_mode = 0
-text = "HQ Vendors [P]"
+text = "Equip & Bags [I]"
 
 [node name="LevelButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
@@ -306,17 +411,17 @@ text = "Warp HQ [H]"
 [node name="HelpLabel" type="Label" parent="HUD"]
 offset_left = 14.0
 offset_top = 46.0
-offset_right = 1080.0
+offset_right = 1120.0
 offset_bottom = 92.0
-text = "Camera: Hold [Space] + Slide Trackpad (or Right-Drag) = 360° Orbit  |  [Q/E] Rotate  |  [Z/X] or Pinch/2-Finger Scroll = Zoom
-NPCs & Belt: [P] Open 4 HQ Vendors  |  [5/6/7] HP/FP/SP Potions (Auto <45%)  |  [8] Teleport Scroll  |  [U] Quick Gear Upgrade"
+text = "Camera: Hold [Space] + Slide Trackpad (or Right-Drag) = 360° Orbit  |  [Q/E] Rotate  |  [Z/X] or Pinch = Zoom
+HQ Side NPCs: Click any 3D Vendor NPC at HQ Sides to Trade  |  [I] Equipment Slots, Auto-Chargers & Bags  |  [O] Auto-Arrange Bags"
 
 [node name="ShopPanel" type="PanelContainer" parent="HUD"]
 visible = false
 offset_left = 16.0
-offset_top = 98.0
-offset_right = 460.0
-offset_bottom = 310.0
+offset_top = 96.0
+offset_right = 530.0
+offset_bottom = 282.0
 
 [node name="VBox" type="VBoxContainer" parent="HUD/ShopPanel"]
 layout_mode = 2
