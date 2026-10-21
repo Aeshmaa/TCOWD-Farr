@@ -55,6 +55,18 @@ var _upgrade_slot_cursor := 0      # Cycles WEAPON..SHOES for +1..+7 Farr Talic 
 var _shield_buff_timer := 0.0      # Tank Job Fortify Buff (40% damage reduction)
 var quest_kills := 0               # Repeatable Faction Bounty Quest kill counter (3 Kills + 10 Farr -> 1 Talic)
 
+## Main Story Campaign Progress (Chapters I-V per Faction) & Lore Codex Cursor
+var story_chapter_by_faction: Dictionary = {
+	"sveleitre": 0,
+	"order": 0,
+	"legion": 0,
+}
+var story_kills := 0
+var story_farr_mined := 0
+var story_boss_kills := 0
+var codex_cursor := 0
+var request_open_story_window := false
+
 ## Live Combat Damage & Heal Telemetry Meter
 var combat_dmg_dealt_total := 0
 var combat_dmg_dealt_last := 0
@@ -986,7 +998,111 @@ func execute_vendor_action(action_index: int) -> void:
 			3:
 				save_game()
 				event_logged.emit("%s: Character state, Bags, Equipment & Position saved (%s)!" % [active_vendor_npc.npc_name, last_saved_text])
+	elif vtype == "LEADER":
+		match action_index:
+			0:
+				complete_current_story_chapter()
+			1:
+				request_open_story_window = true
+				event_logged.emit("%s: Opening Illustrated Story Campaign & Lore Codex [N]..." % active_vendor_npc.npc_name)
+			2:
+				warp_to_story_chapter_zone()
+			3:
+				var hp_rest := maxi(1, max_hp - current_hp)
+				current_hp = max_hp
+				current_fp = max_fp
+				current_sp = max_sp
+				record_heal_or_restore(hp_rest, 0, 0, "[Sovereign Blessing]")
+				save_game()
+				event_logged.emit("%s bestowed Sovereign Blessing: 100%% HP / FP / SP restored!" % active_vendor_npc.npc_name)
 	save_game()
+	_emit_state()
+
+
+func _active_story_chapter_dict() -> Dictionary:
+	var fid: String = str(_faction_dict()["id"])
+	var camp: Dictionary = GameData.STORY_CAMPAIGNS.get(fid, {})
+	var chapters: Array = camp.get("chapters", [])
+	var idx: int = int(story_chapter_by_faction.get(fid, 0))
+	if idx < 0 or idx >= chapters.size():
+		return {}
+	return chapters[idx]
+
+
+func complete_current_story_chapter() -> void:
+	var f := _faction_dict()
+	var fid: String = str(f["id"])
+	var code: String = str(f["currency_code"])
+	var camp: Dictionary = GameData.STORY_CAMPAIGNS.get(fid, {})
+	var leader_name: String = str(camp.get("leader_name", f["leader"]))
+	var ch := _active_story_chapter_dict()
+	if ch.is_empty():
+		event_logged.emit("%s: You have already completed all 5 Chapters of the %s Campaign!" % [leader_name, f["name"]])
+		return
+
+	var req_lv: int = int(ch.get("req_level", 1))
+	var req_k: int = int(ch.get("req_kills", 0))
+	var req_f: int = int(ch.get("req_farr", 0))
+	var req_b: int = int(ch.get("req_boss", 0))
+
+	if level < req_lv or story_kills < req_k or story_farr_mined < req_f or story_boss_kills < req_b:
+		var boss_str := (" | Boss Kills: %d/%d" % [story_boss_kills, req_b]) if req_b > 0 else ""
+		event_logged.emit("%s [%s]: Requirements not yet met! (Lv:%d/%d | Kills:%d/%d | Mined Farr:%d/%d%s)" % [
+			leader_name, ch["title"], level, req_lv, story_kills, req_k, story_farr_mined, req_f, boss_str
+		])
+		return
+
+	var rew_cur: int = int(ch.get("reward_currency", 500))
+	var rew_debt: int = int(ch.get("reward_debt_relief", 500))
+	var rew_talics: int = int(ch.get("reward_talics", 1))
+	var rew_min_lv: int = int(ch.get("reward_min_level", level))
+	var ch_num: int = int(ch.get("chapter", 1))
+
+	wallet_credits += rew_cur
+	current_debt = maxi(0, current_debt - rew_debt)
+	if rew_talics > 0:
+		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", rew_talics))
+	if level < rew_min_lv:
+		level = rew_min_lv
+
+	var bonus_gear_note := ""
+	if ch_num >= 5:
+		var rare_wpn := GameData.make_equipment_item(4, "WEAPON", str(f["equip_group"]), 3)
+		add_item_to_bags(rare_wpn)
+		bonus_gear_note = " + %s!" % rare_wpn["name"]
+
+	story_kills = 0
+	story_farr_mined = 0
+	story_boss_kills = 0
+	story_chapter_by_faction[fid] = int(story_chapter_by_faction.get(fid, 0)) + 1
+
+	_recalc_vital_stats()
+	current_hp = max_hp
+	current_fp = max_fp
+	current_sp = max_sp
+	_play_sfx("level_up")
+	save_game()
+	event_logged.emit("STORY CHAPTER COMPLETE! %s -> +%d %s, -%d Debt, +%dx Talic, Lv.%d%s" % [
+		ch["title"], rew_cur, code, rew_debt, rew_talics, level, bonus_gear_note
+	])
+	_emit_state()
+
+
+func warp_to_story_chapter_zone() -> void:
+	var ch := _active_story_chapter_dict()
+	if ch.is_empty():
+		travel_to_map("contested_cauldron")
+		return
+	var target_map: String = str(ch.get("target_map", _faction_dict()["hq_map_id"]))
+	travel_to_map(target_map)
+
+
+func cycle_codex_entry(dir: int = 1) -> void:
+	var total := GameData.LORE_CODEX_ENTRIES.size()
+	if total <= 0:
+		return
+	codex_cursor = posmod(codex_cursor + dir, total)
+	_play_sfx("target_lock")
 	_emit_state()
 
 
@@ -1556,6 +1672,9 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 	var f := _faction_dict()
 	wallet_credits += enemy.bounty_reward
 	quest_kills += 3 if enemy.level >= 50 else 1
+	story_kills += 1
+	if enemy.level >= 28:
+		story_boss_kills += 1
 	xp += 55
 	var needed := level * 90
 	if xp >= needed and level < 45:
@@ -1739,6 +1858,7 @@ func _process_mining(delta: float) -> void:
 		var added_weight: float = result["weight"]
 		var added_val: int = result["value"]
 		unrefined_units += added_units
+		story_farr_mined += added_units
 		current_weight = minf(current_weight + added_weight, max_weight)
 		unrefined_value += added_val
 		_play_sfx("mine_ore")
@@ -1948,6 +2068,11 @@ func save_game() -> void:
 		"show_floating_dmg": show_floating_dmg,
 		"sfx_volume_pct": sfx_volume_pct,
 		"cam_sensitivity_mult": cam_sensitivity_mult,
+		"story_chapter_by_faction": story_chapter_by_faction,
+		"story_kills": story_kills,
+		"story_farr_mined": story_farr_mined,
+		"story_boss_kills": story_boss_kills,
+		"codex_cursor": codex_cursor,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -2009,6 +2134,13 @@ func load_game() -> bool:
 	show_floating_dmg = bool(d.get("show_floating_dmg", true))
 	sfx_volume_pct = clampi(int(d.get("sfx_volume_pct", 80)), 0, 100)
 	cam_sensitivity_mult = clampf(float(d.get("cam_sensitivity_mult", 1.0)), 0.4, 2.0)
+	if d.has("story_chapter_by_faction") and typeof(d["story_chapter_by_faction"]) == TYPE_DICTIONARY:
+		for k in d["story_chapter_by_faction"].keys():
+			story_chapter_by_faction[str(k)] = clampi(int(d["story_chapter_by_faction"][k]), 0, 5)
+	story_kills = maxi(0, int(d.get("story_kills", 0)))
+	story_farr_mined = maxi(0, int(d.get("story_farr_mined", 0)))
+	story_boss_kills = maxi(0, int(d.get("story_boss_kills", 0)))
+	codex_cursor = clampi(int(d.get("codex_cursor", 0)), 0, maxi(0, GameData.LORE_CODEX_ENTRIES.size() - 1))
 
 	_recalc_vital_stats()
 	current_hp = clampi(int(d.get("current_hp", max_hp)), 1, max_hp)
@@ -2104,6 +2236,29 @@ func _emit_state() -> void:
 		}
 
 	var cur_mdata: Dictionary = GameData.MAPS.get(current_map_id, {})
+	var fid: String = str(f["id"])
+	var camp: Dictionary = GameData.STORY_CAMPAIGNS.get(fid, {})
+	var cur_ch := _active_story_chapter_dict()
+	var ch_idx: int = int(story_chapter_by_faction.get(fid, 0))
+	var codex_list: Array = GameData.LORE_CODEX_ENTRIES
+	var cur_codex: Dictionary = codex_list[clampi(codex_cursor, 0, codex_list.size() - 1)] if not codex_list.is_empty() else {}
+	var open_req := request_open_story_window
+	request_open_story_window = false
+	var story_info := {
+		"leader_name": str(camp.get("leader_name", f["leader"])),
+		"leader_title": str(camp.get("leader_title", "Faction Sovereign")),
+		"leader_portrait": str(camp.get("portrait_path", "")),
+		"chapter_index": ch_idx,
+		"total_chapters": (camp.get("chapters", []) as Array).size(),
+		"chapter": cur_ch,
+		"story_kills": story_kills,
+		"story_farr_mined": story_farr_mined,
+		"story_boss_kills": story_boss_kills,
+		"request_open": open_req,
+		"codex_index": codex_cursor,
+		"codex_total": codex_list.size(),
+		"codex_entry": cur_codex,
+	}
 	state_updated.emit({
 		"faction": f["name"],
 		"faction_id": f["id"],
@@ -2175,4 +2330,5 @@ func _emit_state() -> void:
 		"show_floating_dmg": show_floating_dmg,
 		"sfx_volume_pct": sfx_volume_pct,
 		"cam_sensitivity_mult": cam_sensitivity_mult,
+		"story_info": story_info,
 	})

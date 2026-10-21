@@ -76,12 +76,27 @@ var _opt_sfx_vol_btn: Button
 var _opt_test_sfx_btn: Button
 var _opt_cam_sens_btn: Button
 var _opt_save_now_btn: Button
+var _story_top_btn: Button
+var _story_panel: PanelContainer
+var _story_leader_portrait: TextureRect
+var _story_header_lbl: Label
+var _story_dialogue_lbl: Label
+var _story_progress_lbl: Label
+var _story_complete_btn: Button
+var _story_warp_btn: Button
+var _codex_portrait: TextureRect
+var _codex_title_lbl: Label
+var _codex_bio_lbl: Label
+var _codex_prev_btn: Button
+var _codex_next_btn: Button
+var _portrait_cache: Dictionary = {}
 var _log_lines: Array[String] = []
 
 
 func _ready() -> void:
 	_build_inventory_window()
 	_build_world_map_window()
+	_build_story_window()
 	_build_settings_window()
 	_build_combat_meter_controls()
 
@@ -272,6 +287,176 @@ func _build_settings_window() -> void:
 	vbox.add_child(_opt_save_now_btn)
 
 
+func _load_portrait_texture(res_path: String) -> Texture2D:
+	if res_path == "":
+		return null
+	if _portrait_cache.has(res_path):
+		return _portrait_cache[res_path]
+	var abs_path := ProjectSettings.globalize_path(res_path)
+	if FileAccess.file_exists(abs_path):
+		var img := Image.load_from_file(abs_path)
+		if img != null and not img.is_empty():
+			var tex := ImageTexture.create_from_image(img)
+			_portrait_cache[res_path] = tex
+			return tex
+	if ResourceLoader.exists(res_path):
+		var loaded := load(res_path) as Texture2D
+		if loaded != null:
+			_portrait_cache[res_path] = loaded
+			return loaded
+	return null
+
+
+func _build_story_window() -> void:
+	var top_bar := get_node_or_null("TopBar") as HBoxContainer
+	if top_bar:
+		_story_top_btn = Button.new()
+		_story_top_btn.focus_mode = Control.FOCUS_NONE
+		_story_top_btn.modulate = Color(1.0, 0.82, 0.95)
+		_story_top_btn.text = "Story & Lore [N]"
+		_story_top_btn.pressed.connect(func() -> void:
+			_story_panel.visible = not _story_panel.visible
+			if _story_panel.visible:
+				_map_panel.visible = false
+				_settings_panel.visible = false
+		)
+		top_bar.add_child(_story_top_btn)
+
+	_story_panel = PanelContainer.new()
+	_story_panel.visible = false
+	_story_panel.offset_left = 540.0
+	_story_panel.offset_top = 95.0
+	_story_panel.offset_right = 1255.0
+	_story_panel.offset_bottom = 735.0
+	add_child(_story_panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	_story_panel.add_child(vbox)
+
+	var banner := Label.new()
+	banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	banner.modulate = Color(1.0, 0.88, 0.45)
+	banner.text = "=== FACTION SOVEREIGN STORY CAMPAIGN (CHAPTERS I–V) & ILLUSTRATED LORE CODEX [N] ==="
+	vbox.add_child(banner)
+
+	var top_row := HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(top_row)
+
+	_story_leader_portrait = TextureRect.new()
+	_story_leader_portrait.custom_minimum_size = Vector2(175.0, 215.0)
+	_story_leader_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_story_leader_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	top_row.add_child(_story_leader_portrait)
+
+	var story_col := VBoxContainer.new()
+	story_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	story_col.add_theme_constant_override("separation", 5)
+	top_row.add_child(story_col)
+
+	_story_header_lbl = Label.new()
+	_story_header_lbl.modulate = Color(0.65, 0.95, 1.0)
+	_story_header_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	story_col.add_child(_story_header_lbl)
+
+	_story_dialogue_lbl = Label.new()
+	_story_dialogue_lbl.modulate = Color(0.96, 0.94, 0.88)
+	_story_dialogue_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_story_dialogue_lbl.custom_minimum_size = Vector2(490.0, 115.0)
+	story_col.add_child(_story_dialogue_lbl)
+
+	_story_progress_lbl = Label.new()
+	_story_progress_lbl.modulate = Color(1.0, 0.9, 0.48)
+	_story_progress_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	story_col.add_child(_story_progress_lbl)
+
+	var btn_row := HBoxContainer.new()
+	btn_row.add_theme_constant_override("separation", 6)
+	story_col.add_child(btn_row)
+
+	_story_complete_btn = Button.new()
+	_story_complete_btn.focus_mode = Control.FOCUS_NONE
+	_story_complete_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_story_complete_btn.modulate = Color(0.55, 1.0, 0.68)
+	_story_complete_btn.text = "Complete Chapter & Claim Sovereign Rewards"
+	_story_complete_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("complete_current_story_chapter"):
+			_player.complete_current_story_chapter()
+	)
+	btn_row.add_child(_story_complete_btn)
+
+	_story_warp_btn = Button.new()
+	_story_warp_btn.focus_mode = Control.FOCUS_NONE
+	_story_warp_btn.modulate = Color(1.0, 0.88, 0.45)
+	_story_warp_btn.text = "Warp to Mission Zone"
+	_story_warp_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("warp_to_story_chapter_zone"):
+			_player.warp_to_story_chapter_zone()
+			_story_panel.visible = false
+	)
+	btn_row.add_child(_story_warp_btn)
+
+	var sep := HSeparator.new()
+	vbox.add_child(sep)
+
+	var codex_banner := Label.new()
+	codex_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	codex_banner.modulate = Color(1.0, 0.78, 0.92)
+	codex_banner.text = "--- ILLUSTRATED WORLD LORE ARCHIVE: SOVEREIGNS & FORSWORN WORLD BOSSES ---"
+	vbox.add_child(codex_banner)
+
+	var codex_row := HBoxContainer.new()
+	codex_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(codex_row)
+
+	_codex_portrait = TextureRect.new()
+	_codex_portrait.custom_minimum_size = Vector2(175.0, 200.0)
+	_codex_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_codex_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	codex_row.add_child(_codex_portrait)
+
+	var codex_col := VBoxContainer.new()
+	codex_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	codex_col.add_theme_constant_override("separation", 5)
+	codex_row.add_child(codex_col)
+
+	_codex_title_lbl = Label.new()
+	_codex_title_lbl.modulate = Color(1.0, 0.88, 0.45)
+	_codex_title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	codex_col.add_child(_codex_title_lbl)
+
+	_codex_bio_lbl = Label.new()
+	_codex_bio_lbl.modulate = Color(0.9, 0.92, 0.96)
+	_codex_bio_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_codex_bio_lbl.custom_minimum_size = Vector2(490.0, 120.0)
+	codex_col.add_child(_codex_bio_lbl)
+
+	var codex_nav := HBoxContainer.new()
+	codex_nav.add_theme_constant_override("separation", 6)
+	codex_col.add_child(codex_nav)
+
+	_codex_prev_btn = Button.new()
+	_codex_prev_btn.focus_mode = Control.FOCUS_NONE
+	_codex_prev_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_codex_prev_btn.text = "< Previous Lore Entry"
+	_codex_prev_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("cycle_codex_entry"):
+			_player.cycle_codex_entry(-1)
+	)
+	codex_nav.add_child(_codex_prev_btn)
+
+	_codex_next_btn = Button.new()
+	_codex_next_btn.focus_mode = Control.FOCUS_NONE
+	_codex_next_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_codex_next_btn.text = "Next Lore Entry >"
+	_codex_next_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("cycle_codex_entry"):
+			_player.cycle_codex_entry(1)
+	)
+	codex_nav.add_child(_codex_next_btn)
+
+
 func _build_inventory_window() -> void:
 	_inv_panel = PanelContainer.new()
 	_inv_panel.visible = false
@@ -403,10 +588,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			_map_panel.visible = not _map_panel.visible
 			if _map_panel.visible:
 				_settings_panel.visible = false
-		elif event.keycode == KEY_ESCAPE:
-			_settings_panel.visible = not _settings_panel.visible
-			if _settings_panel.visible:
+				_story_panel.visible = false
+		elif event.keycode == KEY_N:
+			_story_panel.visible = not _story_panel.visible
+			if _story_panel.visible:
 				_map_panel.visible = false
+				_settings_panel.visible = false
+		elif event.keycode == KEY_ESCAPE:
+			if _story_panel.visible:
+				_story_panel.visible = false
+			else:
+				_settings_panel.visible = not _settings_panel.visible
+				if _settings_panel.visible:
+					_map_panel.visible = false
 
 
 func _on_mode_changed(mode_name: String, proj_name: String) -> void:
@@ -480,7 +674,83 @@ func _on_player_state(d: Dictionary) -> void:
 	_update_physical_vendor_panel(d["vendor_info"], code)
 	_update_inventory_window(d)
 	_update_world_map_window(d)
+	_update_story_window(d)
 	_update_settings_window(d)
+
+
+func _update_story_window(d: Dictionary) -> void:
+	var sinfo: Dictionary = d.get("story_info", {})
+	if sinfo.is_empty():
+		return
+	var code: String = str(d.get("currency_code", "CYC"))
+	var leader_name: String = str(sinfo.get("leader_name", "Sovereign"))
+	var leader_title: String = str(sinfo.get("leader_title", ""))
+	var leader_portrait: String = str(sinfo.get("leader_portrait", ""))
+	var ch_idx: int = int(sinfo.get("chapter_index", 0))
+	var total_ch: int = int(sinfo.get("total_chapters", 5))
+	var ch: Dictionary = sinfo.get("chapter", {})
+
+	if bool(sinfo.get("request_open", false)):
+		_story_panel.visible = true
+		_map_panel.visible = false
+		_settings_panel.visible = false
+
+	if _story_top_btn:
+		if ch.is_empty():
+			_story_top_btn.text = "Story [N]: Campaign Complete (5/5)"
+		else:
+			_story_top_btn.text = "Story [N]: Ch.%d/%d" % [ch_idx + 1, total_ch]
+
+	if _story_leader_portrait:
+		_story_leader_portrait.texture = _load_portrait_texture(leader_portrait)
+
+	if ch.is_empty():
+		_story_header_lbl.text = "★ %s <%s> — ALL 5 STORY CHAPTERS COMPLETED! ★" % [leader_name, leader_title]
+		_story_dialogue_lbl.text = "\"You have fulfilled every decree of our Campaign across the Var. Continue contesting the Central Farr Mining Ground and hunting the Forsworn World Bosses to forge +7 Sovereign Masterwork gear.\""
+		_story_progress_lbl.text = "Campaign Status: 5 / 5 Chapters Complete."
+		_story_complete_btn.text = "All 5 Chapters Completed!"
+		_story_warp_btn.text = "Warp to Forsworn World Bosses"
+	else:
+		var req_lv: int = int(ch.get("req_level", 1))
+		var req_k: int = int(ch.get("req_kills", 0))
+		var req_f: int = int(ch.get("req_farr", 0))
+		var req_b: int = int(ch.get("req_boss", 0))
+		var cur_lv: int = int(d.get("level", 1))
+		var cur_k: int = int(sinfo.get("story_kills", 0))
+		var cur_f: int = int(sinfo.get("story_farr_mined", 0))
+		var cur_b: int = int(sinfo.get("story_boss_kills", 0))
+		var target_map_id: String = str(ch.get("target_map", ""))
+		var target_map_name: String = str(GameData.MAPS.get(target_map_id, {}).get("name", target_map_id))
+
+		_story_header_lbl.text = "★ %s <%s>\n%s (Zone: %s)" % [leader_name, leader_title, str(ch.get("title", "")), target_map_name]
+		_story_dialogue_lbl.text = str(ch.get("dialogue", ""))
+		var boss_prog := ("  |  Boss Kills: %d/%d" % [cur_b, req_b]) if req_b > 0 else ""
+		_story_progress_lbl.text = (
+			"Objective: %s\n" % str(ch.get("objective_summary", ""))
+			+ "Progress -> Level: %d/%d  |  Kills: %d/%d  |  Mined Farr: %d/%d%s\n" % [cur_lv, req_lv, cur_k, req_k, cur_f, req_f, boss_prog]
+			+ "Rewards -> +%d %s, -%d Debt, +%dx Farr Talic, Boost to Lv.%d" % [
+				int(ch.get("reward_currency", 0)),
+				code,
+				int(ch.get("reward_debt_relief", 0)),
+				int(ch.get("reward_talics", 1)),
+				int(ch.get("reward_min_level", cur_lv)),
+			]
+		)
+		var ready_to_turn_in := (cur_lv >= req_lv and cur_k >= req_k and cur_f >= req_f and cur_b >= req_b)
+		_story_complete_btn.text = "Complete Chapter %d & Claim Rewards [READY!]" % (ch_idx + 1) if ready_to_turn_in else "Complete Chapter %d (In Progress)" % (ch_idx + 1)
+		_story_complete_btn.modulate = Color(0.45, 1.0, 0.55) if ready_to_turn_in else Color(0.85, 0.85, 0.85)
+		_story_warp_btn.text = "Warp -> %s" % target_map_name
+
+	var c_entry: Dictionary = sinfo.get("codex_entry", {})
+	var c_idx: int = int(sinfo.get("codex_index", 0))
+	var c_tot: int = int(sinfo.get("codex_total", 1))
+	if not c_entry.is_empty():
+		if _codex_portrait:
+			_codex_portrait.texture = _load_portrait_texture(str(c_entry.get("portrait_path", "")))
+		_codex_title_lbl.text = "[%d / %d] %s  —  %s" % [
+			c_idx + 1, c_tot, str(c_entry.get("title", "")), str(c_entry.get("role", ""))
+		]
+		_codex_bio_lbl.text = str(c_entry.get("bio", ""))
 
 
 func _update_settings_window(d: Dictionary) -> void:
@@ -577,6 +847,11 @@ func _update_physical_vendor_panel(vinfo: Dictionary, code: String) -> void:
 		npc_btn_1.text = "2. Reset Respawn to Faction HQ Default Coordinate"
 		npc_btn_2.text = "3. Full Vital Restoration: 100% HP/FP/SP (50 %s)" % code
 		npc_btn_3.text = "4. Save Character Progress & Position Now"
+	elif vtype == "LEADER":
+		npc_btn_0.text = "1. Complete Current Story Chapter & Claim Sovereign Rewards"
+		npc_btn_1.text = "2. Open Illustrated Story Campaign & Lore Codex [N]"
+		npc_btn_2.text = "3. Warp Directly to Active Chapter Mission Zone"
+		npc_btn_3.text = "4. Sovereign Blessing: Free 100% HP / FP / SP Restore"
 
 
 func _update_inventory_window(d: Dictionary) -> void:

@@ -10,11 +10,12 @@ enum NpcType {
 	ARMOR,
 	UTILITY,
 	REBIRTH,
+	LEADER,
 }
 
 @export var npc_name := "HQ Quartermaster"
 @export var npc_title := "Potion Merchant"
-@export_enum("POTION", "WEAPON", "ARMOR", "UTILITY", "REBIRTH") var vendor_type := "POTION"
+@export_enum("POTION", "WEAPON", "ARMOR", "UTILITY", "REBIRTH", "LEADER") var vendor_type := "POTION"
 @export var faction_id := "sveleitre"
 @export var interact_distance := 3.2
 @export var body_color := Color(0.25, 0.35, 0.45, 1.0)
@@ -31,8 +32,14 @@ func _ready() -> void:
 
 
 func _apply_visuals() -> void:
+	if vendor_type == "LEADER":
+		scale = Vector3(1.65, 1.65, 1.65)
+		interact_distance = 4.2
 	if label_3d:
-		label_3d.text = "%s\n<%s>\n[Click to Trade]" % [npc_name, npc_title]
+		if vendor_type == "LEADER":
+			label_3d.text = "★ %s ★\n<%s>\n[Click for Story Campaign & Lore]" % [npc_name, npc_title]
+		else:
+			label_3d.text = "%s\n<%s>\n[Click to Trade]" % [npc_name, npc_title]
 		label_3d.modulate = accent_color.lightened(0.25)
 	if sprite:
 		sprite.body_color = body_color

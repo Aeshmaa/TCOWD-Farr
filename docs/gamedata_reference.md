@@ -96,3 +96,28 @@ Players travel between zones by walking into physical **3D Warp Portals** ([`War
 | **`contested_steppes`** | **Shattered Persepolis Steppes** | **Contested Upper Ground 1** (All 3 Factions) | `Lv.28–38` + Boss | 3 Faction Outpost Rebirth NPCs, 4 Contested Grinding Spots (`Lv.28–38`), World Boss **`Yima, the Hollow King (Lv.50)`** |
 | **`contested_cauldron`** | **Scorched Var Cauldron** | **Contested Upper Ground 2** (All 3 Factions) | `Lv.36–45` + Bosses | Endgame Contested Grinding Spots (`Lv.38–44`), World Bosses **`Aeshma, the Wrath Unbound (Lv.50)`** & **`The Orphan Process (Lv.50)`** |
 | **`farr_mining_ground`** | **The Crack — Central Farr Mining Ground** | **Central Ore War Zone** (All 3 Factions) | `Lv.25–50` PvPvE Ore War | 3 Faction Breach Camps, **3x Contested Rich Farr Veins**, **2x Scar Megavein Cores**, **Contested Field Refinery**, **`Crack Core Arch-Leviathan (Lv.45)`** |
+
+---
+
+## 7. 3D Faction Leader NPCs, 15-Chapter Story Campaign (`[N]`) & Illustrated Lore Codex
+
+Every Faction HQ (`svel_hq`, `order_hq`, `legion_hq`) now features its **3D Faction Sovereign (`LEADER` NPC, `1.65x` scale)** standing at the center of the citadel, alongside the **`Story & Lore [N]`** campaign & codex window (`[N]` key or `TopBar` button):
+
+| Faction | 3D Sovereign NPC in HQ | 5-Chapter Narrative Arc (`STORY_CAMPAIGNS`) | Chapter V Finale Reward |
+|---|---|---|---|
+| **Sveleitre (Machine Exodus)** | **`INSTANCE ZERO: CODE AELFWYNE`** | **Ch.I** *Cold Boot in a Fallen World* (`svel_hq`) $\rightarrow$ **Ch.II** *Clearing the Hull Breach* (`svel_basic`) $\rightarrow$ **Ch.III** *The Hollow King's Drain* (`contested_steppes`) $\rightarrow$ **Ch.IV** *Blood on the Ignition Veins* (`farr_mining_ground`) $\rightarrow$ **Ch.V** *Reclaiming the Orphaned Fork* (`contested_cauldron`) | `+2,500 CYC`, `-2,500 Ark Debt`, `+5x Farr Talic`, Boost to `Lv.45`, **`+3 Sovereign Masterwork Weapon`** |
+| **Order of the Oracle (Asha)** | **`THE ORACLE, VOICE OF THE SEAL`** | **Ch.I** *TheWeight of the Blindfold* (`order_hq`) $\rightarrow$ **Ch.II** *Purging the Profaned Terraces* (`order_basic`) $\rightarrow$ **Ch.III** *The Fall of King Yima* (`contested_steppes`) $\rightarrow$ **Ch.IV** *Stanching the Sky's Wound* (`farr_mining_ground`) $\rightarrow$ **Ch.V** *He of the Bloody Mace* (`contested_cauldron`) | `+2,500 DRC`, `-2,500 Vow Debt`, `+5x Farr Talic`, Boost to `Lv.45`, **`+3 Sovereign Masterwork Weapon`** |
+| **Legion of the Druj (Ahriman)** | **`AZII DZAHHAKKA, HERALD OF DRUJ`** | **Ch.I** *Whispers of the Two Serpents* (`legion_hq`) $\rightarrow$ **Ch.II** *Feeding the Basalt Trenches* (`legion_basic`) $\rightarrow$ **Ch.III** *Devouring the Hollow King* (`contested_steppes`) $\rightarrow$ **Ch.IV** *Shattering the Sky-Prison* (`farr_mining_ground`) $\rightarrow$ **Ch.V** *Subjugating the Unbound Wrath* (`contested_cauldron`) | `+2,500 SGL`, `-2,500 Pact Debt`, `+5x Farr Talic`, Boost to `Lv.45`, **`+3 Sovereign Masterwork Weapon`** |
+
+- **Illustrated Lore Codex (`LORE_CODEX_ENTRIES`):** Browse all **6 full-color concept art portraits & lore dossiers** directly in-game (`Instance Zero: Code Aelfwyne`, `The Oracle`, `Azii Dzahhakka`, `Aeshma, the Wrath Unbound`, `Yima, the Hollow King`, and `The Orphan Process`).
+
+---
+
+## 8. `[Tab]` Target Priority Options, In-Game Settings (`[Esc]`) & Procedural/Custom Audio (`SfxManager`)
+
+- **`[Tab]` Target Priority Modes** (switchable in `Settings [Esc]`):
+  1. **`Closest to Mouse Cursor`** *(Default)* — projects each enemy's 3D position onto your 2D viewport and locks onto the living enemy nearest your mouse cursor.
+  2. **`Lowest HP First (Finish Off)`** — locks onto the enemy with the lowest current HP percentage within `28m`.
+  3. **`Closest to Character (3D Distance)`** — locks onto the nearest enemy to your character's 3D position.
+- **Audio & Special Effects (`scripts/sfx_manager.gd`):** Synthesizes 10 16-bit PCM `AudioStreamWAV` effects in memory (`target_lock`, `attack_hit`, `skill_cast`, `damage_taken`, `heal`, `mine_ore`, `upgrade_success`, `upgrade_fail`, `warp_portal`, `level_up`) and automatically overrides any cue if you drop a matching `.wav` or `.ogg` file into `res://assets/sfx/`.
+
