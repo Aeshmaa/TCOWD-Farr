@@ -1,10 +1,10 @@
 extends CharacterBody3D
-## Data-Driven Player Controller (driven by `GameData`):
-## - 3 Factions ([F]), 4 Base Classes per faction ([J]), 2 Lv.30 Advanced Job branches ([B])
-## - Lv.1–45 Level Cap + Lv.50 Ascended Faction Leader (Archon) promotion ([L] to test leveling)
-## - Lv.1–50 Equipment Tiers ([U] to buy next tier with Wallet FC)
-## - Teleport to Faction HQ ([H]) across the 3-HQ + Central Scar map
-## - 1 Exclusive Racial Signature per race ([4]): Sveleitre=Siege, Order=Fravashi, Legion=Dread-Titan Mount
+## Data-Driven Player Controller:
+## - HP / FP / SP pools with class-specific ratios + Potions ([5] HP, [6] FP, [7] SP) + Auto-Potion (<45%)
+## - Faction-specific Currencies: CYC (Sveleitre), DRC (Order), SGL (Legion)
+## - Shared Organic/Relic Equipment for Order & Legion vs. Chassis-Only Equipment for Sveleitre
+## - Low-probability Monster/Boss Equipment Drops + 4 HQ Vendor NPCs ([P] Shop Window)
+## - Utility Teleport Scrolls ([8]) & Ammo / Force Reams
 
 signal state_updated(status_data: Dictionary)
 signal event_logged(message: String)
@@ -28,19 +28,37 @@ const FRAVASHI_SCENE := preload("res://scenes/fravashi_companion.tscn")
 var faction_index := 0
 var class_index := 0
 var job_branch := 0
-var gear_tier_index := 0
 var is_ascended_leader := false
+
+## Equipment Compatibility:
+## - Order & Legion share `equipped_organic_tier` (they can wear the same organic/relic gear!)
+## - Sveleitre uses `equipped_chassis_tier` (mechanical frames cannot wear organic gear!)
+var equipped_organic_tier := 0
+var equipped_chassis_tier := 0
 
 var level := 1
 var xp := 0
+
 var max_hp := 300
 var current_hp := 300
+var max_fp := 180
+var current_fp := 180
+var max_sp := 160
+var current_sp := 160
+
+# Consumables & Utility Inventory
+var hp_potions := 5
+var fp_potions := 5
+var sp_potions := 5
+var ammo_or_force_charges := 120
+var teleport_scrolls := 2
+var auto_potion_enabled := true
 
 var unrefined_units := 0
 var current_weight := 0.0
 var unrefined_value := 0
 var current_debt := 5000
-var wallet_credits := 500
+var wallet_credits := 600
 
 var is_mining := false
 var mining_progress := 0.0
@@ -54,6 +72,7 @@ var frame_mounted := false
 var _attack_cd := 0.0
 var _skill2_cd := 0.0
 var _skill3_cd := 0.0
+var _potion_cd := 0.0
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _has_click_target := false
@@ -70,10 +89,12 @@ func _ready() -> void:
 	_upkeep_timer = upkeep_interval
 	_recalc_vital_stats()
 	current_hp = max_hp
+	current_fp = max_fp
+	current_sp = max_sp
 	_apply_faction_tint()
 	_connect_world_enemies()
 	_emit_state()
-	event_logged.emit("Welcome to the Var! [F] Race, [J] Class, [B] Lv.30 Job, [U] Gear, [L] +5 Lv, [H] Warp HQ.")
+	event_logged.emit("Ready! [5/6/7] HP/FP/SP Potions, [8] Warp Scroll, [P] Open HQ NPC Vendors.")
 
 
 func _connect_world_enemies() -> void:
@@ -96,7 +117,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("job_branch_toggle"):
 		toggle_job_branch()
 	elif event.is_action_pressed("upgrade_gear"):
-		upgrade_equipment()
+		npc_buy_equipment_bracket()
 	elif event.is_action_pressed("dev_level_up"):
 		dev_boost_level()
 	elif event.is_action_pressed("teleport_hq"):
@@ -113,6 +134,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		use_skill(3)
 	elif event.is_action_pressed("skill_4"):
 		use_skill(4)
+	elif event.is_action_pressed("potion_hp"):
+		use_potion("HP", false)
+	elif event.is_action_pressed("potion_fp"):
+		use_potion("FP", false)
+	elif event.is_action_pressed("potion_sp"):
+		use_potion("SP", false)
+	elif event.is_action_pressed("use_scroll"):
+		use_teleport_scroll()
 
 
 func _physics_process(delta: float) -> void:
@@ -122,16 +151,28 @@ func _physics_process(delta: float) -> void:
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	_skill2_cd = maxf(0.0, _skill2_cd - delta)
 	_skill3_cd = maxf(0.0, _skill3_cd - delta)
+	_potion_cd = maxf(0.0, _potion_cd - delta)
 
-	if not auto_attacking and current_hp < max_hp:
-		current_hp = mini(max_hp, current_hp + int(ceil(max_hp * 0.025 * delta)))
+	# Natural HP / FP / SP recovery + RF-style Auto-Potion (<45% threshold)
+	if not auto_attacking:
+		current_hp = mini(max_hp, current_hp + int(ceil(max_hp * 0.02 * delta)))
+	current_fp = mini(max_fp, current_fp + int(ceil(max_fp * 0.025 * delta)))
+	current_sp = mini(max_sp, current_sp + int(ceil(max_sp * 0.03 * delta)))
+
+	if auto_potion_enabled and _potion_cd <= 0.0:
+		if current_hp < int(max_hp * 0.45) and hp_potions > 0:
+			use_potion("HP", true)
+		elif current_fp < int(max_fp * 0.35) and fp_potions > 0:
+			use_potion("FP", true)
+		elif current_sp < int(max_sp * 0.35) and sp_potions > 0:
+			use_potion("SP", true)
 
 	_upkeep_timer -= delta
 	if _upkeep_timer <= 0.0:
 		_upkeep_timer = upkeep_interval
 		current_debt += upkeep_cost
-		var f: Dictionary = _faction_dict()
-		event_logged.emit("%s accrued: +%d FC added to %s." % [f["upkeep_label"], upkeep_cost, f["debt_name"]])
+		var f := _faction_dict()
+		event_logged.emit("%s accrued: +%d %s added to %s." % [f["upkeep_label"], upkeep_cost, f["currency_code"], f["debt_name"]])
 
 	if selected_enemy and (not is_instance_valid(selected_enemy) or selected_enemy.is_dead):
 		_set_selected_enemy(null)
@@ -209,8 +250,21 @@ func _class_dict() -> Dictionary:
 	return _faction_dict()["classes"][class_index]
 
 
+func _active_gear_tier_index() -> int:
+	if _faction_dict()["equip_group"] == GameData.EQUIP_CHASSIS_SVEL:
+		return equipped_chassis_tier
+	return equipped_organic_tier
+
+
 func _gear_dict() -> Dictionary:
-	return GameData.EQUIPMENT_TIERS[gear_tier_index]
+	return GameData.EQUIPMENT_TIERS[_active_gear_tier_index()]
+
+
+func _active_gear_name() -> String:
+	var g := _gear_dict()
+	if _faction_dict()["equip_group"] == GameData.EQUIP_CHASSIS_SVEL:
+		return "%s [Svel-Only]" % g["chassis_name"]
+	return "%s [Order/Druj Shared]" % g["organic_name"]
 
 
 func _active_job_title() -> String:
@@ -221,12 +275,146 @@ func _active_job_title() -> String:
 	return "%s (%s)" % [c["base"], c["role"]]
 
 
+func use_potion(kind: String, is_auto: bool) -> void:
+	var tag := "[Auto-Potion] " if is_auto else ""
+	if kind == "HP":
+		if hp_potions <= 0:
+			if not is_auto:
+				event_logged.emit("Out of HP Potions! Buy more from the HQ Alchemist NPC [P].")
+			return
+		hp_potions -= 1
+		var heal := int(round(max_hp * 0.55))
+		current_hp = mini(max_hp, current_hp + heal)
+		_potion_cd = 1.2
+		event_logged.emit("%sUsed HP Potion (+%d HP, %d left)." % [tag, heal, hp_potions])
+	elif kind == "FP":
+		if fp_potions <= 0:
+			if not is_auto:
+				event_logged.emit("Out of FP Chargers! Buy more from the HQ Alchemist NPC [P].")
+			return
+		fp_potions -= 1
+		var gain := int(round(max_fp * 0.6))
+		current_fp = mini(max_fp, current_fp + gain)
+		_potion_cd = 1.2
+		event_logged.emit("%sUsed FP Charger (+%d FP, %d left)." % [tag, gain, fp_potions])
+	elif kind == "SP":
+		if sp_potions <= 0:
+			if not is_auto:
+				event_logged.emit("Out of SP Stims! Buy more from the HQ Alchemist NPC [P].")
+			return
+		sp_potions -= 1
+		var gain := int(round(max_sp * 0.6))
+		current_sp = mini(max_sp, current_sp + gain)
+		_potion_cd = 1.2
+		event_logged.emit("%sUsed SP Stim (+%d SP, %d left)." % [tag, gain, sp_potions])
+
+
+func use_teleport_scroll() -> void:
+	if teleport_scrolls <= 0:
+		event_logged.emit("Out of Teleport Scrolls! Buy more from the HQ Utility NPC [P].")
+		return
+	teleport_scrolls -= 1
+	var f := _faction_dict()
+	var hq_pos: Vector3 = f["hq_spawn"]
+	# If far from HQ, scroll warps to HQ; if already at HQ, scroll warps to Contested Center!
+	if global_position.distance_to(hq_pos) > 15.0:
+		teleport_to_hq()
+		event_logged.emit("Used Return Scroll -> Warped to %s (%d scrolls left)." % [f["hq_name"], teleport_scrolls])
+	else:
+		if is_mining:
+			_cancel_mining("")
+		siege_mode = false
+		auto_attacking = false
+		_clear_click_target()
+		global_position = Vector3(0.0, 0.1, 6.0)
+		velocity = Vector3.ZERO
+		event_logged.emit("Used Scar Portal Scroll -> Warped to Contested Center (%d scrolls left)." % teleport_scrolls)
+
+
+# --- 4 HQ Vendor NPC Functions (accessible via [P] NPC Vendor Window) -------
+
+func npc_buy_potions() -> void:
+	var f := _faction_dict()
+	var cost := 120
+	if wallet_credits < cost:
+		event_logged.emit("Potion NPC: Need %d %s (you have %d)." % [cost, f["currency_code"], wallet_credits])
+		return
+	wallet_credits -= cost
+	hp_potions += 5
+	fp_potions += 5
+	sp_potions += 5
+	event_logged.emit("Potion NPC: Bought +5 HP, +5 FP, +5 SP Potions (-%d %s)." % [cost, f["currency_code"]])
+
+
+func npc_buy_ammo_force() -> void:
+	var f := _faction_dict()
+	var cost := 90
+	if wallet_credits < cost:
+		event_logged.emit("Ammo/Force NPC: Need %d %s (you have %d)." % [cost, f["currency_code"], wallet_credits])
+		return
+	wallet_credits -= cost
+	ammo_or_force_charges += 80
+	event_logged.emit("Weapon & Force NPC: Restocked +80 Ammo / Force Charges (-%d %s)." % [cost, f["currency_code"]])
+
+
+func npc_buy_utility_scrolls() -> void:
+	var f := _faction_dict()
+	var cost := 100
+	if wallet_credits < cost:
+		event_logged.emit("Utility NPC: Need %d %s (you have %d)." % [cost, f["currency_code"], wallet_credits])
+		return
+	wallet_credits -= cost
+	teleport_scrolls += 3
+	event_logged.emit("Utility NPC: Bought +3 Teleport Scrolls (-%d %s). Press [8] to use!" % [cost, f["currency_code"]])
+
+
+func npc_buy_equipment_bracket() -> void:
+	var f := _faction_dict()
+	var cur_idx := _active_gear_tier_index()
+	if cur_idx + 1 >= GameData.EQUIPMENT_TIERS.size():
+		event_logged.emit("Equipment NPC: You already own maximum Tier 6 Archon Regalia!")
+		return
+	var next_idx := cur_idx + 1
+	var next_gear: Dictionary = GameData.EQUIPMENT_TIERS[next_idx]
+	# Skip Rare Drop-only tier (Tier 5 Lv.45 Intense) when buying from standard vendor unless player is Lv.50 Archon
+	if not bool(next_gear["vendor_sold"]):
+		if level < 50:
+			event_logged.emit("Equipment NPC: Lv.45 [RARE] Intense Gear cannot be bought — it only drops from Elites & Boss Aeshma!")
+			return
+		next_idx += 1
+		next_gear = GameData.EQUIPMENT_TIERS[next_idx]
+
+	var req_lv: int = next_gear["req_lv"]
+	var cost: int = next_gear["cost"]
+	var item_name: String = next_gear["chassis_name"] if f["equip_group"] == GameData.EQUIP_CHASSIS_SVEL else next_gear["organic_name"]
+	if level < req_lv:
+		event_logged.emit("Equipment NPC: Need Level %d for %s (%s bracket). Press [L] to test!" % [req_lv, item_name, next_gear["bracket"]])
+		return
+	if wallet_credits < cost:
+		event_logged.emit("Equipment NPC: Need %d %s for %s (you have %d)." % [cost, f["currency_code"], item_name, wallet_credits])
+		return
+	wallet_credits -= cost
+	if f["equip_group"] == GameData.EQUIP_CHASSIS_SVEL:
+		equipped_chassis_tier = next_idx
+	else:
+		equipped_organic_tier = next_idx
+	_recalc_vital_stats()
+	current_hp = max_hp
+	current_fp = max_fp
+	current_sp = max_sp
+	event_logged.emit("Equipment NPC: Equipped %s (%s)!" % [item_name, next_gear["bracket"]])
+
+
 func cycle_class() -> void:
 	class_index = (class_index + 1) % 4
 	_recalc_vital_stats()
 	current_hp = max_hp
+	current_fp = max_fp
+	current_sp = max_sp
 	var c := _class_dict()
-	event_logged.emit("Switched Base Class -> %s (%s). Weapon Range: %.1fm." % [c["base"], c["role"], c["range"]])
+	event_logged.emit("Class -> %s (%s) | HP:%d FP:%d SP:%d | Range:%.1fm" % [
+		c["base"], c["role"], max_hp, max_fp, max_sp, c["range"]
+	])
 
 
 func toggle_job_branch() -> void:
@@ -240,48 +428,32 @@ func toggle_job_branch() -> void:
 		event_logged.emit("Switched Lv.30 Advanced Job -> %s!" % jobs[job_branch])
 
 
-func upgrade_equipment() -> void:
-	if gear_tier_index + 1 >= GameData.EQUIPMENT_TIERS.size():
-		event_logged.emit("Already wearing maximum Tier 7 Ascended Archon Regalia!")
-		return
-	var next_gear: Dictionary = GameData.EQUIPMENT_TIERS[gear_tier_index + 1]
-	var req_lv: int = next_gear["req_lv"]
-	var cost: int = next_gear["cost"]
-	if level < req_lv:
-		event_logged.emit("Need Level %d to equip %s (use [L] to test leveling!)." % [req_lv, next_gear["name"]])
-		return
-	if wallet_credits < cost:
-		event_logged.emit("Need %d Wallet FC to buy %s (you have %d FC)." % [cost, next_gear["name"], wallet_credits])
-		return
-	wallet_credits -= cost
-	gear_tier_index += 1
-	_recalc_vital_stats()
-	current_hp = max_hp
-	event_logged.emit("EQUIPPED %s! (+%d HP, +%d ATK)" % [next_gear["name"], next_gear["bonus_hp"], next_gear["bonus_atk"]])
-
-
 func dev_boost_level() -> void:
+	var f := _faction_dict()
 	if level < 45:
 		var prev := level
 		level = mini(45, level + 5)
+		wallet_credits += 1000
 		if prev < 30 and level >= 30:
 			var jobs: Array = _class_dict()["jobs"]
-			event_logged.emit("REACHED LV.%d! Promoted to Advanced Job: %s!" % [level, jobs[job_branch]])
+			event_logged.emit("REACHED LV.%d! Promoted to Advanced Job: %s (+1000 %s)!" % [level, jobs[job_branch], f["currency_code"]])
 		else:
-			event_logged.emit("Boosted to Level %d (Normal Cap: 45). Wallet +1000 FC for gear testing." % level)
-		wallet_credits += 1000
+			event_logged.emit("Boosted to Level %d (Cap: 45) & +1000 %s." % [level, f["currency_code"]])
 	elif not is_ascended_leader:
 		is_ascended_leader = true
 		level = 50
 		wallet_credits += 5000
-		event_logged.emit("ELECTED FACTION LEADER (ASCENDED ARCHON)! Raised to Lv.50 & unlocked Archon Regalia!")
+		event_logged.emit("ELECTED FACTION LEADER (ARCHON)! Raised to Lv.50 & +5000 %s!" % f["currency_code"])
 	else:
 		is_ascended_leader = false
 		level = 1
-		gear_tier_index = 0
+		equipped_organic_tier = 0
+		equipped_chassis_tier = 0
 		event_logged.emit("Reset back to Level 1 Recruit.")
 	_recalc_vital_stats()
 	current_hp = max_hp
+	current_fp = max_fp
+	current_sp = max_sp
 
 
 func teleport_to_hq() -> void:
@@ -294,7 +466,7 @@ func teleport_to_hq() -> void:
 	var f := _faction_dict()
 	global_position = f["hq_spawn"]
 	velocity = Vector3.ZERO
-	event_logged.emit("Warped to %s (%s)." % [f["hq_name"], f["name"]])
+	event_logged.emit("Arrived at %s (%s)." % [f["hq_name"], f["name"]])
 
 
 func _handle_click(delta: float) -> void:
@@ -397,6 +569,11 @@ func _cast_skill_2() -> void:
 		event_logged.emit("No target in range for Skill 2.")
 		return
 	var s2: Dictionary = _class_dict()["skill2"]
+	var fp_cost: int = s2.get("fp_cost", 20)
+	var sp_cost: int = s2.get("sp_cost", 15)
+	if current_fp < fp_cost or current_sp < sp_cost:
+		event_logged.emit("Not enough FP/SP for %s! Use [6] FP or [7] SP Potion." % s2["name"])
+		return
 	var dist := Vector2(global_position.x - selected_enemy.global_position.x, global_position.z - selected_enemy.global_position.z).length()
 	var max_dist := maxf(float(s2["range"]), 15.0 if siege_mode else 0.0)
 	if dist > max_dist:
@@ -404,25 +581,34 @@ func _cast_skill_2() -> void:
 		return
 	if is_mining:
 		_cancel_mining("")
+	current_fp -= fp_cost
+	current_sp -= sp_cost
 	_skill2_cd = float(s2["cd"])
 	sprite.set_facing(selected_enemy.global_position - global_position)
 	var dmg := int(round(_effective_attack_damage() * float(s2["mult"])))
 	selected_enemy.receive_damage(dmg, self)
-	event_logged.emit("%s hit %s for %d DMG!" % [s2["name"], selected_enemy.enemy_name, dmg])
+	event_logged.emit("%s hit %s for %d DMG (-%d FP, -%d SP)!" % [s2["name"], selected_enemy.enemy_name, dmg, fp_cost, sp_cost])
 
 
 func _cast_skill_3() -> void:
 	if _skill3_cd > 0.0:
 		event_logged.emit("Skill 3 on cooldown (%.1fs)." % _skill3_cd)
 		return
+	var s3: Dictionary = _class_dict()["skill3"]
+	var fp_cost: int = s3.get("fp_cost", 30)
+	var sp_cost: int = s3.get("sp_cost", 20)
+	if current_fp < fp_cost or current_sp < sp_cost:
+		event_logged.emit("Not enough FP/SP for %s! Use [6] FP or [7] SP Potion." % s3["name"])
+		return
 	if is_mining:
 		_cancel_mining("")
-	var s3: Dictionary = _class_dict()["skill3"]
+	current_fp -= fp_cost
+	current_sp -= sp_cost
 	var center := selected_enemy.global_position if (selected_enemy and not selected_enemy.is_dead) else global_position
 	_skill3_cd = float(s3["cd"])
 	var dmg := int(round(_effective_attack_damage() * float(s3["mult"])))
 	var hits := _deal_aoe_damage(center, float(s3["radius"]), dmg)
-	event_logged.emit("%s unleashed! Hit %d enemy(s) for %d AoE DMG." % [s3["name"], hits, dmg])
+	event_logged.emit("%s hit %d enemy(s) for %d AoE DMG (-%d FP, -%d SP)!" % [s3["name"], hits, dmg, fp_cost, sp_cost])
 
 
 func _cast_signature_4() -> void:
@@ -432,7 +618,7 @@ func _cast_signature_4() -> void:
 			if is_mining:
 				_cancel_mining("")
 			_clear_click_target()
-			event_logged.emit("SVELEITRE SIEGE MODE: Locked in place! Range 15m, AoE artillery shells (+15 FC Ark Debt/shot).")
+			event_logged.emit("SVELEITRE SIEGE MODE: Locked in place! Range 15m, AoE shells (-1 Ammo & +15 CYC Ark Debt/shot).")
 		else:
 			event_logged.emit("Siege Mode retracted. Mobile again.")
 	elif faction_index == 1:
@@ -459,7 +645,7 @@ func _cast_signature_4() -> void:
 		if frame_mounted:
 			sprite.scale = Vector3(2.2, 2.2, 2.2)
 			sprite.position.y = 1.75
-			event_logged.emit("LEGION SIGNATURE: Mounted Dread-Titan Construct (2.2x scale, +400 HP, +90% ATK). Hits taken cost +18 FC Repair Debt!")
+			event_logged.emit("LEGION SIGNATURE: Mounted Dread-Titan Construct (+400 HP, +90% ATK). Hits taken cost +18 SGL Pact Debt!")
 		else:
 			sprite.scale = Vector3.ONE
 			sprite.position.y = 0.8
@@ -477,13 +663,22 @@ func _process_auto_attack() -> void:
 	if _attack_cd > 0.0:
 		return
 
+	var c := _class_dict()
+	var needs_charge := bool(c.get("uses_ammo", false)) or bool(c.get("uses_force", false)) or siege_mode
+	if needs_charge:
+		if ammo_or_force_charges <= 0:
+			auto_attacking = false
+			event_logged.emit("Out of Ammo / Force Charges! Restock at HQ Weapon & Force NPC [P].")
+			return
+		ammo_or_force_charges -= 1
+
 	_attack_cd = 1.05
 	sprite.set_facing(to_enemy)
 	var dmg := _effective_attack_damage()
 	if siege_mode:
 		current_debt += 15
 		var hits := _deal_aoe_damage(selected_enemy.global_position, 4.0, dmg)
-		event_logged.emit("Siege Artillery shell hit %d target(s) for %d DMG (+15 FC Ark Debt)." % [hits, dmg])
+		event_logged.emit("Siege Artillery hit %d target(s) for %d DMG (-1 Ammo, +15 CYC Debt)." % [hits, dmg])
 	else:
 		selected_enemy.receive_damage(dmg, self)
 
@@ -517,6 +712,7 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 	if selected_enemy == enemy:
 		_set_selected_enemy(null)
 		auto_attacking = false
+	var f := _faction_dict()
 	wallet_credits += enemy.bounty_reward
 	xp += 55
 	var needed := level * 90
@@ -525,10 +721,46 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 		level += 1
 		_recalc_vital_stats()
 		current_hp = max_hp
+		current_fp = max_fp
+		current_sp = max_sp
 		event_logged.emit("LEVEL UP! Reached Level %d (Cap 45 / Leader 50)." % level)
 	else:
-		event_logged.emit("Slain %s! Earned +%d FC Bounty & dropped Farr bag." % [enemy.enemy_name, enemy.bounty_reward])
+		event_logged.emit("Slain %s! +%d %s Bounty & dropped Farr bag." % [enemy.enemy_name, enemy.bounty_reward, f["currency_code"]])
+
+	_roll_rare_equipment_drop(enemy)
 	_emit_state()
+
+
+## Low-probability monster equipment drop with Order/Legion Shared vs. Sveleitre Chassis-Only rule!
+func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
+	var drop_chance := 1.0 if enemy.level >= 50 else (0.45 if enemy.level >= 25 else 0.25)
+	if randf() > drop_chance:
+		return
+
+	var dropped_tier_idx := 4 if enemy.level >= 35 else (3 if enemy.level >= 25 else 1)
+	var gear_entry: Dictionary = GameData.EQUIPMENT_TIERS[dropped_tier_idx]
+	var rolled_group := GameData.EQUIP_CHASSIS_SVEL if randf() < 0.35 else GameData.EQUIP_ORGANIC_VAR
+	var my_group: String = _faction_dict()["equip_group"]
+	var code: String = _faction_dict()["currency_code"]
+
+	if rolled_group == my_group:
+		var item_name: String = gear_entry["chassis_name"] if rolled_group == GameData.EQUIP_CHASSIS_SVEL else gear_entry["organic_name"]
+		if rolled_group == GameData.EQUIP_CHASSIS_SVEL and dropped_tier_idx > equipped_chassis_tier:
+			equipped_chassis_tier = dropped_tier_idx
+			_recalc_vital_stats()
+			event_logged.emit("RARE DROP EQUIPPED: %s (Sveleitre Chassis)!" % item_name)
+		elif rolled_group == GameData.EQUIP_ORGANIC_VAR and dropped_tier_idx > equipped_organic_tier:
+			equipped_organic_tier = dropped_tier_idx
+			_recalc_vital_stats()
+			event_logged.emit("RARE DROP EQUIPPED: %s (Order/Druj Shared Gear)!" % item_name)
+	else:
+		# Incompatible race group (e.g., Sveleitre found Order/Druj armor, or Order/Druj found Sveleitre chassis)
+		var salvage := 250 * dropped_tier_idx
+		wallet_credits += salvage
+		if my_group == GameData.EQUIP_CHASSIS_SVEL:
+			event_logged.emit("LOOT: Found Order/Druj Organic Armor (Incompatible with Sveleitre Chassis) -> Salvaged for +%d %s!" % [salvage, code])
+		else:
+			event_logged.emit("LOOT: Found Sveleitre Chassis Module (Incompatible with Order/Druj) -> Sold for +%d %s!" % [salvage, code])
 
 
 func _effective_attack_damage() -> int:
@@ -559,15 +791,21 @@ func _effective_attack_range() -> float:
 func _recalc_vital_stats() -> void:
 	var c := _class_dict()
 	var g := _gear_dict()
-	var raw_hp := (280 + (level - 1) * 28 + int(g["bonus_hp"])) * float(c["hp_mult"])
-	if level >= 30:
-		raw_hp *= 1.2
-	if is_ascended_leader:
-		raw_hp *= 1.35
+	var job_mult := 1.2 if level >= 30 else 1.0
+	var archon_mult := 1.35 if is_ascended_leader else 1.0
+
+	var raw_hp := (280 + (level - 1) * 28 + int(g["bonus_hp"])) * float(c["hp_mult"]) * job_mult * archon_mult
+	var raw_fp := (160 + (level - 1) * 16 + int(g["bonus_fp"])) * float(c["fp_mult"]) * job_mult * archon_mult
+	var raw_sp := (150 + (level - 1) * 14 + int(g["bonus_sp"])) * float(c["sp_mult"]) * job_mult * archon_mult
+
 	if frame_mounted:
 		raw_hp += 400
 	max_hp = int(round(raw_hp))
+	max_fp = int(round(raw_fp))
+	max_sp = int(round(raw_sp))
 	current_hp = mini(current_hp, max_hp)
+	current_fp = mini(current_fp, max_fp)
+	current_sp = mini(current_sp, max_sp)
 
 
 func _check_interact_arrival() -> bool:
@@ -627,7 +865,8 @@ func _process_mining(delta: float) -> void:
 		unrefined_units += added_units
 		current_weight = minf(current_weight + added_weight, max_weight)
 		unrefined_value += added_val
-		event_logged.emit("Extracted +%d Unrefined Farr (+%.0f wt, worth %d FC)." % [added_units, added_weight, added_val])
+		var code: String = _faction_dict()["currency_code"]
+		event_logged.emit("Extracted +%d Unrefined Farr (+%.0f wt, worth %d %s)." % [added_units, added_weight, added_val, code])
 		if not _mining_vein.can_mine():
 			_cancel_mining("%s exhausted." % _mining_vein.vein_name)
 			return
@@ -662,8 +901,9 @@ func _refine_and_pay_debt() -> void:
 	wallet_credits += wallet_gain
 
 	var f := _faction_dict()
-	event_logged.emit("Refined %d Farr -> %d FC! Paid %d toward %s, +%d FC to Wallet." % [
-		units_refined, total_fc, debt_paid, f["debt_name"], wallet_gain
+	var code: String = f["currency_code"]
+	event_logged.emit("Refined %d Farr -> %d %s! Paid %d toward %s, +%d %s to Wallet." % [
+		units_refined, total_fc, code, debt_paid, f["debt_name"], wallet_gain, code
 	])
 
 
@@ -674,7 +914,7 @@ func _loot_dropped_bag(bag: DroppedOreBag) -> void:
 	unrefined_units += bag.units
 	current_weight = minf(current_weight + bag.weight, max_weight)
 	unrefined_value += bag.value
-	event_logged.emit("Recovered %d Unrefined Farr (worth %d FC) from dropped bag!" % [bag.units, bag.value])
+	event_logged.emit("Recovered %d Unrefined Farr from dropped bag!" % bag.units)
 	bag.queue_free()
 
 
@@ -690,7 +930,8 @@ func cycle_faction() -> void:
 	_recalc_vital_stats()
 	_apply_faction_tint()
 	var f := _faction_dict()
-	event_logged.emit("Switched Race -> %s (%s). Press [H] to warp to %s!" % [f["name"], f["debt_name"], f["hq_name"]])
+	var shared_note := "Chassis-Only Gear" if f["equip_group"] == GameData.EQUIP_CHASSIS_SVEL else "Shares Organic/Relic Gear between Order & Druj"
+	event_logged.emit("Switched Race -> %s | Currency: %s (%s) | %s" % [f["name"], f["currency_name"], f["currency_code"], shared_note])
 
 
 func simulate_death() -> void:
@@ -701,6 +942,8 @@ func simulate_death() -> void:
 	_clear_click_target()
 	_interact_target = null
 	current_hp = max_hp
+	current_fp = max_fp
+	current_sp = max_sp
 
 	var drop_units := int(ceil(unrefined_units * 0.5))
 	if drop_units > 0:
@@ -768,7 +1011,6 @@ func _camera_relative(input: Vector2) -> Vector3:
 func _emit_state() -> void:
 	var f := _faction_dict()
 	var c := _class_dict()
-	var g := _gear_dict()
 	var s2: Dictionary = c["skill2"]
 	var s3: Dictionary = c["skill3"]
 
@@ -784,16 +1026,27 @@ func _emit_state() -> void:
 
 	state_updated.emit({
 		"faction": f["name"],
+		"currency_name": f["currency_name"],
+		"currency_code": f["currency_code"],
 		"debt_name": f["debt_name"],
 		"job_title": _active_job_title(),
-		"gear_name": g["name"],
+		"gear_name": _active_gear_name(),
 		"level": level,
 		"is_leader": is_ascended_leader,
 		"hp": current_hp,
 		"max_hp": max_hp,
+		"fp": current_fp,
+		"max_fp": max_fp,
+		"sp": current_sp,
+		"max_sp": max_sp,
 		"atk": _effective_attack_damage(),
 		"debt": current_debt,
 		"wallet": wallet_credits,
+		"hp_potions": hp_potions,
+		"fp_potions": fp_potions,
+		"sp_potions": sp_potions,
+		"ammo": ammo_or_force_charges,
+		"scrolls": teleport_scrolls,
 		"unrefined_units": unrefined_units,
 		"unrefined_value": unrefined_value,
 		"weight": current_weight,

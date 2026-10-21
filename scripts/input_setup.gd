@@ -41,10 +41,17 @@ func _enter_tree() -> void:
 	_add_key("teleport_hq", KEY_H)
 	_add_key("simulate_death", KEY_K)
 	_add_key("target_cycle", KEY_TAB)
+	_add_key("toggle_shop", KEY_P)
+
+	# Combat skills [1]-[4] + Potion & Utility Belt [5]-[8]
 	_add_key("skill_1", KEY_1)
 	_add_key("skill_2", KEY_2)
 	_add_key("skill_3", KEY_3)
 	_add_key("skill_4", KEY_4)
+	_add_key("potion_hp", KEY_5)
+	_add_key("potion_fp", KEY_6)
+	_add_key("potion_sp", KEY_7)
+	_add_key("use_scroll", KEY_8)
 
 
 func _ensure_action(action: StringName) -> void:

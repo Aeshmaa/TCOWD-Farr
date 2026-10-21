@@ -276,7 +276,7 @@ text = "VIEW [V]: Perspective"
 [node name="FactionButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
 focus_mode = 0
-text = "Race [F]: Sveleitre"
+text = "Race [F]: Sveleitre (CYC)"
 
 [node name="ClassButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
@@ -288,10 +288,10 @@ layout_mode = 2
 focus_mode = 0
 text = "Lv.30 Job [B]"
 
-[node name="GearButton" type="Button" parent="HUD/TopBar"]
+[node name="ShopButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
 focus_mode = 0
-text = "Buy Gear [U]"
+text = "HQ Vendors [P]"
 
 [node name="LevelButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
@@ -309,7 +309,44 @@ offset_top = 46.0
 offset_right = 1080.0
 offset_bottom = 92.0
 text = "Camera: Hold [Space] + Slide Trackpad (or Right-Drag) = 360° Orbit  |  [Q/E] Rotate  |  [Z/X] or Pinch/2-Finger Scroll = Zoom
-RPG: [F] Race  |  [J] 4 Base Classes  |  [B] Lv.30 Job Branch  |  [U] Upgrade Lv.1-50 Gear  |  [L] Test Level/Archon  |  [H] Warp HQ"
+NPCs & Belt: [P] Open 4 HQ Vendors  |  [5/6/7] HP/FP/SP Potions (Auto <45%)  |  [8] Teleport Scroll  |  [U] Quick Gear Upgrade"
+
+[node name="ShopPanel" type="PanelContainer" parent="HUD"]
+visible = false
+offset_left = 16.0
+offset_top = 98.0
+offset_right = 460.0
+offset_bottom = 310.0
+
+[node name="VBox" type="VBoxContainer" parent="HUD/ShopPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ShopTitle" type="Label" parent="HUD/ShopPanel/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+modulate = Color(1, 0.9, 0.45, 1)
+text = "=== FACTION HQ VENDOR QUARTER [P] ==="
+
+[node name="NpcPotionBtn" type="Button" parent="HUD/ShopPanel/VBox"]
+layout_mode = 2
+focus_mode = 0
+text = "1. Potion NPC: +5 HP / +5 FP / +5 SP Potions (120 Currency)"
+
+[node name="NpcWeaponBtn" type="Button" parent="HUD/ShopPanel/VBox"]
+layout_mode = 2
+focus_mode = 0
+text = "2. Weapon & Force NPC: +80 Ammo / Force Charges (90 Currency)"
+
+[node name="NpcEquipBtn" type="Button" parent="HUD/ShopPanel/VBox"]
+layout_mode = 2
+focus_mode = 0
+text = "3. Equipment NPC [U]: Next Bracket (1-15 / 15-25 / 30-45)"
+
+[node name="NpcUtilityBtn" type="Button" parent="HUD/ShopPanel/VBox"]
+layout_mode = 2
+focus_mode = 0
+text = "4. Utility NPC: +3 HQ/Scar Teleport Scrolls (100 Currency)"
 
 [node name="TargetPanel" type="PanelContainer" parent="HUD"]
 visible = false
@@ -338,27 +375,38 @@ layout_mode = 2
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -465.0
+offset_left = -490.0
 offset_top = 48.0
 offset_right = -14.0
-offset_bottom = 205.0
+offset_bottom = 265.0
 grow_horizontal = 0
 
 [node name="Margin" type="VBoxContainer" parent="HUD/EconomyPanel"]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 3
 
 [node name="EconomyLabel" type="Label" parent="HUD/EconomyPanel/Margin"]
 layout_mode = 2
-text = "Lv.1  |  Breaker (Frontline)
-Gear: Lv.1 Indentured Issue  |  HP: 364/364  |  ATK: 25
-Ark Debt: 5000 FC   |   Wallet: 500 FC
-Unrefined Farr: 0 (0 FC)  |  Wt: 0/100"
+text = "Lv.1  |  Breaker (Frontline)  |  ATK: 25
+Gear: Lv.1 Stock Frame MK-I [Svel-Only]
+HP: 378/378   |   FP: 120/120   |   SP: 202/202
+Ark Debt: 5000 CYC   |   Wallet: 600 CYC (Ark Cycles)
+Ammo/Force: 120   |   Farr: 0 (0 CYC)   |   Wt: 0/100"
 
 [node name="HpBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
 layout_mode = 2
-max_value = 364.0
-value = 364.0
+max_value = 378.0
+value = 378.0
+
+[node name="FpBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
+layout_mode = 2
+max_value = 120.0
+value = 120.0
+
+[node name="SpBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
+layout_mode = 2
+max_value = 202.0
+value = 202.0
 
 [node name="WeightBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
 layout_mode = 2
@@ -395,38 +443,62 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -380.0
+offset_left = -640.0
 offset_top = -82.0
-offset_right = 380.0
+offset_right = 640.0
 offset_bottom = -42.0
 grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 
 [node name="Skill1" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(180, 38)
+custom_minimum_size = Vector2(140, 38)
 layout_mode = 2
 focus_mode = 0
-text = "1: Auto-Atk [OFF]"
+text = "1: Atk [OFF]"
 
 [node name="Skill2" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(180, 38)
+custom_minimum_size = Vector2(165, 38)
 layout_mode = 2
 focus_mode = 0
 text = "2: Ram Cleave"
 
 [node name="Skill3" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(180, 38)
+custom_minimum_size = Vector2(175, 38)
 layout_mode = 2
 focus_mode = 0
 text = "3: Shock Stomp AoE"
 
 [node name="Skill4" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(190, 38)
+custom_minimum_size = Vector2(170, 38)
 layout_mode = 2
 focus_mode = 0
 text = "4: Siege Mode"
+
+[node name="PotHP" type="Button" parent="HUD/SkillBar"]
+custom_minimum_size = Vector2(135, 38)
+layout_mode = 2
+focus_mode = 0
+text = "5: HP Pot (5)"
+
+[node name="PotFP" type="Button" parent="HUD/SkillBar"]
+custom_minimum_size = Vector2(135, 38)
+layout_mode = 2
+focus_mode = 0
+text = "6: FP Pot (5)"
+
+[node name="PotSP" type="Button" parent="HUD/SkillBar"]
+custom_minimum_size = Vector2(135, 38)
+layout_mode = 2
+focus_mode = 0
+text = "7: SP Pot (5)"
+
+[node name="ScrollBtn" type="Button" parent="HUD/SkillBar"]
+custom_minimum_size = Vector2(135, 38)
+layout_mode = 2
+focus_mode = 0
+text = "8: Scroll (2)"
 
 [node name="LogLabel" type="Label" parent="HUD"]
 anchors_preset = 2
@@ -434,7 +506,7 @@ anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
 offset_top = -34.0
-offset_right = 1350.0
+offset_right = 1450.0
 offset_bottom = -10.0
 grow_vertical = 0
 modulate = Color(0.85, 0.95, 1, 1)
