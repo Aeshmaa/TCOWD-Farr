@@ -19,6 +19,11 @@ func _enter_tree() -> void:
 	_add_key("cam_reset", KEY_R)
 	_add_key("faction_cycle", KEY_F)
 	_add_key("simulate_death", KEY_K)
+	_add_key("target_cycle", KEY_TAB)
+	_add_key("skill_1", KEY_1)
+	_add_key("skill_2", KEY_2)
+	_add_key("skill_3", KEY_3)
+	_add_key("skill_4", KEY_4)
 
 
 func _ensure_action(action: StringName) -> void:

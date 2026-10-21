@@ -1,8 +1,9 @@
 extends CanvasLayer
-## Phase 1 + 2/3 HUD:
-## - Top-left RF Camera Mode & Projection bar
-## - Top-right Faction Debt, Wallet Credits & Carry Weight readout
-## - Bottom-center Mining Channel Progress bar + Status Log
+## Phase 1–4 HUD:
+## - Top-left RF Camera Mode & Faction switcher
+## - Top-center Tab-Target Enemy HP bar
+## - Top-right Player HP, Faction Debt, Wallet Credits & Carry Weight
+## - Bottom-center 4-slot RF Skill Hotbar ([1]-[4]) + Mining Channel bar + Event Log
 
 @export var camera_rig_path: NodePath
 @export var player_path: NodePath
@@ -13,8 +14,19 @@ extends CanvasLayer
 @onready var faction_button: Button = $TopBar/FactionButton
 @onready var death_button: Button = $TopBar/DeathButton
 
+@onready var target_panel: PanelContainer = $TargetPanel
+@onready var target_label: Label = $TargetPanel/VBox/TargetLabel
+@onready var target_bar: ProgressBar = $TargetPanel/VBox/TargetBar
+
 @onready var economy_label: Label = $EconomyPanel/Margin/EconomyLabel
+@onready var hp_bar: ProgressBar = $EconomyPanel/Margin/HpBar
 @onready var weight_bar: ProgressBar = $EconomyPanel/Margin/WeightBar
+
+@onready var skill1_btn: Button = $SkillBar/Skill1
+@onready var skill2_btn: Button = $SkillBar/Skill2
+@onready var skill3_btn: Button = $SkillBar/Skill3
+@onready var skill4_btn: Button = $SkillBar/Skill4
+
 @onready var mining_panel: PanelContainer = $MiningPanel
 @onready var mining_label: Label = $MiningPanel/VBox/MiningLabel
 @onready var mining_bar: ProgressBar = $MiningPanel/VBox/MiningBar
@@ -39,6 +51,10 @@ func _ready() -> void:
 		_player.event_logged.connect(_on_event_logged)
 		faction_button.pressed.connect(func() -> void: _player.cycle_faction())
 		death_button.pressed.connect(func() -> void: _player.simulate_death())
+		skill1_btn.pressed.connect(func() -> void: _player.use_skill(1))
+		skill2_btn.pressed.connect(func() -> void: _player.use_skill(2))
+		skill3_btn.pressed.connect(func() -> void: _player.use_skill(3))
+		skill4_btn.pressed.connect(func() -> void: _player.use_skill(4))
 		_player._emit_state()
 
 
@@ -51,15 +67,41 @@ func _on_player_state(d: Dictionary) -> void:
 	faction_button.text = "Faction [F]: %s" % d["faction"]
 	var wt: float = d["weight"]
 	var max_wt: float = d["max_weight"]
-	var overburden := " [OVERBURDENED -40% SPD]" if wt >= max_wt * 0.8 else ""
+	var overburden := " [OVERBURDENED]" if wt >= max_wt * 0.8 else ""
 	economy_label.text = (
-		"%s: %d FC   |   Wallet: %d FC\n" % [d["debt_name"], d["debt"], d["wallet"]]
-		+ "Unrefined Farr: %d units (est. %d FC)\n" % [d["unrefined_units"], d["unrefined_value"]]
-		+ "Carry Weight: %.0f / %.0f%s" % [wt, max_wt, overburden]
+		"Lv.%d (%s)  |  HP: %d / %d  |  ATK: %d\n" % [d["level"], d["faction"], d["hp"], d["max_hp"], d["atk"]]
+		+ "%s: %d FC   |   Wallet: %d FC\n" % [d["debt_name"], d["debt"], d["wallet"]]
+		+ "Unrefined Farr: %d (%d FC)  |  Wt: %.0f/%.0f%s" % [d["unrefined_units"], d["unrefined_value"], wt, max_wt, overburden]
 	)
+	hp_bar.max_value = d["max_hp"]
+	hp_bar.value = d["hp"]
 	weight_bar.max_value = max_wt
 	weight_bar.value = wt
 
+	# Enemy target bar
+	var t_name: String = d["target_name"]
+	target_panel.visible = (t_name != "")
+	if t_name != "":
+		target_label.text = "%s   (%d / %d HP)" % [t_name, d["target_hp"], d["target_max_hp"]]
+		target_bar.max_value = d["target_max_hp"]
+		target_bar.value = d["target_hp"]
+
+	# Skill hotbar labels
+	skill1_btn.text = "1: Auto-Atk [%s]" % ("ON" if d["auto_attacking"] else "OFF")
+	var cd2: float = d["skill2_cd"]
+	skill2_btn.text = ("%s (%.1fs)" % [d["skill2_label"], cd2]) if cd2 > 0.0 else str(d["skill2_label"])
+	var cd3: float = d["skill3_cd"]
+	if d["siege_mode"]:
+		skill3_btn.text = "3: Siege [ACTIVE]"
+	elif cd3 > 0.0:
+		skill3_btn.text = "%s (%.1fs)" % [d["skill3_label"], cd3]
+	else:
+		skill3_btn.text = str(d["skill3_label"])
+
+	var sig_active := bool(d["frame_mounted"]) or bool(d["daeva_possessed"])
+	skill4_btn.text = ("%s [ON]" % d["skill4_label"]) if sig_active else str(d["skill4_label"])
+
+	# Mining bar
 	var mining: bool = d["is_mining"]
 	mining_panel.visible = mining
 	if mining:

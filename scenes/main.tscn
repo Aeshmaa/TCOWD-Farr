@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/hud.gd" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/farr_vein.tscn" id="5_vein"]
 [ext_resource type="PackedScene" path="res://scenes/refinery_station.tscn" id="6_refinery"]
+[ext_resource type="PackedScene" path="res://scenes/enemy_unit.tscn" id="7_enemy"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.12, 0.15, 0.22, 1)
@@ -142,6 +143,40 @@ value_per_unit = 75
 mine_duration = 3.2
 crystal_color = Color(0.95, 0.25, 0.35, 1)
 
+[node name="RivalMinerEast" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, -8.5)
+enemy_name = "Rival Strip-Miner"
+level = 10
+max_hp = 200
+attack_damage = 15
+bounty_reward = 140
+drop_farr_units = 15
+drop_farr_value = 300
+
+[node name="CorruptedDaevaGuard" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -9.5)
+enemy_name = "Druj Vein-Stalker"
+level = 18
+max_hp = 340
+attack_damage = 24
+bounty_reward = 260
+drop_farr_units = 25
+drop_farr_value = 650
+body_color = Color(0.45, 0.15, 0.55, 1)
+accent_color = Color(1, 0.2, 0.45, 1)
+
+[node name="RogueAutomaton" parent="." instance=ExtResource("7_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, -12)
+enemy_name = "Orphaned Fork-Drone"
+level = 22
+max_hp = 420
+attack_damage = 28
+bounty_reward = 350
+drop_farr_units = 30
+drop_farr_value = 900
+body_color = Color(0.25, 0.42, 0.48, 1)
+accent_color = Color(0.2, 0.95, 1, 1)
+
 [node name="Player" parent="." instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
 
@@ -194,30 +229,58 @@ text = "Simulate Death [K]"
 
 [node name="HelpLabel" type="Label" parent="HUD"]
 offset_left = 16.0
-offset_top = 52.0
-offset_right = 880.0
-offset_bottom = 110.0
-text = "Left-Click Vein: Walk & Mine (locks in place)  |  Left-Click Refinery: Extract & Pay Debt  |  Right-Drag: 360° Orbit"
+offset_top = 50.0
+offset_right = 920.0
+offset_bottom = 96.0
+text = "Click Enemy / [Tab]: Target & Attack  |  [1-4]: Skills & Faction Signature  |  Click Vein: Mine  |  Click Refinery: Pay Debt"
+
+[node name="TargetPanel" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 54.0
+offset_right = 180.0
+offset_bottom = 112.0
+grow_horizontal = 2
+
+[node name="VBox" type="VBoxContainer" parent="HUD/TargetPanel"]
+layout_mode = 2
+
+[node name="TargetLabel" type="Label" parent="HUD/TargetPanel/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+modulate = Color(1, 0.55, 0.55, 1)
+text = "Lv.10 Rival Strip-Miner"
+
+[node name="TargetBar" type="ProgressBar" parent="HUD/TargetPanel/VBox"]
+layout_mode = 2
 
 [node name="EconomyPanel" type="PanelContainer" parent="HUD"]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -410.0
+offset_left = -430.0
 offset_top = 14.0
 offset_right = -16.0
-offset_bottom = 132.0
+offset_bottom = 158.0
 grow_horizontal = 0
 
 [node name="Margin" type="VBoxContainer" parent="HUD/EconomyPanel"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 5
 
 [node name="EconomyLabel" type="Label" parent="HUD/EconomyPanel/Margin"]
 layout_mode = 2
-text = "Ark Debt: 5000 FC   |   Wallet: 0 FC
-Unrefined Farr: 0 units (est. 0 FC)
-Carry Weight: 0 / 100"
+text = "Lv.1 (Sveleitre)  |  HP: 300 / 300  |  ATK: 28
+Ark Debt: 5000 FC   |   Wallet: 0 FC
+Unrefined Farr: 0 (0 FC)  |  Wt: 0/100"
+
+[node name="HpBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
+layout_mode = 2
+max_value = 300.0
+value = 300.0
 
 [node name="WeightBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
 layout_mode = 2
@@ -231,9 +294,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -210.0
-offset_top = -115.0
+offset_top = -155.0
 offset_right = 210.0
-offset_bottom = -55.0
+offset_bottom = -95.0
 grow_horizontal = 2
 grow_vertical = 0
 
@@ -248,14 +311,53 @@ text = "Mining Farr Vein..."
 [node name="MiningBar" type="ProgressBar" parent="HUD/MiningPanel/VBox"]
 layout_mode = 2
 
+[node name="SkillBar" type="HBoxContainer" parent="HUD"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -360.0
+offset_top = -82.0
+offset_right = 360.0
+offset_bottom = -42.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="Skill1" type="Button" parent="HUD/SkillBar"]
+custom_minimum_size = Vector2(165, 38)
+layout_mode = 2
+focus_mode = 0
+text = "1: Auto-Atk [OFF]"
+
+[node name="Skill2" type="Button" parent="HUD/SkillBar"]
+custom_minimum_size = Vector2(165, 38)
+layout_mode = 2
+focus_mode = 0
+text = "2: Rail Piercer"
+
+[node name="Skill3" type="Button" parent="HUD/SkillBar"]
+custom_minimum_size = Vector2(165, 38)
+layout_mode = 2
+focus_mode = 0
+text = "3: Siege Mode"
+
+[node name="Skill4" type="Button" parent="HUD/SkillBar"]
+custom_minimum_size = Vector2(175, 38)
+layout_mode = 2
+focus_mode = 0
+text = "4: Titan Frame"
+
 [node name="LogLabel" type="Label" parent="HUD"]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -36.0
-offset_right = 1100.0
-offset_bottom = -12.0
+offset_top = -34.0
+offset_right = 1200.0
+offset_bottom = -10.0
 grow_vertical = 0
 modulate = Color(0.85, 0.95, 1, 1)
 text = "> Ready."
