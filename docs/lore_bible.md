@@ -91,7 +91,10 @@ Every faction gets **at least one healer/support and one tank** so team play alw
 ### Combat Model (tab‑target + skills)
 - **Basic attack:** an auto‑attack with your weapon type (melee, ranged, or caster bolt). There's no light/heavy split.
 - **Skills:** on a hotbar, each with its own cooldown and resource cost (stamina for martial classes, Farr‑charge for casters and machines).
-- **Faction signatures:** Fravashi (Order), Possession (Legion), Frames and Siege Mode (Sveleitre).
+- **Faction signatures (strictly 1 per race):**
+  - **Order of the Oracle:** **Fravashi Summon** (AI guardian spirit that follows, tanks aggro, and levels up; costly re-binding rite if shattered).
+  - **Legion of the Druj:** **Dread-Titan Mount** (mounts a massive 2.2x obsidian-and-iron war construct with huge HP and damage, but every hit taken adds heavy repair debt to Pact Debt).
+  - **Sveleitre:** **Siege Mode** (locks in place to fire long-range AoE artillery shells; every shot burns Ark Debt).
 - **Why tab‑target:** it tolerates lag much better for an MMO‑style game with three factions in large PvP fights, and the networking is far simpler than action combat (dodges, hitbox timing).
 
 ---
