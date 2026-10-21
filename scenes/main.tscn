@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
 [ext_resource type="Script" path="res://scripts/camera_rig.gd" id="3_camrig"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="4_hud"]
+[ext_resource type="PackedScene" path="res://scenes/farr_vein.tscn" id="5_vein"]
+[ext_resource type="PackedScene" path="res://scenes/refinery_station.tscn" id="6_refinery"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.12, 0.15, 0.22, 1)
@@ -32,10 +34,10 @@ roughness = 0.9
 
 [sub_resource type="BoxMesh" id="BoxMesh_ground"]
 material = SubResource("StandardMaterial3D_ground")
-size = Vector3(50, 1, 50)
+size = Vector3(60, 1, 60)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
-size = Vector3(50, 1, 50)
+size = Vector3(60, 1, 60)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pillar"]
 albedo_color = Color(0.38, 0.36, 0.33, 1)
@@ -58,19 +60,6 @@ size = Vector3(8, 2, 1.5)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
 size = Vector3(8, 2, 1.5)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_farr"]
-albedo_color = Color(0.95, 0.68, 0.15, 1)
-emission_enabled = true
-emission = Color(0.95, 0.6, 0.1, 1)
-emission_energy_multiplier = 1.6
-
-[sub_resource type="PrismMesh" id="PrismMesh_farr"]
-material = SubResource("StandardMaterial3D_farr")
-size = Vector3(1.6, 2.2, 1.6)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_farr"]
-size = Vector3(1.6, 2.2, 1.6)
 
 [node name="Main" type="Node3D"]
 
@@ -113,7 +102,7 @@ mesh = SubResource("BoxMesh_pillar")
 shape = SubResource("BoxShape3D_pillar")
 
 [node name="RuinedWall" type="StaticBody3D" parent="World"]
-transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, -2, 1, 5)
+transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, -2, 1, 3)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="World/RuinedWall"]
 mesh = SubResource("BoxMesh_wall")
@@ -121,16 +110,40 @@ mesh = SubResource("BoxMesh_wall")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/RuinedWall"]
 shape = SubResource("BoxShape3D_wall")
 
-[node name="FarrVeinPlaceholder" type="StaticBody3D" parent="World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1.1, 4)
+[node name="RefineryStation" parent="World" instance=ExtResource("6_refinery")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 9)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/FarrVeinPlaceholder"]
-mesh = SubResource("PrismMesh_farr")
+[node name="LowGradeVein" parent="World" instance=ExtResource("5_vein")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 4)
+vein_name = "Low-Grade Farr Vein"
+max_units = 5
+yield_per_cycle = 10
+weight_per_unit = 2.0
+value_per_unit = 20
+mine_duration = 1.8
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/FarrVeinPlaceholder"]
-shape = SubResource("BoxShape3D_farr")
+[node name="RichFarrVein" parent="World" instance=ExtResource("5_vein")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -9)
+vein_name = "Rich Farr Vein"
+max_units = 4
+yield_per_cycle = 15
+weight_per_unit = 2.0
+value_per_unit = 40
+mine_duration = 2.5
+crystal_color = Color(1, 0.52, 0.12, 1)
+
+[node name="ScarMegavein" parent="World" instance=ExtResource("5_vein")]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -10, 0, -11)
+vein_name = "Scar Megavein Core"
+max_units = 6
+yield_per_cycle = 20
+weight_per_unit = 2.0
+value_per_unit = 75
+mine_duration = 3.2
+crystal_color = Color(0.95, 0.25, 0.35, 1)
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
 
 [node name="CameraRig" type="Node3D" parent="."]
 script = ExtResource("3_camrig")
@@ -145,13 +158,14 @@ far = 200.0
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("4_hud")
 camera_rig_path = NodePath("../CameraRig")
+player_path = NodePath("../Player")
 
 [node name="TopBar" type="HBoxContainer" parent="HUD"]
 offset_left = 16.0
 offset_top = 14.0
-offset_right = 760.0
-offset_bottom = 48.0
-theme_override_constants/separation = 10
+offset_right = 1150.0
+offset_bottom = 46.0
+theme_override_constants/separation = 8
 
 [node name="CamModeButton" type="Button" parent="HUD/TopBar"]
 layout_mode = 2
@@ -168,11 +182,80 @@ layout_mode = 2
 focus_mode = 0
 text = "Reset Cam [R]"
 
+[node name="FactionButton" type="Button" parent="HUD/TopBar"]
+layout_mode = 2
+focus_mode = 0
+text = "Faction [F]: Sveleitre"
+
+[node name="DeathButton" type="Button" parent="HUD/TopBar"]
+layout_mode = 2
+focus_mode = 0
+text = "Simulate Death [K]"
+
 [node name="HelpLabel" type="Label" parent="HUD"]
 offset_left = 16.0
-offset_top = 56.0
-offset_right = 820.0
-offset_bottom = 135.0
-text = "Left Click / Hold: Move on NavMesh   |   WASD / Arrows: Direct Move
-Hold Right-Click (or Middle-Click) + Drag: Rotate 360° & Tilt   |   Scroll Wheel: Zoom In Close <-> Far War View
-[C] or CAM Button: Cycle 4 RF Camera Modes (360° Orbit / Chase Behind / Iso Lock / Stay Still)"
+offset_top = 52.0
+offset_right = 880.0
+offset_bottom = 110.0
+text = "Left-Click Vein: Walk & Mine (locks in place)  |  Left-Click Refinery: Extract & Pay Debt  |  Right-Drag: 360° Orbit"
+
+[node name="EconomyPanel" type="PanelContainer" parent="HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -410.0
+offset_top = 14.0
+offset_right = -16.0
+offset_bottom = 132.0
+grow_horizontal = 0
+
+[node name="Margin" type="VBoxContainer" parent="HUD/EconomyPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EconomyLabel" type="Label" parent="HUD/EconomyPanel/Margin"]
+layout_mode = 2
+text = "Ark Debt: 5000 FC   |   Wallet: 0 FC
+Unrefined Farr: 0 units (est. 0 FC)
+Carry Weight: 0 / 100"
+
+[node name="WeightBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
+layout_mode = 2
+max_value = 100.0
+
+[node name="MiningPanel" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -210.0
+offset_top = -115.0
+offset_right = 210.0
+offset_bottom = -55.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="HUD/MiningPanel"]
+layout_mode = 2
+
+[node name="MiningLabel" type="Label" parent="HUD/MiningPanel/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Mining Farr Vein..."
+
+[node name="MiningBar" type="ProgressBar" parent="HUD/MiningPanel/VBox"]
+layout_mode = 2
+
+[node name="LogLabel" type="Label" parent="HUD"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -36.0
+offset_right = 1100.0
+offset_bottom = -12.0
+grow_vertical = 0
+modulate = Color(0.85, 0.95, 1, 1)
+text = "> Ready."

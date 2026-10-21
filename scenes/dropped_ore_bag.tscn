@@ -1,0 +1,38 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/dropped_ore_bag.gd" id="1_bag"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bag"]
+albedo_color = Color(0.95, 0.42, 0.15, 1)
+emission_enabled = true
+emission = Color(0.95, 0.35, 0.1, 1)
+emission_energy_multiplier = 1.2
+
+[sub_resource type="SphereMesh" id="SphereMesh_bag"]
+material = SubResource("StandardMaterial3D_bag")
+radius = 0.45
+height = 0.8
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_bag"]
+radius = 0.55
+
+[node name="DroppedOreBag" type="StaticBody3D"]
+script = ExtResource("1_bag")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+mesh = SubResource("SphereMesh_bag")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("SphereShape3D_bag")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+pixel_size = 0.01
+billboard = 1
+no_depth_test = true
+modulate = Color(1, 0.65, 0.35, 1)
+text = "Dropped Farr Bag"
+font_size = 24
+outline_size = 8

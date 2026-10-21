@@ -1,0 +1,29 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/farr_vein.gd" id="1_vein"]
+
+[sub_resource type="PrismMesh" id="PrismMesh_vein"]
+size = Vector3(1.6, 2.3, 1.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vein"]
+size = Vector3(1.6, 2.3, 1.6)
+
+[node name="FarrVein" type="StaticBody3D"]
+script = ExtResource("1_vein")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("PrismMesh_vein")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+shape = SubResource("BoxShape3D_vein")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 0)
+pixel_size = 0.01
+billboard = 1
+no_depth_test = true
+text = "Farr Vein"
+font_size = 26
+outline_size = 8

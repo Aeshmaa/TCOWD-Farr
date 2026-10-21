@@ -17,6 +17,8 @@ func _enter_tree() -> void:
 	_add_key("cam_mode_cycle", KEY_C)
 	_add_key("cam_projection_toggle", KEY_V)
 	_add_key("cam_reset", KEY_R)
+	_add_key("faction_cycle", KEY_F)
+	_add_key("simulate_death", KEY_K)
 
 
 func _ensure_action(action: StringName) -> void:
