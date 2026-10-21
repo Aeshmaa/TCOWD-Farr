@@ -1,6 +1,7 @@
 extends CharacterBody3D
 ## Phase 1 player controller.
-## - Left click (or hold) to move along the navmesh, RF Online style.
+## - Left click (or hold) on the 3D world to move along the navmesh, RF Online style.
+## - Clicking UI buttons will NOT trigger movement.
 ## - WASD / arrow keys move relative to the camera and cancel the click target.
 
 @export var move_speed := 5.0
@@ -14,10 +15,21 @@ extends CharacterBody3D
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _has_click_target := false
+var _holding_world_click := false
 var _retarget_timer := 0.0
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("move_click"):
+		_holding_world_click = true
+		_retarget_timer = 0.0
+	elif event.is_action_released("move_click"):
+		_holding_world_click = false
+
+
 func _physics_process(delta: float) -> void:
+	if not Input.is_action_pressed("move_click"):
+		_holding_world_click = false
 	_handle_click(delta)
 
 	var wish := Vector3.ZERO
@@ -48,9 +60,7 @@ func _physics_process(delta: float) -> void:
 
 func _handle_click(delta: float) -> void:
 	_retarget_timer -= delta
-	if Input.is_action_just_pressed("move_click"):
-		_retarget_timer = 0.0
-	if Input.is_action_pressed("move_click") and _retarget_timer <= 0.0:
+	if _holding_world_click and _retarget_timer <= 0.0:
 		_retarget_timer = hold_retarget_interval
 		var hit: Variant = _mouse_to_world(get_viewport().get_mouse_position())
 		if hit != null:

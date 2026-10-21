@@ -1,7 +1,5 @@
 extends Node
 ## Registers the default input actions at startup (autoload "InputSetup").
-## Keeping them in code keeps project.godot readable. You can later move them
-## to Project Settings > Input Map if you prefer editing them in the editor.
 
 
 func _enter_tree() -> void:
@@ -14,6 +12,11 @@ func _enter_tree() -> void:
 	_add_key("move_right", KEY_D)
 	_add_key("move_right", KEY_RIGHT)
 	_add_mouse("move_click", MOUSE_BUTTON_LEFT)
+	_add_mouse("cam_rotate", MOUSE_BUTTON_RIGHT)
+	_add_mouse("cam_rotate", MOUSE_BUTTON_MIDDLE)
+	_add_key("cam_mode_cycle", KEY_C)
+	_add_key("cam_projection_toggle", KEY_V)
+	_add_key("cam_reset", KEY_R)
 
 
 func _ensure_action(action: StringName) -> void:
