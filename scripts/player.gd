@@ -2,11 +2,14 @@ extends CharacterBody3D
 ## Phase 1–4 Player Controller:
 ## - NavMesh click-to-move + WASD movement
 ## - Farr Vein mining channel + Carry Weight + Refinery Debt payment + Chinvat Bridge death drop
-## - RF-style Tab-Target combat + 4-slot Skill Hotbar ([1]–[4])
-## - Asymmetric Faction Signatures:
-##     * Sveleitre: Titan Frame Mount (2.1x scale, repair debt on hit) + Siege Mode (locked artillery AoE)
-##     * Order of the Oracle: Fravashi AI Companion (follows, tanks aggro, levels up)
-##     * Legion of the Druj: Daeva Possession transformation (2.1x scale, high ATK + lifesteal, Pact Debt drain)
+## - RF-style Tab-Target combat + 4-slot Skill Hotbar:
+##     * [1] Basic Auto-Attack (Weapon)
+##     * [2] Single-Target Class Skill (4s cooldown)
+##     * [3] AoE Class Skill (6s cooldown)
+##     * [4] Exclusive Racial Signature (ONLY ONE per race, just like RF Online):
+##         - Sveleitre: Siege Mode (Locks in place, 14m artillery AoE, costs ammo debt per shell)
+##         - Order of the Oracle: Call Fravashi (Summons AI companion that follows, tanks aggro & levels up)
+##         - Legion of the Druj: Mount Dread-Titan (Mounts massive 2.2x Obsidian War-Frame, +350 HP & +90% ATK, costs heavy repair debt per hit taken)
 
 signal state_updated(status_data: Dictionary)
 signal event_logged(message: String)
@@ -18,11 +21,11 @@ const FACTIONS := [
 	{
 		"name": "Sveleitre",
 		"debt_name": "Ark Debt",
-		"upkeep_label": "Frame & Core Upkeep",
+		"upkeep_label": "Core & Ammo Upkeep",
 		"color": Color(0.3, 0.9, 1.0),
 		"skill2": "2: Rail Piercer",
-		"skill3": "3: Siege Mode",
-		"skill4": "4: Titan Frame",
+		"skill3": "3: Null-Pulse AoE",
+		"skill4": "4: Siege Mode",
 	},
 	{
 		"name": "Order of the Oracle",
@@ -36,11 +39,11 @@ const FACTIONS := [
 	{
 		"name": "Legion of the Druj",
 		"debt_name": "Pact Debt",
-		"upkeep_label": "Ahriman Pact Tribute",
+		"upkeep_label": "Dread-Titan Upkeep",
 		"color": Color(0.95, 0.3, 0.35),
 		"skill2": "2: Aka Rend",
 		"skill3": "3: Druj Nova",
-		"skill4": "4: Daeva Form",
+		"skill4": "4: Dread-Titan Mount",
 	},
 ]
 
@@ -79,18 +82,16 @@ var wallet_credits := 0
 var is_mining := false
 var mining_progress := 0.0
 
-# Combat & Faction Signature states
+# Combat & Exclusive Racial Signature states (1 per race)
 var selected_enemy: EnemyUnit = null
 var auto_attacking := false
-var siege_mode := false
-var frame_mounted := false
-var daeva_possessed := false
-var fravashi_instance: FravashiCompanion = null
+var siege_mode := false          # Exclusive to Sveleitre ([4])
+var fravashi_instance: FravashiCompanion = null  # Exclusive to Order ([4])
+var frame_mounted := false       # Exclusive to Legion Dread-Titan Mount ([4])
 
 var _attack_cd := 0.0
 var _skill2_cd := 0.0
 var _skill3_cd := 0.0
-var _pact_drain_timer := 0.0
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _has_click_target := false
@@ -110,7 +111,7 @@ func _ready() -> void:
 	_apply_faction_tint()
 	_connect_world_enemies()
 	_emit_state()
-	event_logged.emit("Ready! Click Enemy to Target/Attack, [Tab] cycle target, [1-4] Skills, or click a Farr Vein to mine.")
+	event_logged.emit("Ready! [1] Auto-Atk, [2] Single Skill, [3] AoE Skill, [4] Exclusive Race Signature.")
 
 
 func _connect_world_enemies() -> void:
@@ -154,14 +155,6 @@ func _physics_process(delta: float) -> void:
 	if not auto_attacking and current_hp < max_hp:
 		current_hp = mini(max_hp, current_hp + int(ceil(max_hp * 0.02 * delta)))
 
-	# Legion Daeva Possession Pact Debt drain.
-	if daeva_possessed:
-		_pact_drain_timer += delta
-		if _pact_drain_timer >= 4.0:
-			_pact_drain_timer = 0.0
-			current_debt += 20
-			event_logged.emit("Daeva Possession drains +20 FC into Pact Debt.")
-
 	# Periodic faction upkeep tick.
 	_upkeep_timer -= delta
 	if _upkeep_timer <= 0.0:
@@ -180,9 +173,9 @@ func _physics_process(delta: float) -> void:
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 
 	if siege_mode:
-		# Siege mode locks the player in place!
+		# Sveleitre Siege Mode locks the player in place!
 		if input != Vector2.ZERO:
-			event_logged.emit("Locked in Siege Mode! Press [3] to undeploy before moving.")
+			event_logged.emit("Locked in Siege Mode! Press [4] to undeploy before moving.")
 		_clear_click_target()
 		wish = Vector3.ZERO
 	elif input != Vector2.ZERO:
@@ -256,18 +249,14 @@ func _handle_click(delta: float) -> void:
 			if is_mining:
 				_cancel_mining("Switched to combat.")
 			_interact_target = null
-			if selected_enemy == enemy:
-				auto_attacking = true
-				event_logged.emit("Engaging %s!" % enemy.enemy_name)
-			else:
-				_set_selected_enemy(enemy)
-				auto_attacking = true
-				event_logged.emit("Targeted & engaging %s." % enemy.enemy_name)
+			_set_selected_enemy(enemy)
+			auto_attacking = true
+			event_logged.emit("Targeted & engaging %s." % enemy.enemy_name)
 			_holding_world_click = false
 		elif collider is FarrVein or collider is RefineryStation or collider is DroppedOreBag:
 			var node := collider as Node3D
 			if siege_mode:
-				event_logged.emit("Cannot walk while in Siege Mode! Press [3] to undeploy.")
+				event_logged.emit("Cannot walk while in Siege Mode! Press [4] to undeploy.")
 				_holding_world_click = false
 				return
 			if is_mining and _mining_vein == node:
@@ -333,6 +322,7 @@ func use_skill(slot: int) -> void:
 	_emit_state()
 
 
+## [2] Single-Target Class Skill (shared structure across all 3 races)
 func _cast_skill_2() -> void:
 	if _skill2_cd > 0.0:
 		event_logged.emit("Skill 2 on cooldown (%.1fs)." % _skill2_cd)
@@ -343,8 +333,9 @@ func _cast_skill_2() -> void:
 		event_logged.emit("No target in range for Skill 2.")
 		return
 	var dist := Vector2(global_position.x - selected_enemy.global_position.x, global_position.z - selected_enemy.global_position.z).length()
-	if dist > 8.5:
-		event_logged.emit("Target too far for Skill 2 (move within 8.5m).")
+	var max_dist := 14.0 if siege_mode else 8.5
+	if dist > max_dist:
+		event_logged.emit("Target too far for Skill 2 (move within %.1fm)." % max_dist)
 		return
 	if is_mining:
 		_cancel_mining("")
@@ -352,29 +343,17 @@ func _cast_skill_2() -> void:
 	sprite.set_facing(selected_enemy.global_position - global_position)
 	var dmg := int(round(_effective_attack_damage() * 2.3))
 	selected_enemy.receive_damage(dmg, self)
-	if daeva_possessed:
-		current_hp = mini(max_hp, current_hp + int(dmg * 0.35))
 	var f: Dictionary = FACTIONS[faction_index]
 	event_logged.emit("%s hit %s for %d DMG!" % [f["skill2"], selected_enemy.enemy_name, dmg])
 
 
+## [3] AoE Class Skill (shared structure across all 3 races)
 func _cast_skill_3() -> void:
-	if faction_index == 0:
-		# Sveleitre: Toggle Siege Mode!
-		siege_mode = not siege_mode
-		if siege_mode:
-			if is_mining:
-				_cancel_mining("")
-			_clear_click_target()
-			event_logged.emit("SIEGE MODE DEPLOYED: Locked in place! Range 14m, AoE splash, +15 FC ammo debt per shot.")
-		else:
-			event_logged.emit("Siege Mode retracted. Mobile again.")
-		return
-
-	# Order (Pillar of Atar) / Legion (Druj Nova) AoE burst:
 	if _skill3_cd > 0.0:
 		event_logged.emit("Skill 3 on cooldown (%.1fs)." % _skill3_cd)
 		return
+	if is_mining:
+		_cancel_mining("")
 	var center := selected_enemy.global_position if (selected_enemy and not selected_enemy.is_dead) else global_position
 	_skill3_cd = 6.0
 	var dmg := int(round(_effective_attack_damage() * 1.9))
@@ -383,21 +362,23 @@ func _cast_skill_3() -> void:
 	event_logged.emit("%s unleashed! Hit %d enemy(s) for %d AoE DMG." % [f["skill3"], hits, dmg])
 
 
+## [4] Exclusive Racial Signature (ONLY ONE per race):
+##   - Sveleitre (0): Siege Mode (Accretia style)
+##   - Order (1): Call Fravashi Summon (Cora style)
+##   - Legion (2): Mount Dread-Titan Frame (Bellato MAU style)
 func _cast_signature_4() -> void:
 	if faction_index == 0:
-		# Sveleitre: Mount / Dismount Titan Frame
-		frame_mounted = not frame_mounted
-		_recalc_vital_stats()
-		if frame_mounted:
-			sprite.scale = Vector3(2.1, 2.1, 2.1)
-			sprite.position.y = 1.65
-			event_logged.emit("MOUNTED TITAN FRAME (2.1x scale, +300 HP, +80% ATK). Hits taken add Frame Repair Debt!")
+		# SVELEITRE EXCLUSIVE: Siege Mode
+		siege_mode = not siege_mode
+		if siege_mode:
+			if is_mining:
+				_cancel_mining("")
+			_clear_click_target()
+			event_logged.emit("SVELEITRE SIEGE MODE: Locked in place! Range 14m, AoE artillery shells (+15 FC Ark Debt/shot).")
 		else:
-			sprite.scale = Vector3.ONE
-			sprite.position.y = 0.8
-			event_logged.emit("Dismounted Titan Frame.")
+			event_logged.emit("Siege Mode retracted. Mobile again.")
 	elif faction_index == 1:
-		# Order: Summon / Dismiss Fravashi Companion
+		# ORDER EXCLUSIVE: Summon Fravashi Companion
 		if fravashi_instance == null or not is_instance_valid(fravashi_instance):
 			fravashi_instance = FRAVASHI_SCENE.instantiate() as FravashiCompanion
 			get_parent().add_child(fravashi_instance)
@@ -405,7 +386,7 @@ func _cast_signature_4() -> void:
 			fravashi_instance.companion_event.connect(func(msg: String) -> void: event_logged.emit(msg))
 			fravashi_instance.global_position = global_position + Vector3(1.5, 0.0, 1.0)
 			fravashi_instance.assigned_target = selected_enemy
-			event_logged.emit("Summoned Fravashi Guardian Spirit (Lv.%d)! It draws aggro and levels up." % fravashi_instance.level)
+			event_logged.emit("ORDER SIGNATURE: Summoned Fravashi Spirit (Lv.%d)! Draws aggro & levels up." % fravashi_instance.level)
 		else:
 			fravashi_instance.visible = not fravashi_instance.visible
 			if fravashi_instance.visible:
@@ -416,17 +397,17 @@ func _cast_signature_4() -> void:
 			else:
 				event_logged.emit("Dismissed Fravashi Spirit.")
 	elif faction_index == 2:
-		# Legion: Daeva Possession transformation
-		daeva_possessed = not daeva_possessed
+		# LEGION EXCLUSIVE: Mount Dread-Titan (massive war construct, expensive repair debt)
+		frame_mounted = not frame_mounted
 		_recalc_vital_stats()
-		if daeva_possessed:
-			sprite.scale = Vector3(2.1, 2.1, 2.1)
-			sprite.position.y = 1.65
-			event_logged.emit("DAEVA POSSESSION ACTIVE (2.1x scale, +110% ATK, 35% Lifesteal, drains Pact Debt)!")
+		if frame_mounted:
+			sprite.scale = Vector3(2.2, 2.2, 2.2)
+			sprite.position.y = 1.75
+			event_logged.emit("LEGION SIGNATURE: Mounted Dread-Titan Construct (2.2x scale, +350 HP, +90% ATK). Every hit taken costs +18 FC Repair Debt!")
 		else:
 			sprite.scale = Vector3.ONE
 			sprite.position.y = 0.8
-			event_logged.emit("Ended Daeva Possession.")
+			event_logged.emit("Dismounted Dread-Titan Construct.")
 
 
 func _process_auto_attack() -> void:
@@ -446,11 +427,9 @@ func _process_auto_attack() -> void:
 	if siege_mode:
 		current_debt += 15
 		var hits := _deal_aoe_damage(selected_enemy.global_position, 3.8, dmg)
-		event_logged.emit("Siege Artillery shell hit %d target(s) for %d DMG (+15 FC ammo debt)." % [hits, dmg])
+		event_logged.emit("Siege Artillery shell hit %d target(s) for %d DMG (+15 FC Ark Debt)." % [hits, dmg])
 	else:
 		selected_enemy.receive_damage(dmg, self)
-		if daeva_possessed:
-			current_hp = mini(max_hp, current_hp + int(dmg * 0.35))
 
 
 func _deal_aoe_damage(center: Vector3, radius: float, dmg: int) -> int:
@@ -470,8 +449,8 @@ func receive_damage(amount: int, attacker: Node3D) -> void:
 		_cancel_mining("Mining interrupted by enemy attack!")
 	current_hp = maxi(0, current_hp - amount)
 	if frame_mounted:
-		# Mounting a Titan Frame costs repair debt when hit!
-		current_debt += 12
+		# Legion Dread-Titan Mount adds heavy repair debt on every hit!
+		current_debt += 18
 	if selected_enemy == null and attacker is EnemyUnit:
 		_set_selected_enemy(attacker as EnemyUnit)
 	if current_hp <= 0:
@@ -502,9 +481,7 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 func _effective_attack_damage() -> int:
 	var mult := 1.0
 	if frame_mounted:
-		mult *= 1.8
-	if daeva_possessed:
-		mult *= 2.1
+		mult *= 1.9
 	if siege_mode:
 		mult *= 1.65
 	return int(round(base_attack_damage * mult))
@@ -513,13 +490,13 @@ func _effective_attack_damage() -> int:
 func _effective_attack_range() -> float:
 	if siege_mode:
 		return 14.0
-	if frame_mounted or daeva_possessed:
-		return 3.4
+	if frame_mounted:
+		return 3.5
 	return base_attack_range
 
 
 func _recalc_vital_stats() -> void:
-	var bonus_hp := 300 if frame_mounted else (150 if daeva_possessed else 0)
+	var bonus_hp := 350 if frame_mounted else 0
 	max_hp = base_max_hp + bonus_hp
 	current_hp = mini(current_hp, max_hp)
 
@@ -631,10 +608,8 @@ func _loot_dropped_bag(bag: DroppedOreBag) -> void:
 
 
 func cycle_faction() -> void:
-	# Reset active signature states when switching faction skin.
 	siege_mode = false
 	frame_mounted = false
-	daeva_possessed = false
 	sprite.scale = Vector3.ONE
 	sprite.position.y = 0.8
 	if fravashi_instance and is_instance_valid(fravashi_instance):
@@ -644,7 +619,7 @@ func cycle_faction() -> void:
 	_recalc_vital_stats()
 	_apply_faction_tint()
 	var f: Dictionary = FACTIONS[faction_index]
-	event_logged.emit("Switched Faction -> %s (%s). Press [4] for signature ability!" % [f["name"], f["debt_name"]])
+	event_logged.emit("Switched Race -> %s (%s). Exclusive [4]: %s" % [f["name"], f["debt_name"], f["skill4"]])
 
 
 func simulate_death() -> void:
@@ -729,6 +704,8 @@ func _emit_state() -> void:
 		target_hp = selected_enemy.current_hp
 		target_max_hp = selected_enemy.max_hp
 
+	var sig_active := siege_mode or frame_mounted or (fravashi_instance != null and is_instance_valid(fravashi_instance) and fravashi_instance.visible)
+
 	state_updated.emit({
 		"faction": f["name"],
 		"debt_name": f["debt_name"],
@@ -749,9 +726,7 @@ func _emit_state() -> void:
 		"target_hp": target_hp,
 		"target_max_hp": target_max_hp,
 		"auto_attacking": auto_attacking,
-		"siege_mode": siege_mode,
-		"frame_mounted": frame_mounted,
-		"daeva_possessed": daeva_possessed,
+		"sig_active": sig_active,
 		"skill2_label": f["skill2"],
 		"skill3_label": f["skill3"],
 		"skill4_label": f["skill4"],

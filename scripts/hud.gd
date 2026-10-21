@@ -91,14 +91,9 @@ func _on_player_state(d: Dictionary) -> void:
 	var cd2: float = d["skill2_cd"]
 	skill2_btn.text = ("%s (%.1fs)" % [d["skill2_label"], cd2]) if cd2 > 0.0 else str(d["skill2_label"])
 	var cd3: float = d["skill3_cd"]
-	if d["siege_mode"]:
-		skill3_btn.text = "3: Siege [ACTIVE]"
-	elif cd3 > 0.0:
-		skill3_btn.text = "%s (%.1fs)" % [d["skill3_label"], cd3]
-	else:
-		skill3_btn.text = str(d["skill3_label"])
+	skill3_btn.text = ("%s (%.1fs)" % [d["skill3_label"], cd3]) if cd3 > 0.0 else str(d["skill3_label"])
 
-	var sig_active := bool(d["frame_mounted"]) or bool(d["daeva_possessed"])
+	var sig_active := bool(d["sig_active"])
 	skill4_btn.text = ("%s [ON]" % d["skill4_label"]) if sig_active else str(d["skill4_label"])
 
 	# Mining bar
