@@ -63,10 +63,13 @@ var _talic_upgrade_btn: Button
 var _bag_tab_btns: Array[Button] = []
 var _auto_arrange_btn: Button
 var _bag_slot_btns: Array[Button] = []
+var _reset_meter_btn: Button
+var _log_lines: Array[String] = []
 
 
 func _ready() -> void:
 	_build_inventory_window()
+	_build_combat_meter_controls()
 
 	_rig = get_node_or_null(camera_rig_path)
 	if _rig:
@@ -101,6 +104,20 @@ func _ready() -> void:
 		pot_sp_btn.pressed.connect(func() -> void: _player.use_potion("SP", false))
 		scroll_btn.pressed.connect(func() -> void: _player.use_teleport_scroll())
 		_player._emit_state()
+
+
+func _build_combat_meter_controls() -> void:
+	var econ_vbox := get_node_or_null("EconomyPanel/Margin") as VBoxContainer
+	if econ_vbox:
+		_reset_meter_btn = Button.new()
+		_reset_meter_btn.focus_mode = Control.FOCUS_NONE
+		_reset_meter_btn.modulate = Color(1.0, 0.85, 0.55)
+		_reset_meter_btn.text = "Reset DMG / Heal Telemetry Meter"
+		_reset_meter_btn.pressed.connect(func() -> void:
+			if _player and _player.has_method("reset_combat_telemetry"):
+				_player.reset_combat_telemetry()
+		)
+		econ_vbox.add_child(_reset_meter_btn)
 
 
 func _build_inventory_window() -> void:
@@ -250,8 +267,17 @@ func _on_player_state(d: Dictionary) -> void:
 		+ "Rebirth Spawn: %s\n" % d.get("respawn_name", "HQ Default")
 		+ "HP: %d/%d   |   FP: %d/%d   |   SP: %d/%d\n" % [d["hp"], d["max_hp"], d["fp"], d["max_fp"], d["sp"], d["max_sp"]]
 		+ "%s: %d %s   |   Wallet: %d %s (%s)\n" % [d["debt_name"], d["debt"], code, d["wallet"], code, d["currency_name"]]
-		+ "Ammo/Force: %d   |   Farr: %d (%d %s)   |   Wt: %.0f/%.0f%s" % [
+		+ "Ammo/Force: %d   |   Farr: %d (%d %s)   |   Wt: %.0f/%.0f%s\n" % [
 			d["ammo"], d["unrefined_units"], d["unrefined_value"], code, wt, max_wt, overburden
+		]
+		+ "DMG Out: %d (Last: -%d | Max: -%d)  |  DMG In: %d (Last: -%d)  |  Healed: +%d HP (Last: +%d)" % [
+			int(d.get("dmg_dealt_total", 0)),
+			int(d.get("dmg_dealt_last", 0)),
+			int(d.get("dmg_dealt_max", 0)),
+			int(d.get("dmg_taken_total", 0)),
+			int(d.get("dmg_taken_last", 0)),
+			int(d.get("hp_healed_total", 0)),
+			int(d.get("hp_healed_last", 0)),
 		]
 	)
 	hp_bar.max_value = d["max_hp"]
@@ -398,4 +424,7 @@ func _update_inventory_window(d: Dictionary) -> void:
 
 
 func _on_event_logged(msg: String) -> void:
-	log_label.text = "> " + msg
+	_log_lines.append("> " + msg)
+	while _log_lines.size() > 2:
+		_log_lines.pop_front()
+	log_label.text = "\n".join(_log_lines)

@@ -5,6 +5,8 @@ extends CharacterBody3D
 
 signal companion_event(msg: String)
 
+const FLOATING_TEXT := preload("res://scripts/floating_combat_text.gd")
+
 @export var move_speed := 5.8
 @export var follow_distance := 2.2
 @export var attack_range := 2.4
@@ -54,7 +56,9 @@ func _physics_process(delta: float) -> void:
 			sprite.set_facing(to_enemy)
 			if _attack_timer <= 0.0:
 				_attack_timer = attack_interval
-				assigned_target.receive_damage(attack_damage, self)
+				assigned_target.receive_damage(attack_damage, self, false, "[Fravashi]")
+				if owner_player and is_instance_valid(owner_player) and owner_player.has_method("record_damage_dealt"):
+					owner_player.call("record_damage_dealt", attack_damage)
 				gain_xp(12)
 	else:
 		var to_owner := owner_player.global_position - global_position
@@ -81,6 +85,14 @@ func receive_damage(amount: int, attacker: Node3D) -> void:
 	if not visible:
 		return
 	current_hp = maxi(0, current_hp - amount)
+	FLOATING_TEXT.spawn(
+		self,
+		global_position + Vector3(0.0, 2.0, 0.0),
+		"-%d [Fravashi]" % amount,
+		Color(1.0, 0.42, 0.35),
+		30,
+		1.5
+	)
 	if assigned_target == null and attacker is EnemyUnit:
 		assigned_target = attacker as EnemyUnit
 	_refresh_label()

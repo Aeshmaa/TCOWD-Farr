@@ -11,6 +11,7 @@ signal event_logged(message: String)
 
 const DROPPED_BAG_SCENE := preload("res://scenes/dropped_ore_bag.tscn")
 const FRAVASHI_SCENE := preload("res://scenes/fravashi_companion.tscn")
+const FLOATING_TEXT := preload("res://scripts/floating_combat_text.gd")
 
 @export var base_move_speed := 6.0
 @export var overburdened_speed_mult := 0.6
@@ -52,6 +53,15 @@ var _armor_vendor_slot_cursor := 1 # Cycles HELMET..SHOES when buying individual
 var _upgrade_slot_cursor := 0      # Cycles WEAPON..SHOES for +1..+7 Farr Talic upgrading
 var _shield_buff_timer := 0.0      # Tank Job Fortify Buff (40% damage reduction)
 var quest_kills := 0               # Repeatable Faction Bounty Quest kill counter (3 Kills + 10 Farr -> 1 Talic)
+
+## Live Combat Damage & Heal Telemetry Meter
+var combat_dmg_dealt_total := 0
+var combat_dmg_dealt_last := 0
+var combat_dmg_dealt_max := 0
+var combat_dmg_taken_total := 0
+var combat_dmg_taken_last := 0
+var combat_hp_healed_total := 0
+var combat_hp_healed_last := 0
 
 ## Persistent Character Save (RF-style: log back in exactly where you left off)
 ## - Bags, equipment, wallet, debt, level, position & carried Farr ore all persist.
@@ -631,6 +641,7 @@ func cycle_auto_charger(kind: String) -> void:
 
 func use_potion(kind: String, is_auto: bool) -> void:
 	var tag := "[Auto-Charger] " if is_auto else ""
+	var float_tag := "[Auto]" if is_auto else ""
 	if kind == "HP":
 		if not consume_item_from_bags("POT_HP", 1):
 			if not is_auto:
@@ -639,6 +650,7 @@ func use_potion(kind: String, is_auto: bool) -> void:
 		var heal := int(round(max_hp * 0.55))
 		current_hp = mini(max_hp, current_hp + heal)
 		_potion_cd = 1.2
+		record_heal_or_restore(heal, 0, 0, float_tag)
 		event_logged.emit("%sUsed HP Potion (+%d HP, %d left in Bags)." % [tag, heal, get_item_count("POT_HP")])
 	elif kind == "FP":
 		if not consume_item_from_bags("POT_FP", 1):
@@ -648,6 +660,7 @@ func use_potion(kind: String, is_auto: bool) -> void:
 		var gain := int(round(max_fp * 0.6))
 		current_fp = mini(max_fp, current_fp + gain)
 		_potion_cd = 1.2
+		record_heal_or_restore(0, gain, 0, float_tag)
 		event_logged.emit("%sUsed FP Charger (+%d FP, %d left in Bags)." % [tag, gain, get_item_count("POT_FP")])
 	elif kind == "SP":
 		if not consume_item_from_bags("POT_SP", 1):
@@ -657,6 +670,7 @@ func use_potion(kind: String, is_auto: bool) -> void:
 		var gain := int(round(max_sp * 0.6))
 		current_sp = mini(max_sp, current_sp + gain)
 		_potion_cd = 1.2
+		record_heal_or_restore(0, 0, gain, float_tag)
 		event_logged.emit("%sUsed SP Stim (+%d SP, %d left in Bags)." % [tag, gain, get_item_count("POT_SP")])
 	_emit_state()
 
@@ -801,9 +815,11 @@ func execute_vendor_action(action_index: int) -> void:
 					event_logged.emit("%s: Need %d %s for Full Vital Restoration." % [active_vendor_npc.npc_name, heal_cost, code])
 					return
 				wallet_credits -= heal_cost
+				var hp_restored := maxi(1, max_hp - current_hp)
 				current_hp = max_hp
 				current_fp = max_fp
 				current_sp = max_sp
+				record_heal_or_restore(hp_restored, 0, 0, "[Rebirth Shrine]")
 				save_game()
 				event_logged.emit("%s: Restored 100%% HP / FP / SP (-%d %s) & saved progress!" % [active_vendor_npc.npc_name, heal_cost, code])
 			3:
@@ -1078,9 +1094,12 @@ func _cast_skill_2() -> void:
 	sprite.set_facing(selected_enemy.global_position - global_position)
 	var dmg := int(round(_effective_attack_damage() * float(s2["mult"])))
 	var effect: String = str(s2.get("effect", "NONE"))
+	var hit_tag := "[SKILL]"
 	if effect == "ARMOR_PIERCE":
 		dmg = int(round(dmg * 1.22))
-	selected_enemy.receive_damage(dmg, self)
+		hit_tag = "[CRIT PIERCE!]"
+	selected_enemy.receive_damage(dmg, self, true, hit_tag)
+	record_damage_dealt(dmg)
 	var fx_note := _apply_skill_effect(effect, dmg)
 	event_logged.emit("%s hit %s for %d DMG%s (-%d FP, -%d SP)!" % [
 		s2["name"], selected_enemy.enemy_name, dmg, fx_note, fp_cost, sp_cost
@@ -1105,7 +1124,7 @@ func _cast_skill_3() -> void:
 	_skill3_cd = float(s3["cd"])
 	var dmg := int(round(_effective_attack_damage() * float(s3["mult"])))
 	var effect: String = str(s3.get("effect", "NONE"))
-	var hits := _deal_aoe_damage(center, float(s3["radius"]), dmg)
+	var hits := _deal_aoe_damage(center, float(s3["radius"]), dmg, true, "[AoE SKILL]")
 	var fx_note := _apply_skill_effect(effect, dmg * maxi(1, hits))
 	event_logged.emit("%s hit %d enemy(s) for %d AoE DMG%s (-%d FP, -%d SP)!" % [
 		s3["name"], hits, dmg, fx_note, fp_cost, sp_cost
@@ -1118,24 +1137,37 @@ func _apply_skill_effect(effect: String, dmg_dealt: int) -> String:
 			_shield_buff_timer = 8.0
 			var heal := int(round(max_hp * 0.18))
 			current_hp = mini(max_hp, current_hp + heal)
+			record_heal_or_restore(heal, 0, 0, "[Fortify]")
 			return " [Tank Fortify: -40%% Dmg Taken 8s & +%d HP]" % heal
 		"LIFESTEAL":
 			var drain := maxi(15, int(round(dmg_dealt * 0.32)))
 			current_hp = mini(max_hp, current_hp + drain)
+			record_heal_or_restore(drain, 0, 0, "[Lifesteal]")
 			return " [Drained +%d HP]" % drain
 		"HEAL_SELF":
 			var heal_s := int(round(max_hp * 0.28))
 			var sp_s := int(round(max_sp * 0.20))
 			current_hp = mini(max_hp, current_hp + heal_s)
 			current_sp = mini(max_sp, current_sp + sp_s)
+			record_heal_or_restore(heal_s, 0, sp_s, "[Self-Heal]")
 			return " [Self-Repair: +%d HP, +%d SP]" % [heal_s, sp_s]
 		"HEAL_PULSE":
 			var heal_p := int(round(max_hp * 0.45))
 			var sp_p := int(round(max_sp * 0.25))
 			current_hp = mini(max_hp, current_hp + heal_p)
 			current_sp = mini(max_sp, current_sp + sp_p)
+			record_heal_or_restore(heal_p, 0, sp_p, "[Pulse]")
 			if fravashi_instance and is_instance_valid(fravashi_instance) and fravashi_instance.visible:
+				var f_heal := maxi(1, fravashi_instance.max_hp - fravashi_instance.current_hp)
 				fravashi_instance.current_hp = fravashi_instance.max_hp
+				FLOATING_TEXT.spawn(
+					fravashi_instance,
+					fravashi_instance.global_position + Vector3(0.0, 2.1, 0.0),
+					"+%d HP [Fravashi]" % f_heal,
+					Color(0.28, 1.0, 0.48),
+					32,
+					1.6
+				)
 			return " [Sanctuary Heal Pulse: +%d HP, +%d SP]" % [heal_p, sp_p]
 		"ARMOR_PIERCE":
 			return " [Armor-Piercing Crit!]"
@@ -1207,20 +1239,24 @@ func _process_auto_attack() -> void:
 	var dmg := _effective_attack_damage()
 	if siege_mode:
 		current_debt += 15
-		var hits := _deal_aoe_damage(selected_enemy.global_position, 4.0, dmg)
+		var hits := _deal_aoe_damage(selected_enemy.global_position, 4.0, dmg, true, "[SIEGE]")
 		event_logged.emit("Siege Artillery hit %d target(s) for %d DMG (-1 Ammo, +15 CYC Debt)." % [hits, dmg])
 	else:
-		selected_enemy.receive_damage(dmg, self)
+		var enemy_name_before := selected_enemy.enemy_name
+		selected_enemy.receive_damage(dmg, self, false, "")
+		record_damage_dealt(dmg)
+		event_logged.emit("Hit %s for -%d DMG!" % [enemy_name_before, dmg])
 
 
-func _deal_aoe_damage(center: Vector3, radius: float, dmg: int) -> int:
+func _deal_aoe_damage(center: Vector3, radius: float, dmg: int, is_skill: bool = true, hit_tag: String = "[AoE]") -> int:
 	var count := 0
 	for n in get_tree().get_nodes_in_group("enemy_unit"):
 		var e := n as EnemyUnit
 		if e and not e.is_dead:
 			var d := Vector2(e.global_position.x - center.x, e.global_position.z - center.z).length()
 			if d <= radius:
-				e.receive_damage(dmg, self)
+				e.receive_damage(dmg, self, is_skill, hit_tag)
+				record_damage_dealt(dmg)
 				count += 1
 	return count
 
@@ -1228,14 +1264,90 @@ func _deal_aoe_damage(center: Vector3, radius: float, dmg: int) -> int:
 func receive_damage(amount: int, attacker: Node3D) -> void:
 	if is_mining:
 		_cancel_mining("Mining interrupted by enemy attack!")
-	var final_dmg := int(round(amount * 0.6)) if _shield_buff_timer > 0.0 else amount
+	var shielded := _shield_buff_timer > 0.0
+	var final_dmg := int(round(amount * 0.6)) if shielded else amount
 	current_hp = maxi(0, current_hp - final_dmg)
+	record_damage_taken(final_dmg, shielded)
 	if frame_mounted:
 		current_debt += 18
+	var atk_name := (attacker as EnemyUnit).enemy_name if (attacker is EnemyUnit) else "Enemy"
+	var shield_note := " [Fortify -40%]" if shielded else ""
+	event_logged.emit("Took -%d DMG%s from %s (HP: %d/%d)!" % [final_dmg, shield_note, atk_name, current_hp, max_hp])
 	if selected_enemy == null and attacker is EnemyUnit:
 		_set_selected_enemy(attacker as EnemyUnit)
 	if current_hp <= 0:
 		simulate_death()
+	_emit_state()
+
+
+func record_damage_dealt(amount: int) -> void:
+	if amount <= 0:
+		return
+	combat_dmg_dealt_total += amount
+	combat_dmg_dealt_last = amount
+	combat_dmg_dealt_max = maxi(combat_dmg_dealt_max, amount)
+
+
+func record_damage_taken(amount: int, shielded: bool = false) -> void:
+	if amount <= 0:
+		return
+	combat_dmg_taken_total += amount
+	combat_dmg_taken_last = amount
+	var tag := " [SHIELDED]" if shielded else " HIT"
+	var head_offset := Vector3(0.0, 2.75 if frame_mounted else 2.15, 0.0)
+	FLOATING_TEXT.spawn(
+		self,
+		global_position + head_offset,
+		"-%d%s" % [amount, tag],
+		Color(1.0, 0.26, 0.26),
+		36,
+		1.65
+	)
+
+
+func record_heal_or_restore(hp_gain: int, fp_gain: int = 0, sp_gain: int = 0, tag: String = "") -> void:
+	var suffix := (" " + tag) if tag != "" else ""
+	var head_offset := Vector3(0.0, 2.85 if frame_mounted else 2.25, 0.0)
+	if hp_gain > 0:
+		combat_hp_healed_total += hp_gain
+		combat_hp_healed_last = hp_gain
+		FLOATING_TEXT.spawn(
+			self,
+			global_position + head_offset,
+			"+%d HP%s" % [hp_gain, suffix],
+			Color(0.26, 1.0, 0.46),
+			36,
+			1.75
+		)
+	if fp_gain > 0:
+		FLOATING_TEXT.spawn(
+			self,
+			global_position + head_offset + Vector3(0.18, 0.22, 0.0),
+			"+%d FP%s" % [fp_gain, suffix],
+			Color(0.38, 0.88, 1.0),
+			32,
+			1.6
+		)
+	if sp_gain > 0:
+		FLOATING_TEXT.spawn(
+			self,
+			global_position + head_offset + Vector3(-0.18, 0.35, 0.0),
+			"+%d SP%s" % [sp_gain, suffix],
+			Color(1.0, 0.82, 0.32),
+			32,
+			1.6
+		)
+
+
+func reset_combat_telemetry() -> void:
+	combat_dmg_dealt_total = 0
+	combat_dmg_dealt_last = 0
+	combat_dmg_dealt_max = 0
+	combat_dmg_taken_total = 0
+	combat_dmg_taken_last = 0
+	combat_hp_healed_total = 0
+	combat_hp_healed_last = 0
+	event_logged.emit("Combat Damage & Heal Telemetry Meter reset to 0.")
 	_emit_state()
 
 
@@ -1794,4 +1906,11 @@ func _emit_state() -> void:
 		"skill4_label": f["signature_name"],
 		"skill2_cd": _skill2_cd,
 		"skill3_cd": _skill3_cd,
+		"dmg_dealt_total": combat_dmg_dealt_total,
+		"dmg_dealt_last": combat_dmg_dealt_last,
+		"dmg_dealt_max": combat_dmg_dealt_max,
+		"dmg_taken_total": combat_dmg_taken_total,
+		"dmg_taken_last": combat_dmg_taken_last,
+		"hp_healed_total": combat_hp_healed_total,
+		"hp_healed_last": combat_hp_healed_last,
 	})

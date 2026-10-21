@@ -6,6 +6,7 @@ extends CharacterBody3D
 signal died(enemy: EnemyUnit, killer: Node3D)
 
 const DROPPED_BAG_SCENE := preload("res://scenes/dropped_ore_bag.tscn")
+const FLOATING_TEXT := preload("res://scripts/floating_combat_text.gd")
 
 @export var enemy_name := "Rival Strip-Miner"
 @export var level := 12
@@ -105,12 +106,25 @@ func set_selected(selected: bool) -> void:
 		select_ring.visible = selected and not is_dead
 
 
-func receive_damage(amount: int, attacker: Node3D) -> void:
+func receive_damage(amount: int, attacker: Node3D, is_skill: bool = false, hit_tag: String = "") -> void:
 	if is_dead:
 		return
 	current_hp = maxi(0, current_hp - amount)
 	if attacker and is_instance_valid(attacker):
 		aggro_target = attacker
+
+	var suffix := (" " + hit_tag) if hit_tag != "" else (" SKILL!" if is_skill else " DMG")
+	var num_col := Color(1.0, 0.58, 0.16) if is_skill else Color(1.0, 0.94, 0.52)
+	var f_size := 42 if is_skill else 34
+	FLOATING_TEXT.spawn(
+		self,
+		global_position + Vector3(0.0, 2.25, 0.0),
+		"-%d%s" % [amount, suffix],
+		num_col,
+		f_size,
+		1.85 if is_skill else 1.55
+	)
+
 	_refresh_label()
 	if current_hp <= 0:
 		_die(attacker)
