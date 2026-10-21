@@ -58,9 +58,11 @@ var _pitch_deg := -32.0
 var _yaw_deg := 45.0
 var _target_zoom_t := 0.35
 var _rotating := false
+var sensitivity_mult := 1.0
 
 
 func _ready() -> void:
+	add_to_group("camera_rig")
 	_target = get_node_or_null(target_path) as Node3D
 	_pitch_deg = default_pitch
 	_yaw_deg = default_yaw
@@ -83,10 +85,10 @@ func _process(delta: float) -> void:
 	if current_mode != CamMode.ISO_LOCKED:
 		var orbit_axis := Input.get_axis("cam_orbit_left", "cam_orbit_right")
 		if orbit_axis != 0.0:
-			_yaw_deg = wrapf(_yaw_deg - orbit_axis * key_orbit_speed * delta, -180.0, 180.0)
+			_yaw_deg = wrapf(_yaw_deg - orbit_axis * key_orbit_speed * sensitivity_mult * delta, -180.0, 180.0)
 		var tilt_axis := Input.get_axis("cam_tilt_down", "cam_tilt_up")
 		if tilt_axis != 0.0:
-			_pitch_deg = clampf(_pitch_deg + tilt_axis * key_tilt_speed * delta, min_pitch, max_pitch)
+			_pitch_deg = clampf(_pitch_deg + tilt_axis * key_tilt_speed * sensitivity_mult * delta, min_pitch, max_pitch)
 
 	# Keyboard zoom ([Z]/[X] or [=]/[-]).
 	var zoom_axis := Input.get_axis("cam_zoom_in", "cam_zoom_out")
@@ -133,8 +135,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var mm := event as InputEventMouseMotion
 	if mm and _rotating and current_mode != CamMode.ISO_LOCKED:
-		_yaw_deg = wrapf(_yaw_deg - mm.relative.x * mouse_sensitivity, -180.0, 180.0)
-		_pitch_deg = clampf(_pitch_deg - mm.relative.y * mouse_sensitivity, min_pitch, max_pitch)
+		_yaw_deg = wrapf(_yaw_deg - mm.relative.x * mouse_sensitivity * sensitivity_mult, -180.0, 180.0)
+		_pitch_deg = clampf(_pitch_deg - mm.relative.y * mouse_sensitivity * sensitivity_mult, min_pitch, max_pitch)
 
 	# MacBook Trackpad Pinch-to-Zoom gesture
 	var mag := event as InputEventMagnifyGesture

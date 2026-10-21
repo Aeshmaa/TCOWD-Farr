@@ -12,6 +12,7 @@ signal event_logged(message: String)
 const DROPPED_BAG_SCENE := preload("res://scenes/dropped_ore_bag.tscn")
 const FRAVASHI_SCENE := preload("res://scenes/fravashi_companion.tscn")
 const FLOATING_TEXT := preload("res://scripts/floating_combat_text.gd")
+const SFX_MANAGER_SCRIPT := preload("res://scripts/sfx_manager.gd")
 
 @export var base_move_speed := 6.0
 @export var overburdened_speed_mult := 0.6
@@ -62,6 +63,23 @@ var combat_dmg_taken_total := 0
 var combat_dmg_taken_last := 0
 var combat_hp_healed_total := 0
 var combat_hp_healed_last := 0
+
+## In-Game Options & Settings (Saved persistently)
+## tab_target_mode:
+##   0 = Closest to Mouse Cursor (2D screen projection)
+##   1 = Lowest HP First
+##   2 = Closest to Character (3D world distance)
+const TAB_MODE_LABELS := [
+	"Closest to Mouse Cursor",
+	"Lowest HP First",
+	"Closest to Character",
+]
+var tab_target_mode := 0
+var auto_target_on_kill := true
+var show_floating_dmg := true
+var sfx_volume_pct := 80
+var cam_sensitivity_mult := 1.0
+var _sfx: Node = null
 
 ## Persistent Character Save (RF-style: log back in exactly where you left off)
 ## - Bags, equipment, wallet, debt, level, position & carried Farr ore all persist.
@@ -117,10 +135,13 @@ var _mining_vein: FarrVein = null
 
 func _ready() -> void:
 	add_to_group("friendly_combatant")
+	_sfx = SFX_MANAGER_SCRIPT.new()
+	add_child(_sfx)
 	current_debt = starting_debt
 	_upkeep_timer = upkeep_interval
 	_init_equipment_and_bags()
 	var loaded := load_game()
+	_apply_user_settings()
 	_recalc_vital_stats()
 	if not loaded:
 		current_map_id = str(_faction_dict()["hq_map_id"])
@@ -187,11 +208,94 @@ func travel_to_map(target_map_id: String, custom_pos: Variant = null, silent: bo
 		fravashi_instance.assigned_target = null
 
 	_connect_world_enemies()
+	_play_sfx("warp_portal")
 	save_game()
 	_emit_state()
 	if not silent:
 		event_logged.emit("Warped to [%s] (%s)!" % [mdata["name"], mdata.get("level_band", "")])
 	return true
+
+
+func _play_sfx(sfx_name: String, pitch: float = 1.0) -> void:
+	if _sfx and _sfx.has_method("play"):
+		_sfx.call("play", sfx_name, pitch)
+
+
+func _apply_user_settings() -> void:
+	if _sfx:
+		_sfx.set("volume_pct", sfx_volume_pct)
+	if show_floating_dmg:
+		if is_in_group("disable_floating_combat_text"):
+			remove_from_group("disable_floating_combat_text")
+	else:
+		if not is_in_group("disable_floating_combat_text"):
+			add_to_group("disable_floating_combat_text")
+	var rig := get_tree().get_first_node_in_group("camera_rig")
+	if rig:
+		rig.set("sensitivity_mult", cam_sensitivity_mult)
+
+
+func cycle_tab_target_mode() -> void:
+	tab_target_mode = (tab_target_mode + 1) % TAB_MODE_LABELS.size()
+	save_game()
+	_play_sfx("target_lock")
+	event_logged.emit("Setting: [Tab] Target Priority -> %s." % TAB_MODE_LABELS[tab_target_mode])
+	_emit_state()
+
+
+func toggle_auto_target_on_kill() -> void:
+	auto_target_on_kill = not auto_target_on_kill
+	save_game()
+	_play_sfx("target_lock")
+	event_logged.emit("Setting: Auto-Target Next Enemy on Kill -> %s." % ("ON" if auto_target_on_kill else "OFF"))
+	_emit_state()
+
+
+func toggle_floating_dmg_setting() -> void:
+	show_floating_dmg = not show_floating_dmg
+	_apply_user_settings()
+	save_game()
+	_play_sfx("target_lock")
+	event_logged.emit("Setting: 3D Floating Combat & Heal Numbers -> %s." % ("ON" if show_floating_dmg else "OFF"))
+	_emit_state()
+
+
+func cycle_sfx_volume() -> void:
+	match sfx_volume_pct:
+		80:
+			sfx_volume_pct = 100
+		100:
+			sfx_volume_pct = 0
+		0:
+			sfx_volume_pct = 25
+		25:
+			sfx_volume_pct = 50
+		_:
+			sfx_volume_pct = 80
+	_apply_user_settings()
+	save_game()
+	_play_sfx("heal")
+	event_logged.emit("Setting: SFX Volume -> %s." % ("MUTED (0%)" if sfx_volume_pct == 0 else "%d%%" % sfx_volume_pct))
+	_emit_state()
+
+
+func test_sfx_sound() -> void:
+	_play_sfx("skill_cast")
+	event_logged.emit("Played synthesized Skill SFX preview (drop custom .wav files into res://assets/sfx/ to override!).")
+
+
+func cycle_cam_sensitivity() -> void:
+	if is_equal_approx(cam_sensitivity_mult, 1.0):
+		cam_sensitivity_mult = 1.5
+	elif cam_sensitivity_mult > 1.2:
+		cam_sensitivity_mult = 0.6
+	else:
+		cam_sensitivity_mult = 1.0
+	_apply_user_settings()
+	save_game()
+	_play_sfx("target_lock")
+	event_logged.emit("Setting: Camera Orbit Sensitivity -> %.1fx." % cam_sensitivity_mult)
+	_emit_state()
 
 
 func _init_equipment_and_bags() -> void:
@@ -458,6 +562,7 @@ func upgrade_selected_slot_with_talic() -> void:
 		active_slots[slot_name] = upgraded
 		_recalc_vital_stats()
 		_apply_faction_tint()
+		_play_sfx("upgrade_success")
 		var aura_note := " [GLOWING MASTERWORK AURA!]" if target_plus >= 6 else ""
 		event_logged.emit("TALIC UPGRADE SUCCESS (%.0f%%)! %s -> +%d%s (%d Talics left)." % [
 			chance * 100.0, upgraded["name"], target_plus, aura_note, get_item_count("TALIC_FARR")
@@ -478,6 +583,7 @@ func upgrade_selected_slot_with_talic() -> void:
 		active_slots[slot_name] = after_fail
 		_recalc_vital_stats()
 		_apply_faction_tint()
+		_play_sfx("upgrade_fail")
 		if fallback_plus < cur_plus:
 			event_logged.emit("TALIC OVERLOAD FAILURE (%.0f%%)! Upgrade shattered back to +%d (%s)." % [
 				chance * 100.0, fallback_plus, after_fail["name"]
@@ -1078,13 +1184,51 @@ func cycle_target() -> void:
 	if enemies.is_empty():
 		_set_selected_enemy(null)
 		return
-	enemies.sort_custom(func(a: EnemyUnit, b: EnemyUnit) -> bool:
-		return global_position.distance_squared_to(a.global_position) < global_position.distance_squared_to(b.global_position)
-	)
-	var idx := enemies.find(selected_enemy)
-	var next_enemy := enemies[(idx + 1) % enemies.size()]
+
+	if tab_target_mode == 0:
+		# Mode 0: Closest to Mouse Cursor (2D screen projection)
+		var cam := get_viewport().get_camera_3d()
+		var mouse_pos := get_viewport().get_mouse_position()
+		enemies.sort_custom(func(a: EnemyUnit, b: EnemyUnit) -> bool:
+			return _screen_dist_to_mouse(cam, a, mouse_pos) < _screen_dist_to_mouse(cam, b, mouse_pos)
+		)
+	elif tab_target_mode == 1:
+		# Mode 1: Lowest HP First (tie-breaker: distance to player)
+		enemies.sort_custom(func(a: EnemyUnit, b: EnemyUnit) -> bool:
+			if a.current_hp != b.current_hp:
+				return a.current_hp < b.current_hp
+			return global_position.distance_squared_to(a.global_position) < global_position.distance_squared_to(b.global_position)
+		)
+	else:
+		# Mode 2: Closest to Character (3D world distance)
+		enemies.sort_custom(func(a: EnemyUnit, b: EnemyUnit) -> bool:
+			return global_position.distance_squared_to(a.global_position) < global_position.distance_squared_to(b.global_position)
+		)
+
+	var next_enemy: EnemyUnit = enemies[0]
+	if selected_enemy != null and is_instance_valid(selected_enemy):
+		if tab_target_mode == 0 and enemies[0] != selected_enemy:
+			# Snap immediately to the enemy currently closest to the mouse cursor!
+			next_enemy = enemies[0]
+		else:
+			var idx := enemies.find(selected_enemy)
+			next_enemy = enemies[(idx + 1) % enemies.size()]
+
 	_set_selected_enemy(next_enemy)
-	event_logged.emit("Targeted %s (HP %d/%d)." % [next_enemy.enemy_name, next_enemy.current_hp, next_enemy.max_hp])
+	_play_sfx("target_lock")
+	event_logged.emit("Targeted [%s]: %s (HP %d/%d)." % [
+		TAB_MODE_LABELS[tab_target_mode], next_enemy.enemy_name, next_enemy.current_hp, next_enemy.max_hp
+	])
+
+
+func _screen_dist_to_mouse(cam: Camera3D, enemy: EnemyUnit, mouse_pos: Vector2) -> float:
+	if cam == null:
+		return global_position.distance_to(enemy.global_position)
+	var world_pt := enemy.global_position + Vector3(0.0, 1.0, 0.0)
+	if cam.is_position_behind(world_pt):
+		return 999999.0 + global_position.distance_to(world_pt)
+	var screen_pt := cam.unproject_position(world_pt)
+	return screen_pt.distance_to(mouse_pos)
 
 
 func _set_selected_enemy(enemy: EnemyUnit) -> void:
@@ -1147,6 +1291,7 @@ func _cast_skill_2() -> void:
 		hit_tag = "[CRIT PIERCE!]"
 	selected_enemy.receive_damage(dmg, self, true, hit_tag)
 	record_damage_dealt(dmg)
+	_play_sfx("skill_cast")
 	var fx_note := _apply_skill_effect(effect, dmg)
 	event_logged.emit("%s hit %s for %d DMG%s (-%d FP, -%d SP)!" % [
 		s2["name"], selected_enemy.enemy_name, dmg, fx_note, fp_cost, sp_cost
@@ -1172,6 +1317,7 @@ func _cast_skill_3() -> void:
 	var dmg := int(round(_effective_attack_damage() * float(s3["mult"])))
 	var effect: String = str(s3.get("effect", "NONE"))
 	var hits := _deal_aoe_damage(center, float(s3["radius"]), dmg, true, "[AoE SKILL]")
+	_play_sfx("skill_cast", 0.92)
 	var fx_note := _apply_skill_effect(effect, dmg * maxi(1, hits))
 	event_logged.emit("%s hit %d enemy(s) for %d AoE DMG%s (-%d FP, -%d SP)!" % [
 		s3["name"], hits, dmg, fx_note, fp_cost, sp_cost
@@ -1283,6 +1429,7 @@ func _process_auto_attack() -> void:
 
 	_attack_cd = 1.05
 	sprite.set_facing(to_enemy)
+	_play_sfx("attack_hit")
 	var dmg := _effective_attack_damage()
 	if siege_mode:
 		current_debt += 15
@@ -1338,6 +1485,7 @@ func record_damage_dealt(amount: int) -> void:
 func record_damage_taken(amount: int, shielded: bool = false) -> void:
 	if amount <= 0:
 		return
+	_play_sfx("damage_taken")
 	combat_dmg_taken_total += amount
 	combat_dmg_taken_last = amount
 	var tag := " [SHIELDED]" if shielded else " HIT"
@@ -1353,6 +1501,8 @@ func record_damage_taken(amount: int, shielded: bool = false) -> void:
 
 
 func record_heal_or_restore(hp_gain: int, fp_gain: int = 0, sp_gain: int = 0, tag: String = "") -> void:
+	if hp_gain > 0 or fp_gain > 0 or sp_gain > 0:
+		_play_sfx("heal")
 	var suffix := (" " + tag) if tag != "" else ""
 	var head_offset := Vector3(0.0, 2.85 if frame_mounted else 2.25, 0.0)
 	if hp_gain > 0:
@@ -1399,7 +1549,8 @@ func reset_combat_telemetry() -> void:
 
 
 func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
-	if selected_enemy == enemy:
+	var was_selected := (selected_enemy == enemy)
+	if was_selected:
 		_set_selected_enemy(null)
 		auto_attacking = false
 	var f := _faction_dict()
@@ -1414,6 +1565,7 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 		current_hp = max_hp
 		current_fp = max_fp
 		current_sp = max_sp
+		_play_sfx("level_up")
 		event_logged.emit("LEVEL UP! Reached Level %d (Cap 45 / Leader 50)." % level)
 	else:
 		event_logged.emit("Slain %s! +%d %s Bounty (Quest Kills: %d/3) & dropped Farr bag." % [
@@ -1421,6 +1573,13 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 		])
 
 	_roll_rare_equipment_drop(enemy)
+	if was_selected and auto_target_on_kill:
+		# Auto-select next living enemy within 18m according to active [Tab] priority mode
+		for n in get_tree().get_nodes_in_group("enemy_unit"):
+			var cand := n as EnemyUnit
+			if cand and not cand.is_dead and global_position.distance_to(cand.global_position) <= 18.0:
+				cycle_target()
+				break
 	save_game()
 	_emit_state()
 
@@ -1582,6 +1741,7 @@ func _process_mining(delta: float) -> void:
 		unrefined_units += added_units
 		current_weight = minf(current_weight + added_weight, max_weight)
 		unrefined_value += added_val
+		_play_sfx("mine_ore")
 		var code: String = _faction_dict()["currency_code"]
 		event_logged.emit("Extracted +%d Unrefined Farr (+%.0f wt, worth %d %s)." % [added_units, added_weight, added_val, code])
 		if not _mining_vein.can_mine():
@@ -1616,6 +1776,7 @@ func _refine_and_pay_debt() -> void:
 		current_debt -= debt_paid
 	var wallet_gain := total_fc - debt_paid
 	wallet_credits += wallet_gain
+	_play_sfx("mine_ore", 1.15)
 
 	var f := _faction_dict()
 	var code: String = f["currency_code"]
@@ -1782,6 +1943,11 @@ func save_game() -> void:
 		"quest_kills": quest_kills,
 		"bind_points": bind_points,
 		"last_saved_text": last_saved_text,
+		"tab_target_mode": tab_target_mode,
+		"auto_target_on_kill": auto_target_on_kill,
+		"show_floating_dmg": show_floating_dmg,
+		"sfx_volume_pct": sfx_volume_pct,
+		"cam_sensitivity_mult": cam_sensitivity_mult,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -1838,6 +2004,11 @@ func load_game() -> bool:
 	if d.has("bind_points") and typeof(d["bind_points"]) == TYPE_DICTIONARY:
 		bind_points = d["bind_points"]
 	last_saved_text = str(d.get("last_saved_text", "Restored"))
+	tab_target_mode = clampi(int(d.get("tab_target_mode", 0)), 0, TAB_MODE_LABELS.size() - 1)
+	auto_target_on_kill = bool(d.get("auto_target_on_kill", true))
+	show_floating_dmg = bool(d.get("show_floating_dmg", true))
+	sfx_volume_pct = clampi(int(d.get("sfx_volume_pct", 80)), 0, 100)
+	cam_sensitivity_mult = clampf(float(d.get("cam_sensitivity_mult", 1.0)), 0.4, 2.0)
 
 	_recalc_vital_stats()
 	current_hp = clampi(int(d.get("current_hp", max_hp)), 1, max_hp)
@@ -1999,4 +2170,9 @@ func _emit_state() -> void:
 		"dmg_taken_last": combat_dmg_taken_last,
 		"hp_healed_total": combat_hp_healed_total,
 		"hp_healed_last": combat_hp_healed_last,
+		"tab_target_label": TAB_MODE_LABELS[tab_target_mode],
+		"auto_target_on_kill": auto_target_on_kill,
+		"show_floating_dmg": show_floating_dmg,
+		"sfx_volume_pct": sfx_volume_pct,
+		"cam_sensitivity_mult": cam_sensitivity_mult,
 	})

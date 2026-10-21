@@ -67,12 +67,22 @@ var _reset_meter_btn: Button
 var _map_top_btn: Button
 var _map_panel: PanelContainer
 var _map_btns: Dictionary = {}
+var _settings_top_btn: Button
+var _settings_panel: PanelContainer
+var _opt_tab_mode_btn: Button
+var _opt_auto_target_btn: Button
+var _opt_float_dmg_btn: Button
+var _opt_sfx_vol_btn: Button
+var _opt_test_sfx_btn: Button
+var _opt_cam_sens_btn: Button
+var _opt_save_now_btn: Button
 var _log_lines: Array[String] = []
 
 
 func _ready() -> void:
 	_build_inventory_window()
 	_build_world_map_window()
+	_build_settings_window()
 	_build_combat_meter_controls()
 
 	_rig = get_node_or_null(camera_rig_path)
@@ -164,6 +174,102 @@ func _build_world_map_window() -> void:
 		)
 		vbox.add_child(btn)
 		_map_btns[map_id] = btn
+
+
+func _build_settings_window() -> void:
+	var top_bar := get_node_or_null("TopBar") as HBoxContainer
+	if top_bar:
+		_settings_top_btn = Button.new()
+		_settings_top_btn.focus_mode = Control.FOCUS_NONE
+		_settings_top_btn.modulate = Color(0.78, 0.95, 1.0)
+		_settings_top_btn.text = "Settings [Esc]"
+		_settings_top_btn.pressed.connect(func() -> void: _settings_panel.visible = not _settings_panel.visible)
+		top_bar.add_child(_settings_top_btn)
+
+	_settings_panel = PanelContainer.new()
+	_settings_panel.visible = false
+	_settings_panel.offset_left = 605.0
+	_settings_panel.offset_top = 155.0
+	_settings_panel.offset_right = 1140.0
+	_settings_panel.offset_bottom = 520.0
+	add_child(_settings_panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	_settings_panel.add_child(vbox)
+
+	var title := Label.new()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.modulate = Color(0.65, 0.95, 1.0)
+	title.text = "=== IN-GAME OPTIONS & AUDIO SETTINGS [Esc] ==="
+	vbox.add_child(title)
+
+	_opt_tab_mode_btn = Button.new()
+	_opt_tab_mode_btn.focus_mode = Control.FOCUS_NONE
+	_opt_tab_mode_btn.modulate = Color(1.0, 0.92, 0.45)
+	_opt_tab_mode_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("cycle_tab_target_mode"):
+			_player.cycle_tab_target_mode()
+	)
+	vbox.add_child(_opt_tab_mode_btn)
+
+	_opt_auto_target_btn = Button.new()
+	_opt_auto_target_btn.focus_mode = Control.FOCUS_NONE
+	_opt_auto_target_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("toggle_auto_target_on_kill"):
+			_player.toggle_auto_target_on_kill()
+	)
+	vbox.add_child(_opt_auto_target_btn)
+
+	_opt_float_dmg_btn = Button.new()
+	_opt_float_dmg_btn.focus_mode = Control.FOCUS_NONE
+	_opt_float_dmg_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("toggle_floating_dmg_setting"):
+			_player.toggle_floating_dmg_setting()
+	)
+	vbox.add_child(_opt_float_dmg_btn)
+
+	var sfx_row := HBoxContainer.new()
+	sfx_row.add_theme_constant_override("separation", 6)
+	vbox.add_child(sfx_row)
+
+	_opt_sfx_vol_btn = Button.new()
+	_opt_sfx_vol_btn.focus_mode = Control.FOCUS_NONE
+	_opt_sfx_vol_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_opt_sfx_vol_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("cycle_sfx_volume"):
+			_player.cycle_sfx_volume()
+	)
+	sfx_row.add_child(_opt_sfx_vol_btn)
+
+	_opt_test_sfx_btn = Button.new()
+	_opt_test_sfx_btn.focus_mode = Control.FOCUS_NONE
+	_opt_test_sfx_btn.modulate = Color(0.65, 1.0, 0.72)
+	_opt_test_sfx_btn.text = "Preview Skill SFX"
+	_opt_test_sfx_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("test_sfx_sound"):
+			_player.test_sfx_sound()
+	)
+	sfx_row.add_child(_opt_test_sfx_btn)
+
+	_opt_cam_sens_btn = Button.new()
+	_opt_cam_sens_btn.focus_mode = Control.FOCUS_NONE
+	_opt_cam_sens_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("cycle_cam_sensitivity"):
+			_player.cycle_cam_sensitivity()
+	)
+	vbox.add_child(_opt_cam_sens_btn)
+
+	_opt_save_now_btn = Button.new()
+	_opt_save_now_btn.focus_mode = Control.FOCUS_NONE
+	_opt_save_now_btn.modulate = Color(0.55, 0.95, 1.0)
+	_opt_save_now_btn.text = "Save Character & Settings Now"
+	_opt_save_now_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("save_game"):
+			_player.save_game()
+			_on_event_logged("Character progress & In-Game Settings saved!")
+	)
+	vbox.add_child(_opt_save_now_btn)
 
 
 func _build_inventory_window() -> void:
@@ -292,8 +398,15 @@ func _build_inventory_window() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_inventory"):
 		_inv_panel.visible = not _inv_panel.visible
-	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M:
-		_map_panel.visible = not _map_panel.visible
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_M:
+			_map_panel.visible = not _map_panel.visible
+			if _map_panel.visible:
+				_settings_panel.visible = false
+		elif event.keycode == KEY_ESCAPE:
+			_settings_panel.visible = not _settings_panel.visible
+			if _settings_panel.visible:
+				_map_panel.visible = false
 
 
 func _on_mode_changed(mode_name: String, proj_name: String) -> void:
@@ -367,6 +480,25 @@ func _on_player_state(d: Dictionary) -> void:
 	_update_physical_vendor_panel(d["vendor_info"], code)
 	_update_inventory_window(d)
 	_update_world_map_window(d)
+	_update_settings_window(d)
+
+
+func _update_settings_window(d: Dictionary) -> void:
+	if _opt_tab_mode_btn:
+		_opt_tab_mode_btn.text = "[Tab] Target Priority: %s (Click to Switch)" % str(d.get("tab_target_label", "Closest to Mouse Cursor"))
+	if _opt_auto_target_btn:
+		var atk_on := bool(d.get("auto_target_on_kill", true))
+		_opt_auto_target_btn.text = "Auto-Target Next Enemy on Kill: [%s]" % ("ON" if atk_on else "OFF")
+	if _opt_float_dmg_btn:
+		var fd_on := bool(d.get("show_floating_dmg", true))
+		_opt_float_dmg_btn.text = "3D Floating Damage & Heal Numbers: [%s]" % ("ON" if fd_on else "OFF")
+	if _opt_sfx_vol_btn:
+		var vol: int = int(d.get("sfx_volume_pct", 80))
+		_opt_sfx_vol_btn.text = "Special Effects (SFX) Volume: [%s]" % ("MUTED (0%)" if vol <= 0 else "%d%%" % vol)
+	if _opt_cam_sens_btn:
+		var sens: float = float(d.get("cam_sensitivity_mult", 1.0))
+		var sens_lbl := "Normal (1.0x)" if is_equal_approx(sens, 1.0) else ("Fast (1.5x)" if sens > 1.2 else "Low (0.6x)")
+		_opt_cam_sens_btn.text = "Camera Orbit Sensitivity: [%s]" % sens_lbl
 
 
 func _update_world_map_window(d: Dictionary) -> void:

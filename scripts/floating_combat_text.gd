@@ -21,7 +21,7 @@ static func spawn(
 	if context_node == null or not context_node.is_inside_tree():
 		return null
 	var tree := context_node.get_tree()
-	if tree == null or tree.current_scene == null:
+	if tree == null or tree.current_scene == null or tree.has_group("disable_floating_combat_text"):
 		return null
 
 	var script_res: GDScript = load("res://scripts/floating_combat_text.gd")
