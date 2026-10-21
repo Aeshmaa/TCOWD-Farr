@@ -50,6 +50,18 @@ var auto_sp_pct := 45
 var active_vendor_npc: VendorNpc = null
 var _armor_vendor_slot_cursor := 1 # Cycles HELMET..SHOES when buying individual armor pieces
 
+## Persistent Character Save (RF-style: log back in exactly where you left off)
+## - Bags, equipment, wallet, debt, level, position & carried Farr ore all persist.
+## - On death only unrefined Farr ore drops; you respawn at your bound Rebirth NPC (or HQ default).
+const SAVE_PATH := "user://farr_character_save.txt"
+const SAVE_VERSION := 1
+@export var autosave_interval := 5.0
+var bind_points: Dictionary = {} # faction_id -> {"pos": Vector3, "name": String}
+var last_saved_text := "Never"
+var _autosave_timer := 5.0
+var _save_disabled := false
+var _wipe_confirm_timer := 0.0
+
 var level := 1
 var xp := 0
 
@@ -94,14 +106,22 @@ func _ready() -> void:
 	current_debt = starting_debt
 	_upkeep_timer = upkeep_interval
 	_init_equipment_and_bags()
+	var loaded := load_game()
 	_recalc_vital_stats()
-	current_hp = max_hp
-	current_fp = max_fp
-	current_sp = max_sp
+	if not loaded:
+		current_hp = max_hp
+		current_fp = max_fp
+		current_sp = max_sp
 	_apply_faction_tint()
 	_connect_world_enemies()
 	_emit_state()
-	event_logged.emit("Ready! Click any HQ Side NPC to trade, [I] Equipment & Bags, [O] Auto-Arrange.")
+	if loaded:
+		event_logged.emit("Welcome back! Lv.%d %s restored where you logged out (last save: %s). Rebirth Point: %s." % [
+			level, _faction_dict()["name"], last_saved_text, _respawn_name()
+		])
+	else:
+		event_logged.emit("New character created! Click HQ Side NPCs to trade, [I] Equipment & Bags, Rebirth NPC to bind respawn.")
+		save_game()
 
 
 func _init_equipment_and_bags() -> void:
@@ -175,7 +195,13 @@ func _physics_process(delta: float) -> void:
 	_skill2_cd = maxf(0.0, _skill2_cd - delta)
 	_skill3_cd = maxf(0.0, _skill3_cd - delta)
 	_potion_cd = maxf(0.0, _potion_cd - delta)
+	_wipe_confirm_timer = maxf(0.0, _wipe_confirm_timer - delta)
 
+	# Periodic autosave (protects progress even if the game is force-stopped from the editor)
+	_autosave_timer -= delta
+	if _autosave_timer <= 0.0:
+		_autosave_timer = autosave_interval
+		save_game()
 	# Close physical NPC shop if player walks away from the NPC booth
 	if active_vendor_npc != null:
 		if not is_instance_valid(active_vendor_npc):
@@ -673,6 +699,37 @@ func execute_vendor_action(action_index: int) -> void:
 				wallet_credits -= pay
 				current_debt -= pay
 				event_logged.emit("%s: Paid %d %s toward %s!" % [active_vendor_npc.npc_name, pay, code, f["debt_name"]])
+	elif vtype == "REBIRTH":
+		var fid: String = str(f["id"])
+		match action_index:
+			0:
+				var bind_pos := active_vendor_npc.global_position + Vector3(0.0, 0.1, 2.2)
+				bind_points[fid] = {"pos": bind_pos, "name": active_vendor_npc.npc_name}
+				save_game()
+				event_logged.emit("%s: Bound your Rebirth Spawn Point here! On death you will respawn at %s." % [
+					active_vendor_npc.npc_name, active_vendor_npc.npc_name
+				])
+			1:
+				bind_points.erase(fid)
+				save_game()
+				event_logged.emit("%s: Reset your Rebirth Spawn Point back to %s (HQ Default Coordinates)." % [
+					active_vendor_npc.npc_name, f["hq_name"]
+				])
+			2:
+				var heal_cost := 50
+				if wallet_credits < heal_cost:
+					event_logged.emit("%s: Need %d %s for Full Vital Restoration." % [active_vendor_npc.npc_name, heal_cost, code])
+					return
+				wallet_credits -= heal_cost
+				current_hp = max_hp
+				current_fp = max_fp
+				current_sp = max_sp
+				save_game()
+				event_logged.emit("%s: Restored 100%% HP / FP / SP (-%d %s) & saved progress!" % [active_vendor_npc.npc_name, heal_cost, code])
+			3:
+				save_game()
+				event_logged.emit("%s: Character state, Bags, Equipment & Position saved (%s)!" % [active_vendor_npc.npc_name, last_saved_text])
+	save_game()
 	_emit_state()
 
 
@@ -1266,6 +1323,24 @@ func cycle_faction() -> void:
 	event_logged.emit("Switched Race -> %s | Currency: %s (%s) | %s" % [f["name"], f["currency_name"], f["currency_code"], shared_note])
 
 
+func _respawn_position() -> Vector3:
+	var f := _faction_dict()
+	var fid: String = str(f["id"])
+	if bind_points.has(fid):
+		var bp: Dictionary = bind_points[fid]
+		return bp.get("pos", f["hq_spawn"])
+	return f["hq_spawn"]
+
+
+func _respawn_name() -> String:
+	var f := _faction_dict()
+	var fid: String = str(f["id"])
+	if bind_points.has(fid):
+		var bp: Dictionary = bind_points[fid]
+		return "%s (Bound Rebirth NPC)" % str(bp.get("name", f["hq_name"]))
+	return "%s (HQ Default)" % str(f["hq_name"])
+
+
 func simulate_death() -> void:
 	if is_mining:
 		_cancel_mining("")
@@ -1278,6 +1353,11 @@ func simulate_death() -> void:
 	current_fp = max_fp
 	current_sp = max_sp
 
+	var spawn_dest := _respawn_position()
+	var spawn_label := _respawn_name()
+
+	# RF / FARR Rule: All Bag items (Potions, Scrolls, Ammo, Gear) stay 100% in your Bags!
+	# Only Unrefined Farr Ore drops at your death coordinate so anyone can loot it.
 	var drop_units := int(ceil(unrefined_units * 0.5))
 	if drop_units > 0:
 		var ratio := float(drop_units) / float(unrefined_units)
@@ -1291,12 +1371,120 @@ func simulate_death() -> void:
 		get_parent().add_child(bag)
 		bag.global_position = Vector3(global_position.x, 0.0, global_position.z)
 		bag.setup(drop_units, drop_weight, drop_val)
-		event_logged.emit("CHINVAT BRIDGE: You died! Dropped %d Unrefined Farr at your death spot." % drop_units)
+		event_logged.emit("CHINVAT REBIRTH: Slain! Dropped %d Unrefined Farr (All Bag items kept!) -> Respawned at %s." % [
+			drop_units, spawn_label
+		])
 	else:
-		event_logged.emit("CHINVAT BRIDGE: Respawned at %s." % _faction_dict()["hq_name"])
+		event_logged.emit("CHINVAT REBIRTH: Respawned at %s (All Bag items & Equipment kept!)." % spawn_label)
 
-	global_position = _faction_dict()["hq_spawn"]
+	global_position = spawn_dest
 	velocity = Vector3.ZERO
+	save_game()
+
+
+func _exit_tree() -> void:
+	save_game()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		save_game()
+
+
+func save_game() -> void:
+	if _save_disabled:
+		return
+	var t := Time.get_time_dict_from_system()
+	last_saved_text = "%02d:%02d:%02d" % [t.get("hour", 0), t.get("minute", 0), t.get("second", 0)]
+	var saved_pos := global_position if is_inside_tree() else position
+	var data := {
+		"version": SAVE_VERSION,
+		"pos": saved_pos,
+		"faction_index": faction_index,
+		"class_index": class_index,
+		"job_branch": job_branch,
+		"is_ascended_leader": is_ascended_leader,
+		"level": level,
+		"xp": xp,
+		"current_hp": current_hp,
+		"current_fp": current_fp,
+		"current_sp": current_sp,
+		"wallet_credits": wallet_credits,
+		"current_debt": current_debt,
+		"unrefined_units": unrefined_units,
+		"current_weight": current_weight,
+		"unrefined_value": unrefined_value,
+		"unlocked_bags": unlocked_bags,
+		"active_bag_tab": active_bag_tab,
+		"bag_slots": bag_slots,
+		"equipped_organic_slots": equipped_organic_slots,
+		"equipped_chassis_slots": equipped_chassis_slots,
+		"auto_hp_pct": auto_hp_pct,
+		"auto_fp_pct": auto_fp_pct,
+		"auto_sp_pct": auto_sp_pct,
+		"bind_points": bind_points,
+		"last_saved_text": last_saved_text,
+	}
+	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(var_to_str(data))
+		f.close()
+
+
+func load_game() -> bool:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return false
+	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if f == null:
+		return false
+	var raw := f.get_as_text()
+	f.close()
+	var parsed: Variant = str_to_var(raw)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return false
+	var d: Dictionary = parsed
+	if int(d.get("version", 0)) != SAVE_VERSION:
+		return false
+
+	faction_index = clampi(int(d.get("faction_index", 0)), 0, GameData.FACTIONS.size() - 1)
+	class_index = clampi(int(d.get("class_index", 0)), 0, 3)
+	job_branch = clampi(int(d.get("job_branch", 0)), 0, 1)
+	is_ascended_leader = bool(d.get("is_ascended_leader", false))
+	level = maxi(1, int(d.get("level", 1)))
+	xp = maxi(0, int(d.get("xp", 0)))
+	wallet_credits = maxi(0, int(d.get("wallet_credits", 900)))
+	current_debt = maxi(0, int(d.get("current_debt", starting_debt)))
+	unrefined_units = maxi(0, int(d.get("unrefined_units", 0)))
+	current_weight = maxf(0.0, float(d.get("current_weight", 0.0)))
+	unrefined_value = maxi(0, int(d.get("unrefined_value", 0)))
+	unlocked_bags = clampi(int(d.get("unlocked_bags", 2)), 1, GameData.MAX_BAGS)
+	active_bag_tab = clampi(int(d.get("active_bag_tab", 0)), 0, unlocked_bags - 1)
+
+	if d.has("bag_slots") and typeof(d["bag_slots"]) == TYPE_ARRAY:
+		bag_slots = d["bag_slots"]
+	while bag_slots.size() < unlocked_bags * GameData.BAG_SLOTS_PER_BAG:
+		bag_slots.append({})
+
+	if d.has("equipped_organic_slots") and typeof(d["equipped_organic_slots"]) == TYPE_DICTIONARY:
+		equipped_organic_slots = d["equipped_organic_slots"]
+	if d.has("equipped_chassis_slots") and typeof(d["equipped_chassis_slots"]) == TYPE_DICTIONARY:
+		equipped_chassis_slots = d["equipped_chassis_slots"]
+
+	auto_hp_pct = int(d.get("auto_hp_pct", 55))
+	auto_fp_pct = int(d.get("auto_fp_pct", 45))
+	auto_sp_pct = int(d.get("auto_sp_pct", 45))
+	if d.has("bind_points") and typeof(d["bind_points"]) == TYPE_DICTIONARY:
+		bind_points = d["bind_points"]
+	last_saved_text = str(d.get("last_saved_text", "Restored"))
+
+	_recalc_vital_stats()
+	current_hp = clampi(int(d.get("current_hp", max_hp)), 1, max_hp)
+	current_fp = clampi(int(d.get("current_fp", max_fp)), 0, max_fp)
+	current_sp = clampi(int(d.get("current_sp", max_sp)), 0, max_sp)
+
+	if d.has("pos") and typeof(d["pos"]) == TYPE_VECTOR3:
+		global_position = d["pos"]
+	return true
 
 
 func _apply_faction_tint() -> void:
@@ -1377,6 +1565,8 @@ func _emit_state() -> void:
 		"debt_name": f["debt_name"],
 		"job_title": _active_job_title(),
 		"gear_name": _active_gear_summary(),
+		"respawn_name": _respawn_name(),
+		"last_saved": last_saved_text,
 		"equipped_slots": _active_equipment_slots(),
 		"unlocked_bags": unlocked_bags,
 		"active_bag_tab": active_bag_tab,

@@ -226,8 +226,9 @@ func _on_player_state(d: Dictionary) -> void:
 	var overburden := " [OVERBURDENED]" if wt >= max_wt * 0.8 else ""
 	var leader_tag := " [ARCHON]" if d["is_leader"] else ""
 	economy_label.text = (
-		"Lv.%d%s  |  %s  |  ATK: %d\n" % [d["level"], leader_tag, d["job_title"], d["atk"]]
+		"Lv.%d%s  |  %s  |  ATK: %d  |  Saved: %s\n" % [d["level"], leader_tag, d["job_title"], d["atk"], d.get("last_saved", "Auto")]
 		+ "Equipped: %s\n" % d["gear_name"]
+		+ "Rebirth Spawn: %s\n" % d.get("respawn_name", "HQ Default")
 		+ "HP: %d/%d   |   FP: %d/%d   |   SP: %d/%d\n" % [d["hp"], d["max_hp"], d["fp"], d["max_fp"], d["sp"], d["max_sp"]]
 		+ "%s: %d %s   |   Wallet: %d %s (%s)\n" % [d["debt_name"], d["debt"], code, d["wallet"], code, d["currency_name"]]
 		+ "Ammo/Force: %d   |   Farr: %d (%d %s)   |   Wt: %.0f/%.0f%s" % [
@@ -308,6 +309,11 @@ func _update_physical_vendor_panel(vinfo: Dictionary, code: String) -> void:
 			npc_btn_1.text = "All 5 Bags Unlocked (40 Slots Max)"
 		npc_btn_2.text = "Sell / Salvage All Unequipped Gear in Bags"
 		npc_btn_3.text = "Pay Down 500 Faction Debt (500 %s)" % code
+	elif vtype == "REBIRTH":
+		npc_btn_0.text = "1. Bind Respawn Point Here (Rebirth NPC Coordinate)"
+		npc_btn_1.text = "2. Reset Respawn to Faction HQ Default Coordinate"
+		npc_btn_2.text = "3. Full Vital Restoration: 100% HP/FP/SP (50 %s)" % code
+		npc_btn_3.text = "4. Save Character Progress & Position Now"
 
 
 func _update_inventory_window(d: Dictionary) -> void:

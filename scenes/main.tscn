@@ -228,6 +228,58 @@ faction_id = "legion"
 body_color = Color(0.38, 0.16, 0.2, 1)
 accent_color = Color(0.95, 0.45, 0.5, 1)
 
+[node name="SvelNpcRebirth" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42, 0, 33)
+npc_name = "Ark Backup Core R-00"
+npc_title = "HQ Rebirth & Save NPC"
+vendor_type = "REBIRTH"
+faction_id = "sveleitre"
+accent_color = Color(0.5, 1, 0.85, 1)
+
+[node name="SvelOutpostRebirth" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, 31)
+npc_name = "Forward Relay Beacon R-01"
+npc_title = "Outpost Rebirth & Save NPC"
+vendor_type = "REBIRTH"
+faction_id = "sveleitre"
+accent_color = Color(0.5, 1, 0.85, 1)
+
+[node name="OrderNpcRebirth" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 0, 33)
+npc_name = "Chinvat Priestess Rashnu"
+npc_title = "HQ Rebirth & Save NPC"
+vendor_type = "REBIRTH"
+faction_id = "order"
+body_color = Color(0.45, 0.38, 0.22, 1)
+accent_color = Color(1, 0.95, 0.6, 1)
+
+[node name="OrderOutpostRebirth" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 31)
+npc_name = "Outpost Flame-Keeper Sraosha"
+npc_title = "Outpost Rebirth & Save NPC"
+vendor_type = "REBIRTH"
+faction_id = "order"
+body_color = Color(0.45, 0.38, 0.22, 1)
+accent_color = Color(1, 0.95, 0.6, 1)
+
+[node name="LegionNpcRebirth" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 0, -33)
+npc_name = "Blood-Anchor Astovidatu"
+npc_title = "HQ Rebirth & Save NPC"
+vendor_type = "REBIRTH"
+faction_id = "legion"
+body_color = Color(0.38, 0.16, 0.2, 1)
+accent_color = Color(1, 0.45, 0.65, 1)
+
+[node name="LegionOutpostRebirth" parent="World" instance=ExtResource("8_vendor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, -31)
+npc_name = "Outpost Soul-Binder Vizaresh"
+npc_title = "Outpost Rebirth & Save NPC"
+vendor_type = "REBIRTH"
+faction_id = "legion"
+body_color = Color(0.38, 0.16, 0.2, 1)
+accent_color = Color(1, 0.45, 0.65, 1)
+
 [node name="SveleitreOutpostVein" parent="World" instance=ExtResource("5_vein")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 0, 28)
 vein_name = "Ark Outpost Farr Vein (Lv.1-15)"

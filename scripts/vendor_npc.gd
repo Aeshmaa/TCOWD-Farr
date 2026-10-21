@@ -9,11 +9,12 @@ enum NpcType {
 	WEAPON,
 	ARMOR,
 	UTILITY,
+	REBIRTH,
 }
 
 @export var npc_name := "HQ Quartermaster"
 @export var npc_title := "Potion Merchant"
-@export_enum("POTION", "WEAPON", "ARMOR", "UTILITY") var vendor_type := "POTION"
+@export_enum("POTION", "WEAPON", "ARMOR", "UTILITY", "REBIRTH") var vendor_type := "POTION"
 @export var faction_id := "sveleitre"
 @export var interact_distance := 3.2
 @export var body_color := Color(0.25, 0.35, 0.45, 1.0)
