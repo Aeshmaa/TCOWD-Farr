@@ -1,15 +1,13 @@
 extends Node3D
-## RF Online-style multi-mode camera rig.
+## RF Online-style multi-mode camera rig (Desktop Mouse + MacBook Trackpad/Keyboard support).
 ##
-## Modes (cycle with [C] key or HUD [CAM] button):
-##   1. ORBIT_360    - Follows player; hold Right/Middle mouse to orbit 360° & tilt; scroll to zoom close or far.
-##   2. CHASE_BEHIND - Follows player and smoothly swings behind the player's facing direction when moving.
-##   3. ISO_LOCKED   - Locked tactical angle (-32° pitch, 45° yaw); scroll to zoom.
-##   4. STAY_STILL   - Detaches pivot in place so the camera stays still while the player walks around (can still orbit 360° & zoom).
-##
-## Projection (toggle with [V] key or HUD [PROJ] button):
-##   - PERSPECTIVE (RF Online style: close over-the-shoulder zoom to huge war-zone overview)
-##   - ORTHOGONAL  (classic flat 2.5D tactical view)
+## MacBook Trackpad & Keyboard Controls:
+##   - Hold [Space] + slide 1 finger on trackpad: 360° Free Orbit & Tilt (no click needed!)
+##   - [Q] / [E] keys: Rotate camera 360° Left / Right
+##   - [T] / [G] keys: Tilt camera Up / Down
+##   - [Z] / [X] or [=] / [-] keys: Smooth Zoom In / Out
+##   - Trackpad Pinch-to-Zoom or Two-Finger Scroll: Smooth Zoom In / Out
+##   - Desktop Mouse: Hold Right/Middle-Click + Drag to Orbit, Scroll Wheel to Zoom
 
 signal mode_changed(mode_name: String, projection_name: String)
 
@@ -37,6 +35,8 @@ const MODE_NAMES := {
 @export var min_pitch := -82.0
 @export var max_pitch := -10.0
 @export var mouse_sensitivity := 0.28
+@export var key_orbit_speed := 110.0
+@export var key_tilt_speed := 55.0
 @export var chase_turn_speed := 4.5
 
 @export_group("Zoom & Follow")
@@ -44,6 +44,7 @@ const MODE_NAMES := {
 ## Zoom level normalized (0.0 = closest, 1.0 = farthest war overview).
 @export_range(0.0, 1.0) var zoom_t := 0.35
 @export var zoom_step := 0.07
+@export var key_zoom_speed := 0.65
 @export var zoom_smooth := 12.0
 @export var persp_dist_min := 4.5
 @export var persp_dist_max := 55.0
@@ -78,20 +79,33 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("cam_reset"):
 		reset_view()
 
+	# Keyboard 360° orbit ([Q]/[E]) and tilt ([T]/[G]) for MacBook convenience.
+	if current_mode != CamMode.ISO_LOCKED:
+		var orbit_axis := Input.get_axis("cam_orbit_left", "cam_orbit_right")
+		if orbit_axis != 0.0:
+			_yaw_deg = wrapf(_yaw_deg - orbit_axis * key_orbit_speed * delta, -180.0, 180.0)
+		var tilt_axis := Input.get_axis("cam_tilt_down", "cam_tilt_up")
+		if tilt_axis != 0.0:
+			_pitch_deg = clampf(_pitch_deg + tilt_axis * key_tilt_speed * delta, min_pitch, max_pitch)
+
+	# Keyboard zoom ([Z]/[X] or [=]/[-]).
+	var zoom_axis := Input.get_axis("cam_zoom_in", "cam_zoom_out")
+	if zoom_axis != 0.0:
+		_target_zoom_t = clampf(_target_zoom_t + zoom_axis * key_zoom_speed * delta, 0.0, 1.0)
+
 	# Position follow (disabled in STAY_STILL mode so camera stays anchored in place).
 	if _target and current_mode != CamMode.STAY_STILL:
 		var desired_pos := _target.global_position + Vector3(0.0, 0.9, 0.0)
 		var t := 1.0 - exp(-follow_speed * delta)
 		global_position = global_position.lerp(desired_pos, t)
 
-	# Auto-behind yaw in CHASE_BEHIND mode when not manually dragging the mouse.
+	# Auto-behind yaw in CHASE_BEHIND mode when not manually rotating.
 	if current_mode == CamMode.CHASE_BEHIND and not _rotating and _target:
 		var vel := Vector3.ZERO
 		if _target is CharacterBody3D:
 			vel = (_target as CharacterBody3D).velocity
 			vel.y = 0.0
 		if vel.length_squared() > 0.2:
-			# Camera looks along -Z, so to look in `vel` direction, yaw = atan2(-vel.x, -vel.z).
 			var desired_yaw := rad_to_deg(atan2(-vel.x, -vel.z))
 			var t_yaw := 1.0 - exp(-chase_turn_speed * delta)
 			_yaw_deg = rad_to_deg(lerp_angle(deg_to_rad(_yaw_deg), deg_to_rad(desired_yaw), t_yaw))
@@ -122,6 +136,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		_yaw_deg = wrapf(_yaw_deg - mm.relative.x * mouse_sensitivity, -180.0, 180.0)
 		_pitch_deg = clampf(_pitch_deg - mm.relative.y * mouse_sensitivity, min_pitch, max_pitch)
 
+	# MacBook Trackpad Pinch-to-Zoom gesture
+	var mag := event as InputEventMagnifyGesture
+	if mag:
+		_target_zoom_t = clampf(_target_zoom_t - (mag.factor - 1.0) * 0.8, 0.0, 1.0)
+
+	# MacBook Trackpad Two-Finger Scroll/Pan gesture
+	var pan := event as InputEventPanGesture
+	if pan:
+		_target_zoom_t = clampf(_target_zoom_t + pan.delta.y * 0.03, 0.0, 1.0)
+		if current_mode != CamMode.ISO_LOCKED and absf(pan.delta.x) > 0.01:
+			_yaw_deg = wrapf(_yaw_deg - pan.delta.x * 2.2, -180.0, 180.0)
+
+	# Standard Mouse Wheel
 	var mb := event as InputEventMouseButton
 	if mb and mb.pressed:
 		if mb.button_index == MOUSE_BUTTON_WHEEL_UP:

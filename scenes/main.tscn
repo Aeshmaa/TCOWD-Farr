@@ -230,9 +230,10 @@ text = "Simulate Death [K]"
 [node name="HelpLabel" type="Label" parent="HUD"]
 offset_left = 16.0
 offset_top = 50.0
-offset_right = 920.0
+offset_right = 1040.0
 offset_bottom = 96.0
-text = "Click Enemy / [Tab]: Target & Attack  |  [1-4]: Skills & Faction Signature  |  Click Vein: Mine  |  Click Refinery: Pay Debt"
+text = "MacBook / PC Camera: Hold [Space] + Slide Trackpad (or Right-Drag) = 360° Orbit & Tilt  |  [Q/E] Rotate  |  [Z/X] or Pinch/2-Finger Scroll = Zoom
+Gameplay: Click Enemy / [Tab] = Target & Attack  |  [1-4] = Skills & Race Signature  |  Click Vein = Mine  |  Click Refinery = Pay Debt"
 
 [node name="TargetPanel" type="PanelContainer" parent="HUD"]
 visible = false

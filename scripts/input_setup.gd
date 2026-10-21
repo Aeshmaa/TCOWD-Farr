@@ -12,8 +12,24 @@ func _enter_tree() -> void:
 	_add_key("move_right", KEY_D)
 	_add_key("move_right", KEY_RIGHT)
 	_add_mouse("move_click", MOUSE_BUTTON_LEFT)
+
+	# Camera orbit: Right-Click, Middle-Click, OR Hold [Space] + move trackpad cursor (MacBook friendly!)
 	_add_mouse("cam_rotate", MOUSE_BUTTON_RIGHT)
 	_add_mouse("cam_rotate", MOUSE_BUTTON_MIDDLE)
+	_add_key("cam_rotate", KEY_SPACE)
+
+	# Keyboard 360° orbit & tilt (MacBook friendly!)
+	_add_key("cam_orbit_left", KEY_Q)
+	_add_key("cam_orbit_right", KEY_E)
+	_add_key("cam_tilt_up", KEY_T)
+	_add_key("cam_tilt_down", KEY_G)
+
+	# Keyboard zoom in / out: [-] / [=] or [Z] / [X]
+	_add_key("cam_zoom_in", KEY_EQUAL)
+	_add_key("cam_zoom_in", KEY_Z)
+	_add_key("cam_zoom_out", KEY_MINUS)
+	_add_key("cam_zoom_out", KEY_X)
+
 	_add_key("cam_mode_cycle", KEY_C)
 	_add_key("cam_projection_toggle", KEY_V)
 	_add_key("cam_reset", KEY_R)
