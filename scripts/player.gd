@@ -795,6 +795,7 @@ func cycle_class() -> void:
 	current_hp = max_hp
 	current_fp = max_fp
 	current_sp = max_sp
+	save_game()
 	var c := _class_dict()
 	event_logged.emit("Class -> %s (%s) | HP:%d FP:%d SP:%d | Range:%.1fm" % [
 		c["base"], c["role"], max_hp, max_fp, max_sp, c["range"]
@@ -836,6 +837,7 @@ func dev_boost_level() -> void:
 	current_hp = max_hp
 	current_fp = max_fp
 	current_sp = max_sp
+	save_game()
 
 
 func teleport_to_hq() -> void:
@@ -855,6 +857,9 @@ func teleport_to_hq() -> void:
 func _handle_click(delta: float) -> void:
 	_retarget_timer -= delta
 	if _holding_world_click and _retarget_timer <= 0.0:
+		if get_viewport().gui_get_hovered_control() != null:
+			_holding_world_click = false
+			return
 		_retarget_timer = hold_retarget_interval
 		var hit_info := _mouse_raycast(get_viewport().get_mouse_position())
 		if hit_info.is_empty():
