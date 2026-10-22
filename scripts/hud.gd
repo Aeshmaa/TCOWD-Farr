@@ -76,6 +76,8 @@ var _opt_auto_target_btn: Button
 var _opt_float_dmg_btn: Button
 var _opt_sfx_vol_btn: Button
 var _opt_test_sfx_btn: Button
+var _opt_bgm_vol_btn: Button
+var _opt_test_bgm_btn: Button
 var _opt_cam_sens_btn: Button
 var _opt_save_now_btn: Button
 var _story_top_btn: Button
@@ -309,6 +311,29 @@ func _build_settings_window() -> void:
 			_player.test_sfx_sound()
 	)
 	sfx_row.add_child(_opt_test_sfx_btn)
+
+	var bgm_row := HBoxContainer.new()
+	bgm_row.add_theme_constant_override("separation", 6)
+	vbox.add_child(bgm_row)
+
+	_opt_bgm_vol_btn = Button.new()
+	_opt_bgm_vol_btn.focus_mode = Control.FOCUS_NONE
+	_opt_bgm_vol_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_opt_bgm_vol_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("cycle_music_volume"):
+			_player.cycle_music_volume()
+	)
+	bgm_row.add_child(_opt_bgm_vol_btn)
+
+	_opt_test_bgm_btn = Button.new()
+	_opt_test_bgm_btn.focus_mode = Control.FOCUS_NONE
+	_opt_test_bgm_btn.modulate = Color(1.0, 0.85, 0.45)
+	_opt_test_bgm_btn.text = "Preview Zone BGM"
+	_opt_test_bgm_btn.pressed.connect(func() -> void:
+		if _player and _player.has_method("test_music_sound"):
+			_player.test_music_sound()
+	)
+	bgm_row.add_child(_opt_test_bgm_btn)
 
 	_opt_cam_sens_btn = Button.new()
 	_opt_cam_sens_btn.focus_mode = Control.FOCUS_NONE
@@ -830,6 +855,9 @@ func _update_settings_window(d: Dictionary) -> void:
 	if _opt_sfx_vol_btn:
 		var vol: int = int(d.get("sfx_volume_pct", 80))
 		_opt_sfx_vol_btn.text = "Special Effects (SFX) Volume: [%s]" % ("MUTED (0%)" if vol <= 0 else "%d%%" % vol)
+	if _opt_bgm_vol_btn:
+		var mvol: int = int(d.get("music_volume_pct", 70))
+		_opt_bgm_vol_btn.text = "Background Music (BGM): [%s]" % ("MUTED (0%)" if mvol <= 0 else "%d%%" % mvol)
 	if _opt_cam_sens_btn:
 		var sens: float = float(d.get("cam_sensitivity_mult", 1.0))
 		var sens_lbl := "Normal (1.0x)" if is_equal_approx(sens, 1.0) else ("Fast (1.5x)" if sens > 1.2 else "Low (0.6x)")

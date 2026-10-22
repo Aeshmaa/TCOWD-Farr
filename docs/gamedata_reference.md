@@ -147,13 +147,20 @@ Every Faction HQ (`svel_hq`, `order_hq`, `legion_hq`) now features its **3D Fact
 
 ---
 
-## 8. `[Tab]` Target Priority Options, In-Game Settings (`[Esc]`) & Procedural/Custom Audio (`SfxManager`)
+## 8. `[Tab]` Target Priority Options, In-Game Settings (`[Esc]`) & Audio Architecture (`SfxManager` & `BgmManager`)
 
 - **`[Tab]` Target Priority Modes** (switchable in `Settings [Esc]`):
   1. **`Closest to Mouse Cursor`** *(Default)* — projects each enemy's 3D position onto your 2D viewport and locks onto the living enemy nearest your mouse cursor.
   2. **`Lowest HP First (Finish Off)`** — locks onto the enemy with the lowest current HP percentage within `28m`.
   3. **`Closest to Character (3D Distance)`** — locks onto the nearest enemy to your character's 3D position.
-- **Audio & Special Effects (`scripts/sfx_manager.gd`):** Synthesizes 12 16-bit PCM `AudioStreamWAV` effects in memory (`target_lock`, `attack_hit`, `ranged_shot`, `skill_cast`, `buff_cast`, `damage_taken`, `heal`, `mine_ore`, `upgrade_success`, `upgrade_fail`, `warp_portal`, `level_up`) and automatically overrides any cue if you drop a matching `.wav` or `.ogg` file into `res://assets/sfx/`.
+
+- **Special Effects Audio (`scripts/sfx_manager.gd`):** Synthesizes 12 16-bit PCM `AudioStreamWAV` effects in memory (`target_lock`, `attack_hit`, `ranged_shot`, `skill_cast`, `buff_cast`, `damage_taken`, `heal`, `mine_ore`, `upgrade_success`, `upgrade_fail`, `warp_portal`, `level_up`) and automatically overrides any cue if you drop a matching `.wav` or `.ogg` file into `res://assets/sfx/`.
+
+- **Background Music & Soundscapes (`scripts/bgm_manager.gd`):**
+  - **Procedural Ambient Soundscapes:** Synthesizes seamless, non-repetitive harmonic audio loops in memory for all biome themes (cybernetic drone in `TECH_ARK`, sacred modal flute/choir pads in `HOLY_TEMPLE`, tectonic subterranean rumble in `MAGMA_CALDERA`, martial industrial war percussion in `CRACK_MINING`, celestial fifths in `AETHER_SKY`, etc.).
+  - **Seamless Cross-fading:** Uses dual `AudioStreamPlayer` nodes to smoothly cross-fade music over `1.2 seconds` when transitioning across maps.
+  - **Custom Soundtrack Support:** Automatically checks `res://assets/music/<map_id>.ogg` (or `.wav`) and `res://assets/music/<theme>.ogg` (or `.wav`). Drop any custom track into that folder to hear it in-game immediately!
+  - **Independent Volume Controls:** Adjust both **SFX Volume** and **BGM Volume** independently in `Settings [Esc]`.
 
 ---
 
@@ -178,23 +185,34 @@ Press **`[B]`** or **`[9]`** (or click **`9: RF Buffs [B]`** on the Skill Bar) t
 
 ---
 
-## 10. Expansive 3D Terrain, Themed Landmarks, Dedicated Boss Pits & Summon Beacons
+## 10. Expansive 3D Terrain, Procedural Height Landforms, 23 Biome Landmarks & Boss Pits
 
-### 10.1 Perimeter Mountain Cliff Barriers & Themed Landmarks
-Every one of the 9 maps features procedural physical barriers and themed architectural structures dynamically built by [`WorldZoneManager`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/scripts/world.gd):
-- **Perimeter Ring Cliffs (68 Rock Bastions):** An unbroken ring of rocky mountain cliffs enclosing the `230m x 230m` boundaries (coordinates `X, Z = ±115m`), keeping players and mobs safely inside the playable area and creating a dramatic mountain canyon rim.
-- **Themed Architectural Landmarks:**
-  - `TECH_ARK` (`svel_hq`): Giant crashed alloy bulkheads, high-tech energy conduit pylons with neon cyan strips, and coolant vents.
-  - `FROZEN_SCRAP` (`svel_basic`): Glacial ice spires (11m-16m tall, translucent cyan-blue crystal), frost-covered scrap hulls.
-  - `HOLY_TEMPLE` (`order_hq`): Ivory-gold marble peristyle colonnade, central Sacred Fire Altar with burning holy flame and OmniLight3D.
-  - `DESERT_RUINS` (`order_basic`): Weathered Persian sandstone obelisks with gold runes, ruined bull-capital columns and crumbling stone walls.
-  - `OBSIDIAN_CITADEL` (`legion_hq`): Sharp jagged black basalt monolith blades (12m-15m tall) and dark cauldron braziers with violet-crimson flame.
-  - `VOLCANIC_BASIN` (`legion_basic`): Smoldering brimstone crags with glowing red magma fissures and volcanic chimney cones.
-  - `PERSEPOLIS_STEPPES` (`contested_steppes`): Colossal Persepolis hypostyle columns with double-bull capitals (8.5m tall) and stepped stone terrace dais.
-  - `SCORCHED_CAULDRON` (`contested_cauldron`): Abyssal demonic spires (15m-17m tall) and twisted brimstone arches.
-  - `CRACK_MINING` (`farr_mining_ground`): Colossal 14m Central Raw Amber Farr Crystal Megaspire with 24m light radiance and 4 heavy industrial mining rig scaffolding towers.
+### 10.1 Multi-Tier Walkable Height Variation & Landforms
+Across all 30 world zones, [`WorldZoneManager`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/scripts/world.gd) dynamically generates multi-tiered 3D terrain:
+- **Elevated Terraces & Plateaus (`height = 2.4m – 3.8m`):** Placed in the outer quadrants (`40m – 65m` from center), keeping the central arena open while providing strategic high ground.
+- **Walkable Sloping Ramps (`slope ~ 13.4°`):** Wide ramps connecting ground level (`y = 0.0`) to elevated platforms, fully walkable by players and mobs and dynamically baked into Godot 4's `NavigationMesh`.
+- **Rolling Hills & Bluffs (`radius = 14m – 18m`, `height = 1.6m – 2.2m`):** Low-gradient natural mounds.
+- **Sky Bridges & Walkways:** Elevated high-tech gangways and energy bridges in sky platforms and mainframe supercores.
+- **Perimeter Ring Mountain Cliffs:** 68 rocky monolith bastions enclosing the `230m x 230m` boundaries (`X, Z = ±115m`).
+- **Cinematic Atmosphere & Distance Fog:** Procedural distance fog (`fog_density = 0.0055`) and horizon-matched directional sunlight across all 30 maps.
 
-### 10.2 Dedicated Boss Pits & Zone Pit Bosses
+### 10.2 Distinctive 23 Biome Thematic Landmarks
+Every zone features architectural structures and environmental monuments tailored to its specific theme:
+- `TECH_ARK` / `ARK_SUPERCORE`: Crashed alloy bulkheads, neon cyan tech pylons, server blade mainframe racks with blinking LED arrays.
+- `AETHER_SKY`: Levitating sky island discs with glowing thruster rings, floating boulders, and crystal cloud spires.
+- `HOLY_TEMPLE` / `SKY_SANCTUM`: Ivory-gold peristyle colonnades, sacred fire altars, floating celestial halos of white-gold light.
+- `DESERT_RUINS` / `PERSEPOLIS_STEPPES`: Ancient Persian obelisks, hypostyle columns with double-bull capitals, monumental stone terraces.
+- `MAGMA_CALDERA` / `SCORCHED_CAULDRON`: Glowing molten lava fissures with dynamic OmniLight3D, obsidian monolith blades, and smoking fumaroles.
+- `CATACOMB_CRYPT` / `DAEVA_CRYPT`: Ancient Persian royal sarcophagi, subterranean mausoleum pillared arches, and necrotic soul-fire braziers.
+- `LUMINESCENT_AQUIFER`: Giant bioluminescent mushroom caps emitting turquoise spore light, crystal stalagmites, and stone aqueduct arches.
+- `BEAST_HIGHLAND`: Colossal apex predator skeletal ribcage arches forming walkable bone tunnels, mammoth tusk shrines.
+- `OUTCAST_WASTELAND`: Scavenger watchtowers with searchlights, spiked defensive palisades, and rusted engine scrap heaps.
+- `SKY_FRACTURE`: Gravity-inverted floating boulders hovering in midair, cosmic rift spires with starfall purple/cyan glow.
+- `VAR_ROOTS`: Titanic petrified tree roots curving through gold-inlaid stone vaults and royal Yima seal discs.
+- `BORDER_TRENCHES`: Sandbag revetment bunkers, fortified firing parapets, and military barricades.
+- `CRACK_MINING` / `LOWER_CRATER` / `BREACH_RIDGE`: 14m Central Raw Amber Farr Megaspire, heavy industrial drill rigs, and sniper battlements.
+
+### 10.3 Dedicated Boss Pits & Zone Pit Bosses
 Each zone has a dedicated **Boss Pit Arena** platform with 8 monolithic stone pillars, fire braziers, glowing inner rune circles, and a floating 3D title plate:
 
 | Map ID | Boss Pit Name | Pit Boss Name | Level | HP | ATK | Guaranteed Loot & Talics |
@@ -209,7 +227,7 @@ Each zone has a dedicated **Boss Pit Arena** platform with 8 monolithic stone pi
 | `contested_cauldron` | Forsworn Crucible Pit | **ABYSSAL DAEVA OVERLORD** | `Lv.44` | `5,200` | `112` | Guaranteed 2-3 Farr Talics + Lv.35 Rare Equipment + `3,600 Currency` |
 | `farr_mining_ground` | Central Core Megavein Pit | **CRACK CORE ARCH-LEVIATHAN** | `Lv.45` | `5,800` | `128` | Guaranteed 2-3 Farr Talics + Lv.35-45 Rare Gear + `4,200 Currency` |
 
-### 10.3 3D Interactive Monster Summon Beacon (`SummonBeacon`)
+### 10.4 3D Interactive Monster Summon Beacon (`SummonBeacon`)
 Every map has an interactive 3D monument ([`SummonBeacon`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/scripts/summon_beacon.gd)) featuring a floating rotating prism crystal core and light beam:
 - **Left-Click to Approach & Activate:** Walking up to the beacon opens the **Rift Summon Beacon Terminal** GUI window.
 - **`[1] Summon Grinding Pack`**: Materializes a wave of 3 hostile zone monsters around the beacon with AoE blast VFX for instant leveling and grinding.

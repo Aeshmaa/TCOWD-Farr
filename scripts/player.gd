@@ -13,6 +13,7 @@ const DROPPED_BAG_SCENE := preload("res://scenes/dropped_ore_bag.tscn")
 const FRAVASHI_SCENE := preload("res://scenes/fravashi_companion.tscn")
 const FLOATING_TEXT := preload("res://scripts/floating_combat_text.gd")
 const SFX_MANAGER_SCRIPT := preload("res://scripts/sfx_manager.gd")
+const BGM_MANAGER_SCRIPT := preload("res://scripts/bgm_manager.gd")
 const COMBAT_VFX := preload("res://scripts/combat_vfx.gd")
 
 @export var base_move_speed := 6.0
@@ -97,8 +98,10 @@ var tab_target_mode := 0
 var auto_target_on_kill := true
 var show_floating_dmg := true
 var sfx_volume_pct := 80
+var music_volume_pct := 70
 var cam_sensitivity_mult := 1.0
 var _sfx: Node = null
+var _bgm: Node = null
 
 ## Persistent Character Save (RF-style: log back in exactly where you left off)
 ## - Bags, equipment, wallet, debt, level, position & carried Farr ore all persist.
@@ -156,6 +159,8 @@ func _ready() -> void:
 	add_to_group("friendly_combatant")
 	_sfx = SFX_MANAGER_SCRIPT.new()
 	add_child(_sfx)
+	_bgm = BGM_MANAGER_SCRIPT.new()
+	add_child(_bgm)
 	current_debt = starting_debt
 	_upkeep_timer = upkeep_interval
 	_init_equipment_and_bags()
@@ -186,6 +191,8 @@ func _sync_world_to_current_map() -> void:
 	var world_mgr := get_tree().get_first_node_in_group("world_zone_manager")
 	if world_mgr and world_mgr.has_method("load_map"):
 		world_mgr.call("load_map", current_map_id)
+	if _bgm and _bgm.has_method("play_for_map"):
+		_bgm.call("play_for_map", current_map_id)
 
 
 func travel_to_map(target_map_id: String, custom_pos: Variant = null, silent: bool = false) -> bool:
@@ -244,6 +251,8 @@ func _play_sfx(sfx_name: String, pitch: float = 1.0) -> void:
 func _apply_user_settings() -> void:
 	if _sfx:
 		_sfx.set("volume_pct", sfx_volume_pct)
+	if _bgm:
+		_bgm.set("volume_pct", music_volume_pct)
 	if show_floating_dmg:
 		if is_in_group("disable_floating_combat_text"):
 			remove_from_group("disable_floating_combat_text")
@@ -302,6 +311,31 @@ func cycle_sfx_volume() -> void:
 func test_sfx_sound() -> void:
 	_play_sfx("skill_cast")
 	event_logged.emit("Played synthesized Skill SFX preview (drop custom .wav files into res://assets/sfx/ to override!).")
+
+
+func cycle_music_volume() -> void:
+	match music_volume_pct:
+		70:
+			music_volume_pct = 100
+		100:
+			music_volume_pct = 0
+		0:
+			music_volume_pct = 25
+		25:
+			music_volume_pct = 50
+		_:
+			music_volume_pct = 70
+	_apply_user_settings()
+	save_game()
+	_play_sfx("heal")
+	event_logged.emit("Setting: Background Music (BGM) Volume -> %s." % ("MUTED (0%)" if music_volume_pct == 0 else "%d%%" % music_volume_pct))
+	_emit_state()
+
+
+func test_music_sound() -> void:
+	if _bgm and _bgm.has_method("test_preview"):
+		_bgm.call("test_preview")
+	event_logged.emit("Previewed Zone BGM soundtrack (drop custom .ogg/.wav files into res://assets/music/ to override!).")
 
 
 func cycle_cam_sensitivity() -> void:
@@ -2307,6 +2341,7 @@ func save_game() -> void:
 		"auto_target_on_kill": auto_target_on_kill,
 		"show_floating_dmg": show_floating_dmg,
 		"sfx_volume_pct": sfx_volume_pct,
+		"music_volume_pct": music_volume_pct,
 		"cam_sensitivity_mult": cam_sensitivity_mult,
 		"story_chapter_by_faction": story_chapter_by_faction,
 		"story_kills": story_kills,
@@ -2375,6 +2410,7 @@ func load_game() -> bool:
 	auto_target_on_kill = bool(d.get("auto_target_on_kill", true))
 	show_floating_dmg = bool(d.get("show_floating_dmg", true))
 	sfx_volume_pct = clampi(int(d.get("sfx_volume_pct", 80)), 0, 100)
+	music_volume_pct = clampi(int(d.get("music_volume_pct", 70)), 0, 100)
 	cam_sensitivity_mult = clampf(float(d.get("cam_sensitivity_mult", 1.0)), 0.4, 2.0)
 	if d.has("story_chapter_by_faction") and typeof(d["story_chapter_by_faction"]) == TYPE_DICTIONARY:
 		for k in d["story_chapter_by_faction"].keys():
@@ -2590,6 +2626,7 @@ func _emit_state() -> void:
 		"auto_target_on_kill": auto_target_on_kill,
 		"show_floating_dmg": show_floating_dmg,
 		"sfx_volume_pct": sfx_volume_pct,
+		"music_volume_pct": music_volume_pct,
 		"cam_sensitivity_mult": cam_sensitivity_mult,
 		"story_info": story_info,
 	})
