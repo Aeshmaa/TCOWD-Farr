@@ -64,14 +64,17 @@ extends CanvasLayer
 @onready var target_bar: ProgressBar = $TargetPanel/Margin/VBox/TargetBox/TargetBar
 @onready var target_hp_label: Label = $TargetPanel/Margin/VBox/TargetBox/TargetHpLabel
 
-@onready var skill1_btn: Button = $SkillBar/Skill1
-@onready var skill2_btn: Button = $SkillBar/Skill2
-@onready var skill3_btn: Button = $SkillBar/Skill3
-@onready var skill4_btn: Button = $SkillBar/Skill4
-@onready var pot_hp_btn: Button = $SkillBar/PotHP
-@onready var pot_fp_btn: Button = $SkillBar/PotFP
-@onready var pot_sp_btn: Button = $SkillBar/PotSP
-@onready var scroll_btn: Button = $SkillBar/ScrollBtn
+@onready var skill_bar_panel: PanelContainer = $SkillBarPanel
+@onready var skill1_btn: Button = $SkillBarPanel/Margin/SkillBar/Skill1
+@onready var skill2_btn: Button = $SkillBarPanel/Margin/SkillBar/Skill2
+@onready var skill3_btn: Button = $SkillBarPanel/Margin/SkillBar/Skill3
+@onready var skill4_btn: Button = $SkillBarPanel/Margin/SkillBar/Skill4
+@onready var pot_hp_btn: Button = $SkillBarPanel/Margin/SkillBar/PotHP
+@onready var pot_fp_btn: Button = $SkillBarPanel/Margin/SkillBar/PotFP
+@onready var pot_sp_btn: Button = $SkillBarPanel/Margin/SkillBar/PotSP
+@onready var scroll_btn: Button = $SkillBarPanel/Margin/SkillBar/ScrollBtn
+@onready var buff_btn: Button = $SkillBarPanel/Margin/SkillBar/BuffBtn
+@onready var stance_btn: Button = $SkillBarPanel/Margin/SkillBar/StanceBtn
 
 @onready var mining_panel: PanelContainer = $MiningPanel
 @onready var mining_label: Label = $MiningPanel/VBox/MiningLabel
@@ -80,6 +83,7 @@ extends CanvasLayer
 
 var _rig: Node
 var _player: Node
+var _quickslots: Dictionary = {}
 
 # Programmatically built Inventory & Equipment Panel [I]
 var _inv_panel: PanelContainer
@@ -220,6 +224,16 @@ func _ready() -> void:
 		pot_fp_btn.pressed.connect(func() -> void: _player.use_potion("FP", false))
 		pot_sp_btn.pressed.connect(func() -> void: _player.use_potion("SP", false))
 		scroll_btn.pressed.connect(func() -> void: _player.use_teleport_scroll())
+		if buff_btn:
+			buff_btn.pressed.connect(func() -> void:
+				if _player and _player.has_method("cast_rf_buff_suite"):
+					_player.cast_rf_buff_suite()
+			)
+		if stance_btn:
+			stance_btn.pressed.connect(func() -> void:
+				if _player and _player.has_method("cycle_weapon_stance"):
+					_player.cycle_weapon_stance()
+			)
 		_player._emit_state()
 
 
@@ -308,29 +322,285 @@ func _apply_hud_styles() -> void:
 		target_bar.add_theme_stylebox_override("background", hp_bg.duplicate())
 		target_bar.add_theme_stylebox_override("fill", tgt_fill)
 
+	if skill_bar_panel:
+		var bar_style := StyleBoxFlat.new()
+		bar_style.bg_color = Color(0.05, 0.07, 0.11, 0.94)
+		bar_style.border_color = Color(0.25, 0.38, 0.52, 0.85)
+		bar_style.border_width_left = 2
+		bar_style.border_width_top = 2
+		bar_style.border_width_right = 2
+		bar_style.border_width_bottom = 2
+		bar_style.corner_radius_top_left = 6
+		bar_style.corner_radius_top_right = 6
+		bar_style.corner_radius_bottom_left = 6
+		bar_style.corner_radius_bottom_right = 6
+		bar_style.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
+		bar_style.shadow_size = 6
+		skill_bar_panel.add_theme_stylebox_override("panel", bar_style)
+
+	_setup_all_quickslots()
+
+
+func _setup_all_quickslots() -> void:
+	_quickslots.clear()
+	_setup_quickslot(skill1_btn, "skill1", "1", "res://assets/icons/skills/attack.png", "Auto-Attack [1]\nClick or press [1] to engage weapon attack on selected enemy.")
+	_setup_quickslot(skill2_btn, "skill2", "2", "res://assets/icons/skills/cleave.png", "Primary Skill [2]\nSingle-target burst / Cleave (CD: 6.0s)")
+	_setup_quickslot(skill3_btn, "skill3", "3", "res://assets/icons/skills/stomp.png", "Secondary Skill [3]\nShockwave AoE stagger (CD: 10.0s)")
+	_setup_quickslot(skill4_btn, "skill4", "4", "res://assets/icons/skills/signature.png", "Signature Ability [4]\nFaction Signature mode / Siege / Fravashi summon")
+	_setup_quickslot(pot_hp_btn, "pot_hp", "5", "res://assets/icons/skills/potion_hp.png", "HP Recovery Flask [5]\nRestores +350 HP instantly.\nAuto-pot setting in Bags [I]")
+	_setup_quickslot(pot_fp_btn, "pot_fp", "6", "res://assets/icons/skills/potion_fp.png", "FP Force Crystal [6]\nRestores +250 FP instantly.\nAuto-pot setting in Bags [I]")
+	_setup_quickslot(pot_sp_btn, "pot_sp", "7", "res://assets/icons/skills/potion_sp.png", "SP Stamina Ampoule [7]\nRestores +300 SP instantly.")
+	_setup_quickslot(scroll_btn, "scroll", "8", "res://assets/icons/skills/scroll.png", "Teleport Recall Scroll [8]\nInstant recall warp to your Faction Safe HQ.")
+	_setup_quickslot(buff_btn, "buff", "9", "res://assets/icons/skills/buff_suite.png", "RF Combat Buff Suite [9 / B]\n+15% Dmg, +15% Def, +25% Move Speed, +HP/FP Regen (60s).")
+	_setup_quickslot(stance_btn, "stance", "Z", "res://assets/icons/skills/weapon_stance.png", "Weapon Stance [Z]\nCycle Native (balanced) / Fast (+25% Atk Spd) / Power (+30% Dmg).")
+
+
+func _setup_quickslot(btn: Button, slot_id: String, key_text: String, icon_path: String, tooltip_text: String) -> void:
+	if not btn:
+		return
+	btn.custom_minimum_size = Vector2(50, 50)
+	btn.text = ""
+	btn.tooltip_text = tooltip_text
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.clip_contents = true
+
+	for c in btn.get_children():
+		c.queue_free()
+
+	var normal_box := StyleBoxFlat.new()
+	normal_box.bg_color = Color(0.07, 0.09, 0.13, 0.95)
+	normal_box.border_color = Color(0.28, 0.38, 0.50, 0.85)
+	normal_box.set_border_width_all(2)
+	normal_box.set_corner_radius_all(4)
+
+	var hover_box := StyleBoxFlat.new()
+	hover_box.bg_color = Color(0.12, 0.16, 0.24, 0.95)
+	hover_box.border_color = Color(0.55, 0.80, 1.0, 1.0)
+	hover_box.set_border_width_all(2)
+	hover_box.set_corner_radius_all(4)
+
+	var pressed_box := StyleBoxFlat.new()
+	pressed_box.bg_color = Color(0.04, 0.05, 0.08, 0.98)
+	pressed_box.border_color = Color(0.85, 0.95, 1.0, 1.0)
+	pressed_box.set_border_width_all(2)
+	pressed_box.set_corner_radius_all(4)
+
+	btn.add_theme_stylebox_override("normal", normal_box)
+	btn.add_theme_stylebox_override("hover", hover_box)
+	btn.add_theme_stylebox_override("pressed", pressed_box)
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+	var icon_rect := TextureRect.new()
+	icon_rect.name = "Icon"
+	icon_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon_rect.offset_left = 3.0
+	icon_rect.offset_top = 3.0
+	icon_rect.offset_right = -3.0
+	icon_rect.offset_bottom = -3.0
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if ResourceLoader.exists(icon_path):
+		icon_rect.texture = load(icon_path)
+	btn.add_child(icon_rect)
+
+	var key_lbl := Label.new()
+	key_lbl.name = "KeyBadge"
+	key_lbl.offset_left = 4.0
+	key_lbl.offset_top = 2.0
+	key_lbl.offset_right = 24.0
+	key_lbl.offset_bottom = 18.0
+	key_lbl.text = key_text
+	key_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	key_lbl.add_theme_font_size_override("font_size", 11)
+	key_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+	key_lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.95))
+	key_lbl.add_theme_constant_override("outline_size", 3)
+	btn.add_child(key_lbl)
+
+	var count_lbl := Label.new()
+	count_lbl.name = "CountBadge"
+	count_lbl.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	count_lbl.offset_left = -34.0
+	count_lbl.offset_top = -18.0
+	count_lbl.offset_right = -4.0
+	count_lbl.offset_bottom = -2.0
+	count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	count_lbl.text = ""
+	count_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	count_lbl.add_theme_font_size_override("font_size", 10)
+	count_lbl.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
+	count_lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.95))
+	count_lbl.add_theme_constant_override("outline_size", 3)
+	btn.add_child(count_lbl)
+
+	var cd_rect := ColorRect.new()
+	cd_rect.name = "CdOverlay"
+	cd_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cd_rect.offset_left = 2.0
+	cd_rect.offset_top = 2.0
+	cd_rect.offset_right = -2.0
+	cd_rect.offset_bottom = -2.0
+	cd_rect.color = Color(0.02, 0.03, 0.05, 0.72)
+	cd_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cd_rect.visible = false
+	btn.add_child(cd_rect)
+
+	var cd_lbl := Label.new()
+	cd_lbl.name = "CdLabel"
+	cd_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cd_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cd_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	cd_lbl.text = ""
+	cd_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cd_lbl.add_theme_font_size_override("font_size", 11)
+	cd_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.35))
+	cd_lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	cd_lbl.add_theme_constant_override("outline_size", 4)
+	cd_lbl.visible = false
+	btn.add_child(cd_lbl)
+
+	_quickslots[slot_id] = {
+		"btn": btn,
+		"icon": icon_rect,
+		"key_lbl": key_lbl,
+		"count_lbl": count_lbl,
+		"cd_rect": cd_rect,
+		"cd_lbl": cd_lbl,
+		"normal_box": normal_box,
+	}
+
+
+func _set_slot_border(slot_dict: Dictionary, border_col: Color, border_w: int) -> void:
+	if not slot_dict.has("normal_box"):
+		return
+	var box: StyleBoxFlat = slot_dict["normal_box"]
+	box.border_color = border_col
+	box.set_border_width_all(border_w)
+
+
+func _set_slot_cooldown(slot_dict: Dictionary, cd: float) -> void:
+	if not slot_dict.has("cd_rect") or not slot_dict.has("cd_lbl"):
+		return
+	var cd_rect: ColorRect = slot_dict["cd_rect"]
+	var cd_lbl: Label = slot_dict["cd_lbl"]
+	if cd > 0.05:
+		cd_rect.visible = true
+		cd_lbl.visible = true
+		cd_lbl.text = "%.1fs" % cd if cd < 10.0 else "%ds" % int(ceil(cd))
+	else:
+		cd_rect.visible = false
+		cd_lbl.visible = false
+
+
+func _update_quickslots(d: Dictionary) -> void:
+	var s1 = _quickslots.get("skill1")
+	if s1:
+		s1.btn.text = ""
+		var atk_on: bool = bool(d.get("auto_attacking", false))
+		s1.count_lbl.text = "ON" if atk_on else ""
+		s1.count_lbl.add_theme_color_override("font_color", Color(1.0, 0.45, 0.15) if atk_on else Color.WHITE)
+		_set_slot_border(s1, Color(1.0, 0.45, 0.15, 1.0) if atk_on else Color(0.28, 0.38, 0.50, 0.85), 3 if atk_on else 2)
+		var t_name: String = str(d.get("target_name", ""))
+		s1.btn.tooltip_text = "Auto-Attack [1]\nStatus: %s\nTarget: %s\nClick or press [1] to engage auto-attack on target." % [
+			"ACTIVE (Attacking)" if atk_on else "STANDBY (Idle)",
+			t_name if t_name != "" else "No target"
+		]
+
+	var s2 = _quickslots.get("skill2")
+	if s2:
+		s2.btn.text = ""
+		var cd2: float = float(d.get("skill2_cd", 0.0))
+		_set_slot_cooldown(s2, cd2)
+		var sk2_lbl: String = str(d.get("skill2_label", "Skill 2"))
+		s2.btn.tooltip_text = "%s [2]\nDamage: 180%% Phys/Force\nCooldown: 6.0s (Remaining: %.1fs)" % [sk2_lbl, cd2]
+
+	var s3 = _quickslots.get("skill3")
+	if s3:
+		s3.btn.text = ""
+		var cd3: float = float(d.get("skill3_cd", 0.0))
+		_set_slot_cooldown(s3, cd3)
+		var sk3_lbl: String = str(d.get("skill3_label", "Skill 3"))
+		s3.btn.tooltip_text = "%s [3]\nArea of Effect Shockwave\nStaggers nearby targets (CD: 10.0s, Remaining: %.1fs)" % [sk3_lbl, cd3]
+
+	var s4 = _quickslots.get("skill4")
+	if s4:
+		s4.btn.text = ""
+		var sig_on: bool = bool(d.get("sig_active", false))
+		s4.count_lbl.text = "ON" if sig_on else ""
+		s4.count_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+		_set_slot_border(s4, Color(1.0, 0.85, 0.20, 1.0) if sig_on else Color(0.28, 0.38, 0.50, 0.85), 3 if sig_on else 2)
+		var sk4_lbl: String = str(d.get("skill4_label", "Signature"))
+		s4.btn.tooltip_text = "%s [4]\nFaction Signature Stance / Summon\nStatus: %s" % [
+			sk4_lbl, "ACTIVE" if sig_on else "READY"
+		]
+
+	var pot_cd: float = float(d.get("potion_cd", 0.0))
+
+	var s5 = _quickslots.get("pot_hp")
+	if s5:
+		s5.btn.text = ""
+		var hp_n: int = int(d.get("hp_potions", 0))
+		s5.count_lbl.text = str(hp_n)
+		_set_slot_cooldown(s5, pot_cd)
+		s5.btn.tooltip_text = "HP Recovery Flask [5]\nCount: %d\nRestores +350 HP instantly.\nShared Potion CD: 2.0s (Remaining: %.1fs)\nConfigure Auto-Pot in Bags [I]" % [hp_n, pot_cd]
+
+	var s6 = _quickslots.get("pot_fp")
+	if s6:
+		s6.btn.text = ""
+		var fp_n: int = int(d.get("fp_potions", 0))
+		s6.count_lbl.text = str(fp_n)
+		_set_slot_cooldown(s6, pot_cd)
+		s6.btn.tooltip_text = "FP Force Crystal [6]\nCount: %d\nRestores +250 FP instantly.\nShared Potion CD: 2.0s (Remaining: %.1fs)\nConfigure Auto-Pot in Bags [I]" % [fp_n, pot_cd]
+
+	var s7 = _quickslots.get("pot_sp")
+	if s7:
+		s7.btn.text = ""
+		var sp_n: int = int(d.get("sp_potions", 0))
+		s7.count_lbl.text = str(sp_n)
+		_set_slot_cooldown(s7, pot_cd)
+		s7.btn.tooltip_text = "SP Stamina Ampoule [7]\nCount: %d\nRestores +300 SP instantly.\nShared Potion CD: 2.0s (Remaining: %.1fs)" % [sp_n, pot_cd]
+
+	var s8 = _quickslots.get("scroll")
+	if s8:
+		s8.btn.text = ""
+		var sc_n: int = int(d.get("scrolls", 0))
+		s8.count_lbl.text = str(sc_n)
+		s8.btn.tooltip_text = "Teleport Recall Scroll [8]\nCount: %d\nInstantly recalls your character to Faction Safe HQ." % sc_n
+
+	var s9 = _quickslots.get("buff")
+	if s9:
+		s9.btn.text = ""
+		var rf_t: float = float(d.get("rf_buff_timer", 0.0))
+		var buffs_on := rf_t > 0.0
+		s9.count_lbl.text = ("%.0fs" % rf_t) if buffs_on else ""
+		s9.count_lbl.add_theme_color_override("font_color", Color(0.35, 1.0, 0.60))
+		_set_slot_border(s9, Color(0.25, 1.0, 0.55, 1.0) if buffs_on else Color(0.28, 0.38, 0.50, 0.85), 3 if buffs_on else 2)
+		s9.btn.tooltip_text = "RF Combat Buff Suite [9 / B]\n%s\nGrants +15%% Attack, +15%% Defense, +25%% Move Speed, and HP/FP regen." % [
+			("Active: %.1fs remaining" % rf_t) if buffs_on else "Ready to cast"
+		]
+
+	var s10 = _quickslots.get("stance")
+	if s10:
+		s10.btn.text = ""
+		var st_name: String = str(d.get("weapon_mode_summary", d.get("weapon_stance_label", "Native")))
+		var short_st: String = "NAT"
+		var st_color: Color = Color(0.85, 0.92, 1.0)
+		if "Fast" in st_name:
+			short_st = "FAST"
+			st_color = Color(0.40, 0.85, 1.0)
+		elif "Power" in st_name or "Heavy" in st_name:
+			short_st = "POW"
+			st_color = Color(1.0, 0.65, 0.35)
+		s10.count_lbl.text = short_st
+		s10.count_lbl.add_theme_color_override("font_color", st_color)
+		_set_slot_border(s10, Color(0.35, 0.70, 0.95, 0.9) if short_st != "NAT" else Color(0.28, 0.38, 0.50, 0.85), 2)
+		s10.btn.tooltip_text = "Weapon Combat Stance [Z]\nCurrent: %s\nCycle between Native (Balanced), Fast (+25%% Speed), and Power (+30%% Dmg)." % st_name
+
 
 func _build_combat_meter_controls() -> void:
-	var skill_bar := get_node_or_null("SkillBar") as HBoxContainer
-	if skill_bar:
-		_rf_buff_btn = Button.new()
-		_rf_buff_btn.focus_mode = Control.FOCUS_NONE
-		_rf_buff_btn.modulate = Color(0.55, 1.0, 0.72)
-		_rf_buff_btn.text = "9: RF Buffs [B]"
-		_rf_buff_btn.pressed.connect(func() -> void:
-			if _player and _player.has_method("cast_rf_buff_suite"):
-				_player.cast_rf_buff_suite()
-		)
-		skill_bar.add_child(_rf_buff_btn)
-
-		_weapon_stance_btn = Button.new()
-		_weapon_stance_btn.focus_mode = Control.FOCUS_NONE
-		_weapon_stance_btn.modulate = Color(0.75, 0.92, 1.0)
-		_weapon_stance_btn.text = "Weap [Z]: Native"
-		_weapon_stance_btn.pressed.connect(func() -> void:
-			if _player and _player.has_method("cycle_weapon_stance"):
-				_player.cycle_weapon_stance()
-		)
-		skill_bar.add_child(_weapon_stance_btn)
+	_rf_buff_btn = buff_btn
+	_weapon_stance_btn = stance_btn
 
 
 func _build_world_map_window() -> void:
@@ -930,29 +1200,7 @@ func _on_player_state(d: Dictionary) -> void:
 			var t_pct := (float(d["target_hp"]) / float(max(1, d["target_max_hp"]))) * 100.0
 			target_hp_label.text = "%d / %d (%.0f%%)" % [d["target_hp"], d["target_max_hp"], t_pct]
 
-	skill1_btn.text = "1: Atk [%s]" % ("ON" if d["auto_attacking"] else "OFF")
-	var cd2: float = d["skill2_cd"]
-	skill2_btn.text = ("%s (%.1fs)" % [d["skill2_label"], cd2]) if cd2 > 0.0 else str(d["skill2_label"])
-	var cd3: float = d["skill3_cd"]
-	skill3_btn.text = ("%s (%.1fs)" % [d["skill3_label"], cd3]) if cd3 > 0.0 else str(d["skill3_label"])
-	var sig_active := bool(d["sig_active"])
-	skill4_btn.text = ("%s [ON]" % d["skill4_label"]) if sig_active else str(d["skill4_label"])
-
-	pot_hp_btn.text = "5: HP Pot (%d)" % d["hp_potions"]
-	pot_fp_btn.text = "6: FP Pot (%d)" % d["fp_potions"]
-	pot_sp_btn.text = "7: SP Pot (%d)" % d["sp_potions"]
-	scroll_btn.text = "8: Scroll (%d)" % d["scrolls"]
-
-	if _rf_buff_btn:
-		if rf_t > 0.0:
-			_rf_buff_btn.text = "9: Buffs [ON %.0fs]" % rf_t
-			_rf_buff_btn.modulate = Color(0.45, 1.0, 0.55)
-		else:
-			_rf_buff_btn.text = "9: RF Buffs [B]"
-			_rf_buff_btn.modulate = Color(1.0, 0.9, 0.45)
-
-	if _weapon_stance_btn:
-		_weapon_stance_btn.text = "Weap [Z]: %s" % str(d.get("weapon_mode_summary", "Native"))
+	_update_quickslots(d)
 
 	var mining: bool = d["is_mining"]
 	mining_panel.visible = mining

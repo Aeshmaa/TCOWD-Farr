@@ -2627,6 +2627,7 @@ func _emit_state() -> void:
 		"skill4_label": f["signature_name"],
 		"skill2_cd": _skill2_cd,
 		"skill3_cd": _skill3_cd,
+		"potion_cd": _potion_cd,
 		"dmg_dealt_total": combat_dmg_dealt_total,
 		"dmg_dealt_last": combat_dmg_dealt_last,
 		"dmg_dealt_max": combat_dmg_dealt_max,

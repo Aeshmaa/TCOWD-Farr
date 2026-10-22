@@ -883,77 +883,101 @@ text = "Mining Farr Vein..."
 [node name="MiningBar" type="ProgressBar" parent="HUD/MiningPanel/VBox"]
 layout_mode = 2
 
-[node name="SkillBar" type="HBoxContainer" parent="HUD"]
+[node name="SkillBarPanel" type="PanelContainer" parent="HUD"]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -640.0
-offset_top = -82.0
-offset_right = 640.0
-offset_bottom = -42.0
+offset_left = -285.0
+offset_top = -68.0
+offset_right = 285.0
+offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 0
+
+[node name="Margin" type="MarginContainer" parent="HUD/SkillBarPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="SkillBar" type="HBoxContainer" parent="HUD/SkillBarPanel/Margin"]
+layout_mode = 2
 alignment = 1
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
-[node name="Skill1" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(140, 38)
+[node name="Skill1" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 focus_mode = 0
-text = "1: Atk [OFF]"
 
-[node name="Skill2" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(165, 38)
+[node name="Skill2" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 focus_mode = 0
-text = "2: Ram Cleave"
 
-[node name="Skill3" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(175, 38)
+[node name="Skill3" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 focus_mode = 0
-text = "3: Shock Stomp AoE"
 
-[node name="Skill4" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(170, 38)
+[node name="Skill4" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 focus_mode = 0
-text = "4: Siege Mode"
 
-[node name="PotHP" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(135, 38)
+[node name="Sep1" type="ColorRect" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(2, 42)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.28, 0.4, 0.54, 0.75)
+
+[node name="PotHP" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 focus_mode = 0
-text = "5: HP Pot (5)"
 
-[node name="PotFP" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(135, 38)
+[node name="PotFP" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 focus_mode = 0
-text = "6: FP Pot (5)"
 
-[node name="PotSP" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(135, 38)
+[node name="PotSP" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 focus_mode = 0
-text = "7: SP Pot (5)"
 
-[node name="ScrollBtn" type="Button" parent="HUD/SkillBar"]
-custom_minimum_size = Vector2(135, 38)
+[node name="ScrollBtn" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 focus_mode = 0
-text = "8: Scroll (2)"
+
+[node name="Sep2" type="ColorRect" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(2, 42)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.28, 0.4, 0.54, 0.75)
+
+[node name="BuffBtn" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+focus_mode = 0
+
+[node name="StanceBtn" type="Button" parent="HUD/SkillBarPanel/Margin/SkillBar"]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+focus_mode = 0
 
 [node name="LogLabel" type="Label" parent="HUD"]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -41.0
-offset_right = 1450.0
-offset_bottom = -3.0
+offset_top = -68.0
+offset_right = 345.0
+offset_bottom = -12.0
 grow_vertical = 0
 modulate = Color(0.85, 0.95, 1, 1)
 text = "> Ready."

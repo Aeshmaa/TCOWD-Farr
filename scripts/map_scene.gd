@@ -144,7 +144,7 @@ func _build_environment() -> Environment:
 	env.fog_enabled = true
 	env.fog_light_color = fog_color
 	env.fog_density = fog_density
-	env.fog_sky_affect = 0.35
+	env.fog_sky_affect = 0.05
 	env.glow_enabled = true
 	env.glow_intensity = glow_intensity
 	env.glow_bloom = 0.05
