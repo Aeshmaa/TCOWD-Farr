@@ -2500,7 +2500,14 @@ func _emit_state() -> void:
 	var target_hp := 0
 	var target_max_hp := 1
 	if selected_enemy and is_instance_valid(selected_enemy) and not selected_enemy.is_dead:
-		target_name = "Lv.%d %s" % [selected_enemy.level, selected_enemy.enemy_name]
+		var ename: String = selected_enemy.enemy_name
+		if ename.begins_with("Lv."):
+			target_name = ename
+		elif " (Lv." in ename:
+			var clean_name := ename.substr(0, ename.find(" (Lv."))
+			target_name = "Lv.%d %s" % [selected_enemy.level, clean_name]
+		else:
+			target_name = "Lv.%d %s" % [selected_enemy.level, ename]
 		target_hp = selected_enemy.current_hp
 		target_max_hp = selected_enemy.max_hp
 

@@ -477,67 +477,312 @@ script = ExtResource("4_hud")
 camera_rig_path = NodePath("../CameraRig")
 player_path = NodePath("../Player")
 
-[node name="TopBar" type="HBoxContainer" parent="HUD"]
-offset_left = 12.0
-offset_top = 10.0
-offset_right = 1580.0
-offset_bottom = 42.0
+[node name="PlayerPanel" type="PanelContainer" parent="HUD"]
+offset_left = 16.0
+offset_top = 14.0
+offset_right = 380.0
+offset_bottom = 182.0
+
+[node name="Margin" type="MarginContainer" parent="HUD/PlayerPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="HUD/PlayerPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HeaderRow" type="HBoxContainer" parent="HUD/PlayerPanel/Margin/VBox"]
+layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="CamModeButton" type="Button" parent="HUD/TopBar"]
+[node name="LevelBadge" type="Label" parent="HUD/PlayerPanel/Margin/VBox/HeaderRow"]
+layout_mode = 2
+modulate = Color(1, 0.88, 0.4, 1)
+text = "Lv.1"
+
+[node name="NameLabel" type="Label" parent="HUD/PlayerPanel/Margin/VBox/HeaderRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Breaker"
+
+[node name="FactionLabel" type="Label" parent="HUD/PlayerPanel/Margin/VBox/HeaderRow"]
+layout_mode = 2
+modulate = Color(0.65, 0.9, 1, 1)
+text = "<Sveleitre>"
+
+[node name="LeaderTag" type="Label" parent="HUD/PlayerPanel/Margin/VBox/HeaderRow"]
+visible = false
+layout_mode = 2
+modulate = Color(1, 0.8, 0.2, 1)
+text = "[ARCHON]"
+
+[node name="HpBox" type="MarginContainer" parent="HUD/PlayerPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+
+[node name="HpBar" type="ProgressBar" parent="HUD/PlayerPanel/Margin/VBox/HpBox"]
+layout_mode = 2
+size_flags_vertical = 1
+show_percentage = false
+
+[node name="HpLabel" type="Label" parent="HUD/PlayerPanel/Margin/VBox/HpBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "HP: 378 / 378"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FpBox" type="MarginContainer" parent="HUD/PlayerPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="FpBar" type="ProgressBar" parent="HUD/PlayerPanel/Margin/VBox/FpBox"]
+layout_mode = 2
+size_flags_vertical = 1
+show_percentage = false
+
+[node name="FpLabel" type="Label" parent="HUD/PlayerPanel/Margin/VBox/FpBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "FP: 120 / 120"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SpBox" type="MarginContainer" parent="HUD/PlayerPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="SpBar" type="ProgressBar" parent="HUD/PlayerPanel/Margin/VBox/SpBox"]
+layout_mode = 2
+size_flags_vertical = 1
+show_percentage = false
+
+[node name="SpLabel" type="Label" parent="HUD/PlayerPanel/Margin/VBox/SpBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "SP: 202 / 202"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WalletLabel" type="Label" parent="HUD/PlayerPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+modulate = Color(1, 0.9, 0.55, 1)
+text = "💰 600 CYC  |  Debt: 5000 CYC  |  Ammo: 120  |  Wt: 0/100"
+
+[node name="StatusLabel" type="Label" parent="HUD/PlayerPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+modulate = Color(0.8, 0.92, 0.8, 1)
+text = "Buffs: None [B]  |  Stance: Native (2.7m)  |  ATK: 25"
+
+[node name="ZoneNavPanel" type="PanelContainer" parent="HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -310.0
+offset_top = 14.0
+offset_right = -16.0
+offset_bottom = 126.0
+grow_horizontal = 0
+
+[node name="Margin" type="MarginContainer" parent="HUD/ZoneNavPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="HUD/ZoneNavPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TitleRow" type="HBoxContainer" parent="HUD/ZoneNavPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ZoneIcon" type="Label" parent="HUD/ZoneNavPanel/Margin/VBox/TitleRow"]
+layout_mode = 2
+text = "🧭"
+
+[node name="ZoneName" type="Label" parent="HUD/ZoneNavPanel/Margin/VBox/TitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+modulate = Color(1, 0.88, 0.42, 1)
+text = "Sveleitre Central HQ"
+
+[node name="ZoneBand" type="Label" parent="HUD/ZoneNavPanel/Margin/VBox/TitleRow"]
+layout_mode = 2
+modulate = Color(0.75, 0.92, 1, 1)
+text = "Lv. 1-15"
+
+[node name="MetaRow" type="HBoxContainer" parent="HUD/ZoneNavPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ZoneFocus" type="Label" parent="HUD/ZoneNavPanel/Margin/VBox/MetaRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+modulate = Color(0.45, 1, 0.65, 1)
+text = "[🛡️ Safe Sanctuary]"
+
+[node name="ZoneCoords" type="Label" parent="HUD/ZoneNavPanel/Margin/VBox/MetaRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+modulate = Color(0.88, 0.88, 0.88, 1)
+text = "X: 0.0  Z: 0.0"
+
+[node name="BtnRow" type="HBoxContainer" parent="HUD/ZoneNavPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ZoneMapBtn" type="Button" parent="HUD/ZoneNavPanel/Margin/VBox/BtnRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+modulate = Color(1, 0.88, 0.45, 1)
+text = "🗺️ World Map (30) [M]"
+
+[node name="ZoneSettingsBtn" type="Button" parent="HUD/ZoneNavPanel/Margin/VBox/BtnRow"]
 layout_mode = 2
 focus_mode = 0
-text = "CAM [C]: 1: 360° Free Orbit"
+modulate = Color(0.78, 0.95, 1, 1)
+text = "⚙️ [Esc]"
 
-[node name="ProjButton" type="Button" parent="HUD/TopBar"]
+[node name="MenuTray" type="HBoxContainer" parent="HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -310.0
+offset_top = 132.0
+offset_right = -16.0
+offset_bottom = 164.0
+grow_horizontal = 0
+theme_override_constants/separation = 4
+
+[node name="ShopButton" type="Button" parent="HUD/MenuTray"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Bags [I]"
+
+[node name="StoryButton" type="Button" parent="HUD/MenuTray"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+modulate = Color(1, 0.85, 0.95, 1)
+text = "Story [N]"
+
+[node name="HqButton" type="Button" parent="HUD/MenuTray"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "HQ [H]"
+
+[node name="DevToggleBtn" type="Button" parent="HUD/MenuTray"]
 layout_mode = 2
 focus_mode = 0
-text = "VIEW [V]: Perspective"
+modulate = Color(0.85, 0.85, 0.85, 1)
+text = "Dev ▼"
 
-[node name="FactionButton" type="Button" parent="HUD/TopBar"]
+[node name="DevPanel" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -310.0
+offset_top = 170.0
+offset_right = -16.0
+offset_bottom = 285.0
+grow_horizontal = 0
+
+[node name="Margin" type="MarginContainer" parent="HUD/DevPanel"]
 layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="Grid" type="GridContainer" parent="HUD/DevPanel/Margin"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+
+[node name="CamModeButton" type="Button" parent="HUD/DevPanel/Margin/Grid"]
+layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
-text = "Race [F]: Sveleitre (CYC)"
+text = "CAM [C]"
 
-[node name="ClassButton" type="Button" parent="HUD/TopBar"]
+[node name="ProjButton" type="Button" parent="HUD/DevPanel/Margin/Grid"]
 layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
-text = "Class [J]: Breaker"
+text = "VIEW [V]"
 
-[node name="BranchButton" type="Button" parent="HUD/TopBar"]
+[node name="FactionButton" type="Button" parent="HUD/DevPanel/Margin/Grid"]
 layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Race [F]"
+
+[node name="ClassButton" type="Button" parent="HUD/DevPanel/Margin/Grid"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Class [J]"
+
+[node name="BranchButton" type="Button" parent="HUD/DevPanel/Margin/Grid"]
+layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
 text = "Lv.30 Job [B]"
 
-[node name="ShopButton" type="Button" parent="HUD/TopBar"]
+[node name="LevelButton" type="Button" parent="HUD/DevPanel/Margin/Grid"]
 layout_mode = 2
-focus_mode = 0
-text = "Equip & Bags [I]"
-
-[node name="LevelButton" type="Button" parent="HUD/TopBar"]
-layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
 text = "+5 Lv / Archon [L]"
 
-[node name="HqButton" type="Button" parent="HUD/TopBar"]
+[node name="ResetMeterBtn" type="Button" parent="HUD/DevPanel/Margin/Grid"]
 layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
-text = "Warp HQ [H]"
+modulate = Color(1, 0.85, 0.55, 1)
+text = "Reset Meter"
+
+[node name="ControlsHelpBtn" type="Button" parent="HUD/DevPanel/Margin/Grid"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+modulate = Color(0.75, 0.9, 1, 1)
+text = "Controls Help"
 
 [node name="HelpLabel" type="Label" parent="HUD"]
-offset_left = 14.0
-offset_top = 46.0
-offset_right = 1120.0
-offset_bottom = 92.0
-text = "Camera: Hold [Space] + Slide Trackpad (or Right-Drag) = 360° Orbit  |  [Q/E] Rotate  |  [Z/X] or Pinch = Zoom
-Zones: Press [M] (or click 3D Warp Portals) to travel across 9 Maps (3 Faction HQs, 3 Basic Grounds, 2 Contested Upper, 1 Central Mining Ground)!"
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 8.0
+offset_right = 400.0
+offset_bottom = 30.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1
+modulate = Color(0.85, 0.9, 1, 0.65)
+text = "[WASD] Move  •  [Space+Drag] Orbit Cam  •  [1-4] Skills  •  [I] Bags  •  [M] Map  •  [N] Story  •  [Esc] System"
 
 [node name="ShopPanel" type="PanelContainer" parent="HUD"]
 visible = false
 offset_left = 16.0
-offset_top = 96.0
+offset_top = 190.0
 offset_right = 530.0
-offset_bottom = 282.0
+offset_bottom = 376.0
 
 [node name="VBox" type="VBoxContainer" parent="HUD/ShopPanel"]
 layout_mode = 2
@@ -575,63 +820,43 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -210.0
-offset_top = 92.0
+offset_top = 34.0
 offset_right = 210.0
-offset_bottom = 148.0
+offset_bottom = 90.0
 grow_horizontal = 2
 
-[node name="VBox" type="VBoxContainer" parent="HUD/TargetPanel"]
+[node name="Margin" type="MarginContainer" parent="HUD/TargetPanel"]
 layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
 
-[node name="TargetLabel" type="Label" parent="HUD/TargetPanel/VBox"]
+[node name="VBox" type="VBoxContainer" parent="HUD/TargetPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TargetLabel" type="Label" parent="HUD/TargetPanel/Margin/VBox"]
 layout_mode = 2
 horizontal_alignment = 1
 modulate = Color(1, 0.55, 0.55, 1)
 text = "Lv.50 AESHMA"
 
-[node name="TargetBar" type="ProgressBar" parent="HUD/TargetPanel/VBox"]
+[node name="TargetBox" type="MarginContainer" parent="HUD/TargetPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
-[node name="EconomyPanel" type="PanelContainer" parent="HUD"]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -560.0
-offset_top = 48.0
-offset_right = -14.0
-offset_bottom = 315.0
-grow_horizontal = 0
-
-[node name="Margin" type="VBoxContainer" parent="HUD/EconomyPanel"]
+[node name="TargetBar" type="ProgressBar" parent="HUD/TargetPanel/Margin/VBox/TargetBox"]
 layout_mode = 2
-theme_override_constants/separation = 3
+size_flags_vertical = 1
+show_percentage = false
 
-[node name="EconomyLabel" type="Label" parent="HUD/EconomyPanel/Margin"]
+[node name="TargetHpLabel" type="Label" parent="HUD/TargetPanel/Margin/VBox/TargetBox"]
 layout_mode = 2
-text = "Lv.1  |  Breaker (Frontline)  |  ATK: 25
-Gear: Lv.1 Stock Frame MK-I [Svel-Only]
-HP: 378/378   |   FP: 120/120   |   SP: 202/202
-Ark Debt: 5000 CYC   |   Wallet: 600 CYC (Ark Cycles)
-Ammo/Force: 120   |   Farr: 0 (0 CYC)   |   Wt: 0/100"
-
-[node name="HpBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
-layout_mode = 2
-max_value = 378.0
-value = 378.0
-
-[node name="FpBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
-layout_mode = 2
-max_value = 120.0
-value = 120.0
-
-[node name="SpBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
-layout_mode = 2
-max_value = 202.0
-value = 202.0
-
-[node name="WeightBar" type="ProgressBar" parent="HUD/EconomyPanel/Margin"]
-layout_mode = 2
-max_value = 100.0
+theme_override_font_sizes/font_size = 11
+text = "HP: 260 / 260 (100%)"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="MiningPanel" type="PanelContainer" parent="HUD"]
 visible = false

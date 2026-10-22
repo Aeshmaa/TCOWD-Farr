@@ -9,21 +9,24 @@ func _init() -> void:
 	await create_timer(0.5).timeout
 	var world = main.get_node("World")
 	world.load_map(map_id)
+	var show_hud: bool = ("--hud" in args)
 	var hud = main.get_node_or_null("HUD")
 	if hud:
-		hud.visible = false
-	var cam := Camera3D.new()
-	cam.far = 500.0
-	root.add_child(cam)
-	cam.current = true
-	var cp := Vector3(0, 24, 48)
-	var lp := Vector3(0, 3, -10)
-	if args.size() >= 8:
-		cp = Vector3(float(args[2]), float(args[3]), float(args[4]))
-		lp = Vector3(float(args[5]), float(args[6]), float(args[7]))
-	cam.global_position = cp
-	cam.look_at(lp, Vector3.UP)
-	cam.fov = 65
+		hud.visible = show_hud
+	var cam: Camera3D
+	if not show_hud or args.size() >= 8:
+		cam = Camera3D.new()
+		cam.far = 500.0
+		root.add_child(cam)
+		cam.current = true
+		var cp := Vector3(0, 24, 48)
+		var lp := Vector3(0, 3, -10)
+		if args.size() >= 8:
+			cp = Vector3(float(args[2]), float(args[3]), float(args[4]))
+			lp = Vector3(float(args[5]), float(args[6]), float(args[7]))
+		cam.global_position = cp
+		cam.look_at(lp, Vector3.UP)
+		cam.fov = 65
 	await create_timer(1.2).timeout
 	await process_frame
 	var img := root.get_viewport().get_texture().get_image()

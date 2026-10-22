@@ -9,14 +9,48 @@ extends CanvasLayer
 @export var camera_rig_path: NodePath
 @export var player_path: NodePath
 
-@onready var cam_button: Button = $TopBar/CamModeButton
-@onready var proj_button: Button = $TopBar/ProjButton
-@onready var faction_button: Button = $TopBar/FactionButton
-@onready var class_button: Button = $TopBar/ClassButton
-@onready var branch_button: Button = $TopBar/BranchButton
-@onready var inv_button: Button = $TopBar/ShopButton
-@onready var level_button: Button = $TopBar/LevelButton
-@onready var hq_button: Button = $TopBar/HqButton
+# Top-Left Player Unit Frame
+@onready var player_panel: PanelContainer = $PlayerPanel
+@onready var player_level_lbl: Label = $PlayerPanel/Margin/VBox/HeaderRow/LevelBadge
+@onready var player_name_lbl: Label = $PlayerPanel/Margin/VBox/HeaderRow/NameLabel
+@onready var player_faction_lbl: Label = $PlayerPanel/Margin/VBox/HeaderRow/FactionLabel
+@onready var player_leader_lbl: Label = $PlayerPanel/Margin/VBox/HeaderRow/LeaderTag
+@onready var hp_bar: ProgressBar = $PlayerPanel/Margin/VBox/HpBox/HpBar
+@onready var hp_label: Label = $PlayerPanel/Margin/VBox/HpBox/HpLabel
+@onready var fp_bar: ProgressBar = $PlayerPanel/Margin/VBox/FpBox/FpBar
+@onready var fp_label: Label = $PlayerPanel/Margin/VBox/FpBox/FpLabel
+@onready var sp_bar: ProgressBar = $PlayerPanel/Margin/VBox/SpBox/SpBar
+@onready var sp_label: Label = $PlayerPanel/Margin/VBox/SpBox/SpLabel
+@onready var wallet_label: Label = $PlayerPanel/Margin/VBox/WalletLabel
+@onready var player_status_lbl: Label = $PlayerPanel/Margin/VBox/StatusLabel
+
+# Top-Right Zone Navigation & Minimap Frame
+@onready var zone_nav_panel: PanelContainer = $ZoneNavPanel
+@onready var zone_name_lbl: Label = $ZoneNavPanel/Margin/VBox/TitleRow/ZoneName
+@onready var zone_band_lbl: Label = $ZoneNavPanel/Margin/VBox/TitleRow/ZoneBand
+@onready var zone_focus_lbl: Label = $ZoneNavPanel/Margin/VBox/MetaRow/ZoneFocus
+@onready var zone_coords_lbl: Label = $ZoneNavPanel/Margin/VBox/MetaRow/ZoneCoords
+@onready var zone_map_btn: Button = $ZoneNavPanel/Margin/VBox/BtnRow/ZoneMapBtn
+@onready var zone_settings_btn: Button = $ZoneNavPanel/Margin/VBox/BtnRow/ZoneSettingsBtn
+
+# Top-Right Menu Tray & Collapsible Dev Drawer
+@onready var menu_tray: HBoxContainer = $MenuTray
+@onready var inv_button: Button = $MenuTray/ShopButton
+@onready var story_button: Button = $MenuTray/StoryButton
+@onready var hq_button: Button = $MenuTray/HqButton
+@onready var dev_toggle_btn: Button = $MenuTray/DevToggleBtn
+
+@onready var dev_panel: PanelContainer = $DevPanel
+@onready var cam_button: Button = $DevPanel/Margin/Grid/CamModeButton
+@onready var proj_button: Button = $DevPanel/Margin/Grid/ProjButton
+@onready var faction_button: Button = $DevPanel/Margin/Grid/FactionButton
+@onready var class_button: Button = $DevPanel/Margin/Grid/ClassButton
+@onready var branch_button: Button = $DevPanel/Margin/Grid/BranchButton
+@onready var level_button: Button = $DevPanel/Margin/Grid/LevelButton
+@onready var reset_meter_btn: Button = $DevPanel/Margin/Grid/ResetMeterBtn
+@onready var controls_help_btn: Button = $DevPanel/Margin/Grid/ControlsHelpBtn
+
+@onready var help_label: Label = $HelpLabel
 
 @onready var shop_panel: PanelContainer = $ShopPanel
 @onready var shop_title: Label = $ShopPanel/VBox/ShopTitle
@@ -26,14 +60,9 @@ extends CanvasLayer
 @onready var npc_btn_3: Button = $ShopPanel/VBox/NpcUtilityBtn
 
 @onready var target_panel: PanelContainer = $TargetPanel
-@onready var target_label: Label = $TargetPanel/VBox/TargetLabel
-@onready var target_bar: ProgressBar = $TargetPanel/VBox/TargetBar
-
-@onready var economy_label: Label = $EconomyPanel/Margin/EconomyLabel
-@onready var hp_bar: ProgressBar = $EconomyPanel/Margin/HpBar
-@onready var fp_bar: ProgressBar = $EconomyPanel/Margin/FpBar
-@onready var sp_bar: ProgressBar = $EconomyPanel/Margin/SpBar
-@onready var weight_bar: ProgressBar = $EconomyPanel/Margin/WeightBar
+@onready var target_label: Label = $TargetPanel/Margin/VBox/TargetLabel
+@onready var target_bar: ProgressBar = $TargetPanel/Margin/VBox/TargetBox/TargetBar
+@onready var target_hp_label: Label = $TargetPanel/Margin/VBox/TargetBox/TargetHpLabel
 
 @onready var skill1_btn: Button = $SkillBar/Skill1
 @onready var skill2_btn: Button = $SkillBar/Skill2
@@ -104,12 +133,60 @@ var _beacon_clear_btn: Button
 
 
 func _ready() -> void:
+	_apply_hud_styles()
 	_build_inventory_window()
 	_build_world_map_window()
 	_build_story_window()
 	_build_settings_window()
 	_build_combat_meter_controls()
 	_build_beacon_window()
+
+	if dev_toggle_btn:
+		dev_toggle_btn.pressed.connect(func() -> void:
+			if dev_panel:
+				dev_panel.visible = not dev_panel.visible
+				dev_toggle_btn.text = "Dev ▲" if dev_panel.visible else "Dev ▼"
+		)
+
+	if zone_map_btn:
+		zone_map_btn.pressed.connect(func() -> void:
+			if _map_panel:
+				_map_panel.visible = not _map_panel.visible
+				if _map_panel.visible:
+					_settings_panel.visible = false
+					_story_panel.visible = false
+		)
+
+	if zone_settings_btn:
+		zone_settings_btn.pressed.connect(func() -> void:
+			if _settings_panel:
+				_settings_panel.visible = not _settings_panel.visible
+				if _settings_panel.visible:
+					_map_panel.visible = false
+					_story_panel.visible = false
+		)
+
+	if story_button:
+		story_button.pressed.connect(func() -> void:
+			if _story_panel:
+				_story_panel.visible = not _story_panel.visible
+				if _story_panel.visible:
+					_map_panel.visible = false
+					_settings_panel.visible = false
+		)
+
+	if reset_meter_btn:
+		reset_meter_btn.pressed.connect(func() -> void:
+			if _player and _player.has_method("reset_combat_telemetry"):
+				_player.reset_combat_telemetry()
+		)
+		_reset_meter_btn = reset_meter_btn
+
+	if controls_help_btn:
+		controls_help_btn.pressed.connect(func() -> void:
+			if help_label:
+				help_label.visible = not help_label.visible
+		)
 
 	_rig = get_node_or_null(camera_rig_path)
 	if _rig:
@@ -125,7 +202,7 @@ func _ready() -> void:
 		faction_button.pressed.connect(func() -> void: _player.cycle_faction())
 		class_button.pressed.connect(func() -> void: _player.cycle_class())
 		branch_button.pressed.connect(func() -> void: _player.toggle_job_branch())
-		inv_button.text = "Equip & Bags [I]"
+		inv_button.text = "Bags [I]"
 		inv_button.pressed.connect(func() -> void: _inv_panel.visible = not _inv_panel.visible)
 		level_button.pressed.connect(func() -> void: _player.dev_boost_level())
 		hq_button.pressed.connect(func() -> void: _player.teleport_to_hq())
@@ -146,19 +223,93 @@ func _ready() -> void:
 		_player._emit_state()
 
 
-func _build_combat_meter_controls() -> void:
-	var econ_vbox := get_node_or_null("EconomyPanel/Margin") as VBoxContainer
-	if econ_vbox:
-		_reset_meter_btn = Button.new()
-		_reset_meter_btn.focus_mode = Control.FOCUS_NONE
-		_reset_meter_btn.modulate = Color(1.0, 0.85, 0.55)
-		_reset_meter_btn.text = "Reset DMG / Heal Telemetry Meter"
-		_reset_meter_btn.pressed.connect(func() -> void:
-			if _player and _player.has_method("reset_combat_telemetry"):
-				_player.reset_combat_telemetry()
-		)
-		econ_vbox.add_child(_reset_meter_btn)
+func _process(_delta: float) -> void:
+	if _player and is_instance_valid(_player) and zone_coords_lbl:
+		var pos: Vector3 = _player.global_position
+		zone_coords_lbl.text = "X: %.1f  Z: %.1f" % [pos.x, pos.z]
 
+
+func _apply_hud_styles() -> void:
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.06, 0.08, 0.12, 0.88)
+	panel_style.border_color = Color(0.25, 0.38, 0.52, 0.75)
+	panel_style.border_width_left = 1
+	panel_style.border_width_right = 1
+	panel_style.border_width_top = 1
+	panel_style.border_width_bottom = 1
+	panel_style.corner_radius_top_left = 6
+	panel_style.corner_radius_top_right = 6
+	panel_style.corner_radius_bottom_left = 6
+	panel_style.corner_radius_bottom_right = 6
+
+	var zone_style := panel_style.duplicate() as StyleBoxFlat
+	zone_style.border_color = Color(0.55, 0.45, 0.22, 0.85)
+
+	var wallet_style := panel_style.duplicate() as StyleBoxFlat
+	wallet_style.border_color = Color(0.20, 0.32, 0.42, 0.65)
+
+	if player_panel:
+		player_panel.add_theme_stylebox_override("panel", panel_style)
+	if zone_nav_panel:
+		zone_nav_panel.add_theme_stylebox_override("panel", zone_style)
+	if dev_panel:
+		dev_panel.add_theme_stylebox_override("panel", panel_style)
+	if target_panel:
+		target_panel.add_theme_stylebox_override("panel", panel_style)
+
+	var hp_bg := StyleBoxFlat.new()
+	hp_bg.bg_color = Color(0.10, 0.12, 0.16, 0.90)
+	hp_bg.corner_radius_top_left = 3
+	hp_bg.corner_radius_top_right = 3
+	hp_bg.corner_radius_bottom_left = 3
+	hp_bg.corner_radius_bottom_right = 3
+
+	var hp_fill := StyleBoxFlat.new()
+	hp_fill.bg_color = Color(0.86, 0.18, 0.22, 1.0)
+	hp_fill.corner_radius_top_left = 3
+	hp_fill.corner_radius_top_right = 3
+	hp_fill.corner_radius_bottom_left = 3
+	hp_fill.corner_radius_bottom_right = 3
+
+	if hp_bar:
+		hp_bar.add_theme_stylebox_override("background", hp_bg)
+		hp_bar.add_theme_stylebox_override("fill", hp_fill)
+
+	var fp_fill := StyleBoxFlat.new()
+	fp_fill.bg_color = Color(0.18, 0.58, 0.95, 1.0)
+	fp_fill.corner_radius_top_left = 3
+	fp_fill.corner_radius_top_right = 3
+	fp_fill.corner_radius_bottom_left = 3
+	fp_fill.corner_radius_bottom_right = 3
+
+	if fp_bar:
+		fp_bar.add_theme_stylebox_override("background", hp_bg.duplicate())
+		fp_bar.add_theme_stylebox_override("fill", fp_fill)
+
+	var sp_fill := StyleBoxFlat.new()
+	sp_fill.bg_color = Color(0.95, 0.74, 0.18, 1.0)
+	sp_fill.corner_radius_top_left = 3
+	sp_fill.corner_radius_top_right = 3
+	sp_fill.corner_radius_bottom_left = 3
+	sp_fill.corner_radius_bottom_right = 3
+
+	if sp_bar:
+		sp_bar.add_theme_stylebox_override("background", hp_bg.duplicate())
+		sp_bar.add_theme_stylebox_override("fill", sp_fill)
+
+	var tgt_fill := StyleBoxFlat.new()
+	tgt_fill.bg_color = Color(0.92, 0.24, 0.24, 1.0)
+	tgt_fill.corner_radius_top_left = 3
+	tgt_fill.corner_radius_top_right = 3
+	tgt_fill.corner_radius_bottom_left = 3
+	tgt_fill.corner_radius_bottom_right = 3
+
+	if target_bar:
+		target_bar.add_theme_stylebox_override("background", hp_bg.duplicate())
+		target_bar.add_theme_stylebox_override("fill", tgt_fill)
+
+
+func _build_combat_meter_controls() -> void:
 	var skill_bar := get_node_or_null("SkillBar") as HBoxContainer
 	if skill_bar:
 		_rf_buff_btn = Button.new()
@@ -183,15 +334,7 @@ func _build_combat_meter_controls() -> void:
 
 
 func _build_world_map_window() -> void:
-	var top_bar := get_node_or_null("TopBar") as HBoxContainer
-	if top_bar:
-		_map_top_btn = Button.new()
-		_map_top_btn.focus_mode = Control.FOCUS_NONE
-		_map_top_btn.modulate = Color(1.0, 0.88, 0.45)
-		_map_top_btn.text = "World Map (30 Zones) [M]"
-		_map_top_btn.pressed.connect(func() -> void: _map_panel.visible = not _map_panel.visible)
-		top_bar.add_child(_map_top_btn)
-
+	_map_top_btn = zone_map_btn
 	_map_panel = PanelContainer.new()
 	_map_panel.visible = false
 	_map_panel.offset_left = 500.0
@@ -237,14 +380,7 @@ func _build_world_map_window() -> void:
 
 
 func _build_settings_window() -> void:
-	var top_bar := get_node_or_null("TopBar") as HBoxContainer
-	if top_bar:
-		_settings_top_btn = Button.new()
-		_settings_top_btn.focus_mode = Control.FOCUS_NONE
-		_settings_top_btn.modulate = Color(0.78, 0.95, 1.0)
-		_settings_top_btn.text = "Settings [Esc]"
-		_settings_top_btn.pressed.connect(func() -> void: _settings_panel.visible = not _settings_panel.visible)
-		top_bar.add_child(_settings_top_btn)
+	_settings_top_btn = zone_settings_btn
 
 	_settings_panel = PanelContainer.new()
 	_settings_panel.visible = false
@@ -376,19 +512,7 @@ func _load_portrait_texture(res_path: String) -> Texture2D:
 
 
 func _build_story_window() -> void:
-	var top_bar := get_node_or_null("TopBar") as HBoxContainer
-	if top_bar:
-		_story_top_btn = Button.new()
-		_story_top_btn.focus_mode = Control.FOCUS_NONE
-		_story_top_btn.modulate = Color(1.0, 0.82, 0.95)
-		_story_top_btn.text = "Story & Lore [N]"
-		_story_top_btn.pressed.connect(func() -> void:
-			_story_panel.visible = not _story_panel.visible
-			if _story_panel.visible:
-				_map_panel.visible = false
-				_settings_panel.visible = false
-		)
-		top_bar.add_child(_story_top_btn)
+	_story_top_btn = story_button
 
 	_story_panel = PanelContainer.new()
 	_story_panel.visible = false
@@ -528,10 +652,10 @@ func _build_story_window() -> void:
 func _build_inventory_window() -> void:
 	_inv_panel = PanelContainer.new()
 	_inv_panel.visible = false
-	_inv_panel.offset_left = 16.0
-	_inv_panel.offset_top = 290.0
-	_inv_panel.offset_right = 590.0
-	_inv_panel.offset_bottom = 785.0
+	_inv_panel.offset_left = 390.0
+	_inv_panel.offset_top = 80.0
+	_inv_panel.offset_right = 960.0
+	_inv_panel.offset_bottom = 575.0
 	add_child(_inv_panel)
 
 	var vbox := VBoxContainer.new()
@@ -676,6 +800,51 @@ func _on_mode_changed(mode_name: String, proj_name: String) -> void:
 	proj_button.text = "VIEW [V]: " + proj_name
 
 
+func _get_focus_badge(focus: String, cat: String, is_locked: bool = false) -> String:
+	match focus:
+		"WEALTH_CREDITS":
+			return "[💰 2.5x Currency Farm]"
+		"TALIC_FARMING":
+			return "[💎 Double Talic Drops]"
+		"RARE_GEAR":
+			return "[🛡️ 65% Rare Gear Drop]"
+		"FORCE_POTIONS":
+			return "[✨ Force/Buff Extracts]"
+		"DUNGEON_LOOT":
+			return "[🏰 Vault: 1.5x XP + Multi-Talics]"
+		"MEGAVEIN_EXTRACTION":
+			return "[⛏️ Megavein Extraction Lv.45+]"
+		"ORE_EXTRACTION":
+			return "[⛏️ Core 3-Way Ore Mining]"
+		"ARTILLERY_PVP":
+			return "[⚔️ Strategic Ridge War]"
+		"ENDGAME_RAID":
+			return "[👑 Apex World Boss Raid]"
+		"WORLD_BOSS":
+			return "[💀 Contested Pit Boss Zone]"
+		"COSMIC_TALICS":
+			return "[🌌 Cosmic Talic Sanctum]"
+		"SOVEREIGN_TALICS":
+			return "[⚡ Sovereign Talic Vault]"
+		"EXILE_WEAPONS":
+			return "[🗡️ Outcast Relic Cache]"
+		"PVP_BOUNTY":
+			return "[⚔️ 3-Way Border Friction]"
+		"HQ_SAFE":
+			return "[🛡️ Safe Sanctuary]"
+		"BASIC_SOLO":
+			return "[🌱 Safe Leveling Ground]"
+		_:
+			if cat == "MINING_WAR":
+				return "[⛏️ 3-Faction Ore War]"
+			elif cat == "CONTESTED_UPPER" or cat == "CONTESTED_BORDER":
+				return "[⚔️ Contested Ground]"
+			elif is_locked:
+				return "[Enemy Territory]"
+			else:
+				return "[Faction Territory]"
+
+
 func _on_player_state(d: Dictionary) -> void:
 	var code: String = d["currency_code"]
 	faction_button.text = "Race [F]: %s (%s)" % [d["faction"], code]
@@ -683,50 +852,83 @@ func _on_player_state(d: Dictionary) -> void:
 	var wt: float = d["weight"]
 	var max_wt: float = d["max_weight"]
 	var overburden := " [OVERBURDENED]" if wt >= max_wt * 0.8 else ""
-	var leader_tag := " [ARCHON]" if d["is_leader"] else ""
 	var rf_t := float(d.get("rf_buff_timer", 0.0))
 	var sh_t := float(d.get("shield_buff", 0.0))
 	var buff_parts: Array[String] = []
 	if rf_t > 0.0:
-		buff_parts.append("%s (+22%% ATK/ASPD/DEF/HP: %.0fs)" % [str(d.get("rf_buff_short", "RF Buffs")), rf_t])
+		buff_parts.append("%s (+22%%: %.0fs)" % [str(d.get("rf_buff_short", "RF Buffs")), rf_t])
 	if sh_t > 0.0:
-		buff_parts.append("Tank Fortify (-40%% DMG: %.0fs)" % sh_t)
-	var buff_status := "  |  ".join(buff_parts) if not buff_parts.is_empty() else "None (Press [B] or [9] for 120s RF Buffs!)"
-	economy_label.text = (
-		"Zone: [%s] (%s)\n" % [d.get("current_map_name", "HQ"), d.get("current_map_band", "")]
-		+ "Lv.%d%s  |  %s  |  ATK: %d  |  Saved: %s\n" % [d["level"], leader_tag, d["job_title"], d["atk"], d.get("last_saved", "Auto")]
-		+ "Weapon Mode [Z]: %s  |  Equipped: %s\n" % [str(d.get("weapon_mode_summary", "Native")), d["gear_name"]]
-		+ "Active Buffs [B]: %s  |  Rebirth: %s\n" % [buff_status, d.get("respawn_name", "HQ Default")]
-		+ "HP: %d/%d   |   FP: %d/%d   |   SP: %d/%d\n" % [d["hp"], d["max_hp"], d["fp"], d["max_fp"], d["sp"], d["max_sp"]]
-		+ "%s: %d %s   |   Wallet: %d %s (%s)\n" % [d["debt_name"], d["debt"], code, d["wallet"], code, d["currency_name"]]
-		+ "Ammo/Force: %d   |   Farr: %d (%d %s)   |   Wt: %.0f/%.0f%s\n" % [
-			d["ammo"], d["unrefined_units"], d["unrefined_value"], code, wt, max_wt, overburden
+		buff_parts.append("Tank (-40%%: %.0fs)" % sh_t)
+	var buff_status := " | ".join(buff_parts) if not buff_parts.is_empty() else "None (Press [B])"
+
+	# 1. Top-Left Player Unit Frame
+	if player_level_lbl:
+		player_level_lbl.text = "Lv.%d" % d["level"]
+	if player_name_lbl:
+		player_name_lbl.text = "%s" % d["job_title"]
+	if player_faction_lbl:
+		player_faction_lbl.text = "<%s>" % d["faction"]
+	if player_leader_lbl:
+		player_leader_lbl.visible = bool(d.get("is_leader", false))
+
+	if hp_bar:
+		hp_bar.max_value = d["max_hp"]
+		hp_bar.value = d["hp"]
+	if hp_label:
+		var hp_pct := (float(d["hp"]) / float(max(1, d["max_hp"]))) * 100.0
+		hp_label.text = "HP: %d / %d (%.0f%%)" % [d["hp"], d["max_hp"], hp_pct]
+
+	if fp_bar:
+		fp_bar.max_value = d["max_fp"]
+		fp_bar.value = d["fp"]
+	if fp_label:
+		fp_label.text = "FP: %d / %d" % [d["fp"], d["max_fp"]]
+
+	if sp_bar:
+		sp_bar.max_value = d["max_sp"]
+		sp_bar.value = d["sp"]
+	if sp_label:
+		sp_label.text = "SP: %d / %d" % [d["sp"], d["max_sp"]]
+
+	if player_status_lbl:
+		player_status_lbl.text = "Buffs: %s  |  Stance: %s  |  ATK: %d" % [
+			buff_status, str(d.get("weapon_stance_label", "Native")), d["atk"]
 		]
-		+ "DMG Out: %d (Last: -%d | Max: -%d)  |  DMG In: %d (Last: -%d)  |  Healed: +%d HP (Last: +%d)" % [
+
+	# 2. Top-Right Zone Navigation Frame
+	var cur_map_id: String = str(d.get("current_map_id", "svel_hq"))
+	var cur_mdata: Dictionary = GameData.MAPS.get(cur_map_id, {})
+	if zone_name_lbl:
+		zone_name_lbl.text = str(d.get("current_map_name", "HQ"))
+	if zone_band_lbl:
+		zone_band_lbl.text = str(d.get("current_map_band", ""))
+	if zone_focus_lbl:
+		var focus: String = str(cur_mdata.get("farming_focus", ""))
+		var cat: String = str(cur_mdata.get("category", ""))
+		zone_focus_lbl.text = _get_focus_badge(focus, cat)
+
+	# 3. Bottom-Left Wallet / Debt / Telemetry Strip
+	if wallet_label:
+		wallet_label.text = "💰 %d %s  |  Debt: %d %s  |  Ammo: %d  |  Farr: %d  |  Wt: %.0f/%.0f%s" % [
+			d["wallet"], code, d["debt"], code, d["ammo"], d["unrefined_units"], wt, max_wt, overburden
+		]
+	if reset_meter_btn:
+		reset_meter_btn.text = "DMG: %d (Max -%d) | In: %d | Heal: +%d [Reset]" % [
 			int(d.get("dmg_dealt_total", 0)),
-			int(d.get("dmg_dealt_last", 0)),
 			int(d.get("dmg_dealt_max", 0)),
 			int(d.get("dmg_taken_total", 0)),
-			int(d.get("dmg_taken_last", 0)),
 			int(d.get("hp_healed_total", 0)),
-			int(d.get("hp_healed_last", 0)),
 		]
-	)
-	hp_bar.max_value = d["max_hp"]
-	hp_bar.value = d["hp"]
-	fp_bar.max_value = d["max_fp"]
-	fp_bar.value = d["fp"]
-	sp_bar.max_value = d["max_sp"]
-	sp_bar.value = d["sp"]
-	weight_bar.max_value = max_wt
-	weight_bar.value = wt
 
 	var t_name: String = d["target_name"]
 	target_panel.visible = (t_name != "")
 	if t_name != "":
-		target_label.text = "%s   (%d / %d HP)" % [t_name, d["target_hp"], d["target_max_hp"]]
+		target_label.text = t_name
 		target_bar.max_value = d["target_max_hp"]
 		target_bar.value = d["target_hp"]
+		if target_hp_label:
+			var t_pct := (float(d["target_hp"]) / float(max(1, d["target_max_hp"]))) * 100.0
+			target_hp_label.text = "%d / %d (%.0f%%)" % [d["target_hp"], d["target_max_hp"], t_pct]
 
 	skill1_btn.text = "1: Atk [%s]" % ("ON" if d["auto_attacking"] else "OFF")
 	var cd2: float = d["skill2_cd"]
@@ -868,7 +1070,7 @@ func _update_world_map_window(d: Dictionary) -> void:
 	var cur_map: String = str(d.get("current_map_id", "svel_hq"))
 	var my_fid: String = str(d.get("faction_id", "sveleitre"))
 	if _map_top_btn:
-		_map_top_btn.text = "Map [M]: %s" % str(d.get("current_map_name", "HQ"))
+		_map_top_btn.text = "🗺️ World Map (30) [M]"
 
 	for map_id_var in GameData.MAP_ORDER:
 		var map_id: String = str(map_id_var)
@@ -882,49 +1084,7 @@ func _update_world_map_window(d: Dictionary) -> void:
 		var is_cur: bool = (map_id == cur_map)
 		var is_locked: bool = (owner_fid != "all" and owner_fid != my_fid)
 
-		var focus_badge := ""
-		match focus:
-			"WEALTH_CREDITS":
-				focus_badge = "[💰 2.5x Currency Farm]"
-			"TALIC_FARMING":
-				focus_badge = "[💎 Double Talic Drops]"
-			"RARE_GEAR":
-				focus_badge = "[🛡️ 65% Rare Gear Drop]"
-			"FORCE_POTIONS":
-				focus_badge = "[✨ Force/Buff Extracts]"
-			"DUNGEON_LOOT":
-				focus_badge = "[🏰 Vault: 1.5x XP + Multi-Talics]"
-			"MEGAVEIN_EXTRACTION":
-				focus_badge = "[⛏️ Megavein Extraction Lv.45+]"
-			"ORE_EXTRACTION":
-				focus_badge = "[⛏️ Core 3-Way Ore Mining]"
-			"ARTILLERY_PVP":
-				focus_badge = "[⚔️ Strategic Ridge War]"
-			"ENDGAME_RAID":
-				focus_badge = "[👑 Apex World Boss Raid]"
-			"WORLD_BOSS":
-				focus_badge = "[💀 Contested Pit Boss Zone]"
-			"COSMIC_TALICS":
-				focus_badge = "[🌌 Cosmic Talic Sanctum]"
-			"SOVEREIGN_TALICS":
-				focus_badge = "[⚡ Sovereign Talic Vault]"
-			"EXILE_WEAPONS":
-				focus_badge = "[🗡️ Outcast Relic Cache]"
-			"PVP_BOUNTY":
-				focus_badge = "[⚔️ 3-Way Border Friction]"
-			"HQ_SAFE":
-				focus_badge = "[🛡️ Safe Sanctuary]"
-			"BASIC_SOLO":
-				focus_badge = "[🌱 Safe Leveling Ground]"
-			_:
-				if cat == "MINING_WAR":
-					focus_badge = "[⛏️ 3-Faction Ore War]"
-				elif cat == "CONTESTED_UPPER" or cat == "CONTESTED_BORDER":
-					focus_badge = "[⚔️ Contested Ground]"
-				elif is_locked:
-					focus_badge = "[Enemy Territory]"
-				else:
-					focus_badge = "[Faction Territory]"
+		var focus_badge: String = _get_focus_badge(focus, cat, is_locked)
 
 		if is_cur:
 			btn.modulate = Color(0.42, 1.0, 0.52)
