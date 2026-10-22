@@ -22,6 +22,30 @@ const COMBAT_VFX := preload("res://scripts/combat_vfx.gd")
 
 var current_map_id := ""
 var _map_container: Node3D = null
+var _current_map_scene: MapScene = null
+var _current_terrain: MapTerrain = null
+
+
+func ground_height_at(x: float, z: float) -> float:
+	if _current_terrain and is_instance_valid(_current_terrain):
+		return _current_terrain.height_at(x, z)
+	return 0.0
+
+
+func apply_map_environment(env: Environment, sun_source: DirectionalLight3D) -> void:
+	var p := get_parent()
+	if p == null:
+		return
+	var env_node := p.get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if env_node and env:
+		env_node.environment = env
+	var sun := p.get_node_or_null("Sun") as DirectionalLight3D
+	if sun and sun_source:
+		sun.light_color = sun_source.light_color
+		sun.light_energy = sun_source.light_energy
+		sun.rotation_degrees = sun_source.rotation_degrees
+		sun.shadow_enabled = true
+		sun.directional_shadow_max_distance = 150.0
 
 
 func _ready() -> void:
@@ -67,8 +91,32 @@ func load_map(map_id: String) -> Dictionary:
 			if s is DroppedOreBag:
 				s.queue_free()
 
-	_apply_map_atmosphere(mdata)
-	_spawn_map_terrain(mdata)
+	_current_map_scene = null
+	_current_terrain = null
+
+	var tscn_path := "res://maps/%s.tscn" % target_id
+	if ResourceLoader.exists(tscn_path):
+		var ground_node := get_node_or_null("Ground") as Node3D
+		if ground_node:
+			ground_node.visible = false
+			var gcol := ground_node.get_node_or_null("CollisionShape3D") as CollisionShape3D
+			if gcol:
+				gcol.disabled = true
+		var map_scn_res := load(tscn_path) as PackedScene
+		if map_scn_res:
+			_current_map_scene = map_scn_res.instantiate() as MapScene
+			_map_container.add_child(_current_map_scene)
+			_current_terrain = _current_map_scene.get_node_or_null("Terrain") as MapTerrain
+	else:
+		var ground_node := get_node_or_null("Ground") as Node3D
+		if ground_node:
+			ground_node.visible = true
+			var gcol := ground_node.get_node_or_null("CollisionShape3D") as CollisionShape3D
+			if gcol:
+				gcol.disabled = false
+		_apply_map_atmosphere(mdata)
+		_spawn_map_terrain(mdata)
+
 	_spawn_map_entities(mdata)
 	if is_inside_tree():
 		bake_navigation_mesh(false)
@@ -1437,7 +1485,9 @@ func _spawn_map_entities(mdata: Dictionary) -> void:
 	for r in refineries:
 		var ref := REFINERY_SCENE.instantiate() as RefineryStation
 		ref.station_name = str(r.get("name", "Refinery Terminal"))
-		ref.position = r.get("pos", Vector3.ZERO)
+		var rpos: Vector3 = r.get("pos", Vector3.ZERO)
+		rpos.y = ground_height_at(rpos.x, rpos.z)
+		ref.position = rpos
 		_map_container.add_child(ref)
 
 	# 2. Physical 3D NPCs (Potion, Weapon, Armor, Utility, Rebirth, Story Leader)
@@ -1450,7 +1500,9 @@ func _spawn_map_entities(mdata: Dictionary) -> void:
 		npc.faction_id = str(n.get("faction", "sveleitre"))
 		npc.body_color = n.get("body", Color(0.25, 0.35, 0.45))
 		npc.accent_color = n.get("accent", Color(0.35, 0.9, 1.0))
-		npc.position = n.get("pos", Vector3.ZERO)
+		var npos: Vector3 = n.get("pos", Vector3.ZERO)
+		npos.y = ground_height_at(npos.x, npos.z)
+		npc.position = npos
 		_map_container.add_child(npc)
 
 	# 3. Farr Ore Veins
@@ -1465,7 +1517,9 @@ func _spawn_map_entities(mdata: Dictionary) -> void:
 		vein.crystal_color = v.get("col", Color(0.95, 0.68, 0.15))
 		var sc := float(v.get("scale", 1.0))
 		vein.scale = Vector3(sc, sc, sc)
-		vein.position = v.get("pos", Vector3.ZERO)
+		var vpos: Vector3 = v.get("pos", Vector3.ZERO)
+		vpos.y = ground_height_at(vpos.x, vpos.z)
+		vein.position = vpos
 		_map_container.add_child(vein)
 
 	# 4. Warp Portals
@@ -1475,14 +1529,18 @@ func _spawn_map_entities(mdata: Dictionary) -> void:
 		portal.set("portal_title", str(p.get("title", "Zone Warp Gate")))
 		portal.set("target_map_id", str(p.get("target", "svel_hq")))
 		portal.set("portal_color", p.get("col", Color(0.4, 0.85, 1.0)))
-		portal.position = p.get("pos", Vector3.ZERO)
+		var ppos: Vector3 = p.get("pos", Vector3.ZERO)
+		ppos.y = ground_height_at(ppos.x, ppos.z)
+		portal.position = ppos
 		_map_container.add_child(portal)
 
 	# 5. Interactive 3D Summon Beacon
 	var beacon_data: Dictionary = mdata.get("summon_beacon", {})
 	if not beacon_data.is_empty():
 		var beacon := SUMMON_BEACON_SCENE.instantiate() as Node3D
-		beacon.position = beacon_data.get("pos", Vector3(0.0, 0.0, 18.0))
+		var bpos: Vector3 = beacon_data.get("pos", Vector3(0.0, 0.0, 18.0))
+		bpos.y = ground_height_at(bpos.x, bpos.z)
+		beacon.position = bpos
 		if beacon.has_method("set_beacon_data"):
 			beacon.call("set_beacon_data", current_map_id, beacon_data.get("name", "Zone Rift Beacon"), beacon_data.get("col", Color(0.3, 0.85, 1.0)))
 		_map_container.add_child(beacon)
@@ -1511,6 +1569,7 @@ func _spawn_map_entities(mdata: Dictionary) -> void:
 			enemy.add_to_group("pit_boss")
 			spawned_pit_boss = true
 		var epos: Vector3 = e.get("pos", Vector3.ZERO)
+		epos.y = ground_height_at(epos.x, epos.z)
 		enemy.position = epos
 		_map_container.add_child(enemy)
 		enemy.home_position = enemy.global_position if enemy.is_inside_tree() else enemy.position
@@ -1559,6 +1618,7 @@ func spawn_summoned_wave(zone_id: String, near_pos: Vector3) -> int:
 		var esc := float(t.get("scale", 1.0))
 		enemy.scale = Vector3(esc, esc, esc)
 		var spawn_pos: Vector3 = near_pos + offsets[i]
+		spawn_pos.y = ground_height_at(spawn_pos.x, spawn_pos.z)
 		enemy.position = spawn_pos
 		enemy.set_meta("is_summoned", true)
 		enemy.add_to_group("summoned_wave")
@@ -1609,6 +1669,7 @@ func awaken_pit_boss(zone_id: String) -> bool:
 	enemy.is_pit_boss = true
 	enemy.add_to_group("pit_boss")
 	var bpos: Vector3 = pb.get("pos", Vector3.ZERO)
+	bpos.y = ground_height_at(bpos.x, bpos.z)
 	enemy.position = bpos
 	_map_container.add_child(enemy)
 	enemy.home_position = enemy.global_position if enemy.is_inside_tree() else enemy.position

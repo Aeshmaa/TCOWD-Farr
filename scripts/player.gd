@@ -191,6 +191,8 @@ func _sync_world_to_current_map() -> void:
 	var world_mgr := get_tree().get_first_node_in_group("world_zone_manager")
 	if world_mgr and world_mgr.has_method("load_map"):
 		world_mgr.call("load_map", current_map_id)
+		if world_mgr.has_method("ground_height_at"):
+			global_position.y = float(world_mgr.call("ground_height_at", global_position.x, global_position.z)) + 0.1
 	if _bgm and _bgm.has_method("play_for_map"):
 		_bgm.call("play_for_map", current_map_id)
 
@@ -228,6 +230,9 @@ func travel_to_map(target_map_id: String, custom_pos: Variant = null, silent: bo
 		var spawns: Dictionary = mdata.get("spawns", {})
 		dest_pos = spawns.get(my_fid, Vector3(0.0, 0.1, 14.0))
 
+	var world_mgr := get_tree().get_first_node_in_group("world_zone_manager")
+	if world_mgr and world_mgr.has_method("ground_height_at"):
+		dest_pos.y = float(world_mgr.call("ground_height_at", dest_pos.x, dest_pos.z)) + 0.1
 	global_position = dest_pos
 	velocity = Vector3.ZERO
 	if fravashi_instance and is_instance_valid(fravashi_instance) and fravashi_instance.visible:
@@ -2664,4 +2669,3 @@ func interact_beacon_clear_summons() -> void:
 func close_beacon_menu() -> void:
 	active_summon_beacon = null
 	_emit_state()
-

@@ -234,5 +234,51 @@ Every map has an interactive 3D monument ([`SummonBeacon`](file:///Users/wildanm
 - **`[2] Awaken Zone Pit Boss`**: Awaken or resurrect the zone's dedicated Pit Boss immediately in the Boss Pit arena with full combat fanfare.
 - **`[3] Clear Summoned Wave`**: Cleans up any active summoned mobs if players want to reset the grinding grounds.
 
+---
+
+## 11. Editable 30-Map Scene & Terrain Architecture (`res://maps/*.tscn`)
+
+All 30 world zones are authored as **standard, fully editable Godot `.tscn` scenes** located in [`res://maps/`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/maps) backed by grayscale heightmaps in [`res://assets/heightmaps/`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/assets/heightmaps), Poly Haven CC0 PBR textures & HDRI skies, and Kenney CC0 3D models.
+
+### 11.1 How to Edit Maps in the Godot Editor (No Coding Required!)
+1. **Open any Map Scene:**
+   - Double-click any scene in `res://maps/<map_id>.tscn` (e.g. `res://maps/svel_hq.tscn`, `res://maps/order_hq.tscn`, `res://maps/farr_mining_ground.tscn`, `res://maps/farm_caldera_magma.tscn`).
+2. **Move, Duplicate, or Add 3D Props:**
+   - Under the `Landmarks` and `Props` nodes in the Scene tree dock, select any building, tower, column, tree, or rock to move, rotate, or duplicate it using standard Godot 3D gizmos (`W`, `E`, `R`).
+   - Drag any `.glb` model from `res://assets/props/kenney/` directly into the 3D viewport.
+3. **Paint / Modify the Terrain Heightmap:**
+   - Open `res://assets/heightmaps/<map_id>.png` in your favourite 2D image editor (**Krita, GIMP, Photoshop, Aseprite...**).
+   - Pure black (`#000000`) is height `0.0m`, pure white (`#FFFFFF`) is `height_scale` metres (e.g. `20m–23m`).
+   - Paint smooth hills, valleys, or craters. When you save the PNG, Godot reimports it automatically.
+   - Select the root node in the Scene tree dock and click **`snap_props_to_terrain`** in the Inspector to instantly re-align all props, landmarks, and lights to your newly painted terrain contours!
+4. **Swap Textures & Atmosphere:**
+   - Select the `Terrain` node (`MapTerrain`): swap `ground_albedo`, `ground_normal`, `accent_albedo`, `cliff_albedo`, tints, tile scale, or emissive glowing fissure color.
+   - Select the root `MapScene` node: swap the equirectangular HDRI sky (`res://assets/sky/*.hdr`), adjust distance fog color/density, sun color/energy/angle, or filmic exposure.
+
+### 11.2 Map Scene Node Hierarchy
+```
+res://maps/<map_id>.tscn (MapScene -> scripts/map_scene.gd)
+├── Environment (WorldEnvironment: HDRI sky, distance fog, filmic tonemap, SSAO, glow)
+├── Sun (DirectionalLight3D: directional sunlight with shadows)
+├── Terrain (MapTerrain -> scripts/map_terrain.gd: heightmap mesh + HeightMapShape3D collision + triplanar PBR shader)
+├── BossPit (Node3D: circular arena floor, glowing rune disk, 8 perimeter columns/braziers, 3D title plate)
+├── Landmarks (Node3D: themed Kenney 3D buildings, hangars, towers, crypts, obelisks, set pieces)
+├── Props (Node3D: natural biome scatter + mountain ridge rock outcrops)
+├── Lights (Node3D: OmniLight3D accent braziers, glowing crystals, energy pylons)
+└── PropCollisions (StaticBody3D: physics collision shapes for placed architectural landmarks)
+```
+
+### 11.3 Real Forward+ Metal GPU In-Game Verification Gallery
+The following screenshots were rendered in windowed mode on the Apple M3 Metal GPU (1600x900 Forward+) and visually verified:
+
+- **Sveleitre Central Fortress (`svel_hq`)**: Industrial alloy hangars, space cargo shuttles, satellite dishes, dual-scale worn concrete and metal plate PBR terrain, and enclosing mountain ridges.
+- **Order Sun-Temple Bastion (`order_hq`)**: Sandstone pavement, hypostyle temple columns, castle towers with conical roofs, palms, sacred fire altars, and the Sun-Temple Boss Pit.
+- **Legion Obsidian Citadel (`legion_hq`)**: Dark basalt citadel surrounded by molten crimson fissures glowing through the ground, ancient obelisks, and black fortress towers.
+- **The Crack Mining Ground (`farr_mining_ground`)**: Colossal open-pit strip mine crater where raw amber Farr fissures glow through the excavation floor, ringed by mining towers and the central Megaspire.
+- **The Great Volcanic Caldera (`farm_caldera_magma`)**: Molten orange lava rivers cutting through charred volcanic basalt, ringed by volcanic peaks and the Drake-Tyrant boss arena.
+- **Sky Sanctum Deep Dungeon (`dungeon_sky_sanctum`)**: Floating celestial halo ring of sacred white-gold light hovering over a high-elevation ivory peristyle colonnade.
+- **Catacombs of the First Kings (`farm_relic_catacombs`)**: Subterranean mausoleum with eerie green necrotic soul-fissures, ancient Persian royal crypts, and stone monuments.
+
+
 
 

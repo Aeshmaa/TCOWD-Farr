@@ -1,0 +1,662 @@
+[gd_scene load_steps=62 format=3]
+
+[ext_resource type="Script" path="res://scripts/map_scene.gd" id="1_res"]
+[ext_resource type="Script" path="res://scripts/map_terrain.gd" id="2_res"]
+[ext_resource type="Texture2D" path="res://assets/sky/snow_field_puresky.hdr" id="3_res"]
+[ext_resource type="Texture2D" path="res://assets/heightmaps/border_glacier.png" id="4_res"]
+[ext_resource type="Texture2D" path="res://assets/textures/snow_02_diff.jpg" id="5_res"]
+[ext_resource type="Texture2D" path="res://assets/textures/snow_02_nor.jpg" id="6_res"]
+[ext_resource type="Texture2D" path="res://assets/textures/aerial_ground_rock_diff.jpg" id="7_res"]
+[ext_resource type="Texture2D" path="res://assets/textures/cliff_side_diff.jpg" id="8_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/nature/statue_obelisk.glb" id="9_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/graveyard/fire-basket.glb" id="10_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/nature/cliff_block_rock.glb" id="11_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/space/hangar_smallB.glb" id="12_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/space/craft_miner.glb" id="13_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/space/rock_crystalsLargeA.glb" id="14_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/space/rock_crystalsLargeB.glb" id="15_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/nature/tree_pineRoundA.glb" id="16_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/space/satelliteDish.glb" id="17_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/space/rock_crystals.glb" id="18_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/nature/rock_tallA.glb" id="19_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/nature/tree_pineGroundA.glb" id="20_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/survival/barrel.glb" id="21_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/nature/rock_tallB.glb" id="22_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/nature/rock_largeD.glb" id="23_res"]
+[ext_resource type="PackedScene" path="res://assets/props/kenney/nature/rock_tallF.glb" id="24_res"]
+
+[sub_resource type="CylinderMesh" id="SubResource_1"]
+top_radius = 9.50
+bottom_radius = 10.30
+height = 0.3
+
+[sub_resource type="StandardMaterial3D" id="SubResource_2"]
+albedo_color = Color(0.14, 0.15, 0.18, 1)
+albedo_texture = ExtResource("5_res")
+uv1_scale = Vector3(4, 4, 4)
+roughness = 0.82
+
+[sub_resource type="CylinderMesh" id="SubResource_3"]
+top_radius = 4.37
+bottom_radius = 4.66
+height = 0.08
+
+[sub_resource type="StandardMaterial3D" id="SubResource_4"]
+albedo_color = Color(0.350, 0.880, 1.000, 1)
+emission_enabled = true
+emission = Color(0.350, 0.880, 1.000, 1)
+emission_energy_multiplier = 2.2
+
+[sub_resource type="CylinderShape3D" id="SubResource_5"]
+height = 4.80
+radius = 0.75
+
+[sub_resource type="CylinderShape3D" id="SubResource_6"]
+height = 4.80
+radius = 0.75
+
+[sub_resource type="CylinderShape3D" id="SubResource_7"]
+height = 4.80
+radius = 0.75
+
+[sub_resource type="CylinderShape3D" id="SubResource_8"]
+height = 4.80
+radius = 0.75
+
+[sub_resource type="CylinderShape3D" id="SubResource_9"]
+height = 4.80
+radius = 0.75
+
+[sub_resource type="CylinderShape3D" id="SubResource_10"]
+height = 4.80
+radius = 0.75
+
+[sub_resource type="CylinderShape3D" id="SubResource_11"]
+height = 4.80
+radius = 0.75
+
+[sub_resource type="CylinderShape3D" id="SubResource_12"]
+height = 4.80
+radius = 0.75
+
+[sub_resource type="CylinderShape3D" id="SubResource_13"]
+height = 6.00
+radius = 4.50
+
+[sub_resource type="CylinderShape3D" id="SubResource_14"]
+height = 6.00
+radius = 4.00
+
+[sub_resource type="CylinderShape3D" id="SubResource_15"]
+height = 6.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_16"]
+height = 6.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_17"]
+height = 6.00
+radius = 2.00
+
+[sub_resource type="CylinderShape3D" id="SubResource_18"]
+height = 6.00
+radius = 2.00
+
+[sub_resource type="CylinderShape3D" id="SubResource_19"]
+height = 6.00
+radius = 2.00
+
+[sub_resource type="CylinderShape3D" id="SubResource_20"]
+height = 6.00
+radius = 2.00
+
+[sub_resource type="CylinderShape3D" id="SubResource_21"]
+height = 6.00
+radius = 2.50
+
+[sub_resource type="CylinderShape3D" id="SubResource_22"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_23"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_24"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_25"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_26"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_27"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_28"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_29"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_30"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_31"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_32"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_33"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_34"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_35"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_36"]
+height = 7.00
+radius = 3.20
+
+[sub_resource type="CylinderShape3D" id="SubResource_37"]
+height = 7.00
+radius = 3.20
+
+[node name="border_glacier" type="Node3D"]
+script = ExtResource("1_res")
+map_id = "border_glacier"
+sky_hdri = ExtResource("3_res")
+sky_energy = 1.05
+sky_tint = Color(0.820, 0.920, 1.000, 1)
+fog_color = Color(0.580, 0.720, 0.860, 1)
+fog_density = 0.0048
+ambient_energy = 0.58
+exposure = 0.95
+glow_intensity = 0.38
+sun_color = Color(0.920, 0.960, 1.000, 1)
+sun_energy = 1.05
+sun_pitch_deg = -42.0
+sun_yaw_deg = -40.0
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+shadow_enabled = true
+
+[node name="Terrain" type="Node3D" parent="."]
+script = ExtResource("2_res")
+size = 250.0
+heightmap = ExtResource("4_res")
+height_scale = 22.0
+resolution = 169
+smooth_passes = 2
+ground_albedo = ExtResource("5_res")
+ground_normal = ExtResource("6_res")
+accent_albedo = ExtResource("7_res")
+cliff_albedo = ExtResource("8_res")
+ground_tint = Color(0.880, 0.950, 1.000, 1)
+accent_tint = Color(0.680, 0.780, 0.880, 1)
+cliff_tint = Color(0.580, 0.700, 0.840, 1)
+accent_amount = 0.36
+ground_tile_metres = 7.5
+cliff_tile_metres = 9.5
+roughness = 0.78
+glow_color = Color(0.350, 0.880, 1.000, 1)
+glow_below_height = 0.70
+glow_strength = 1.80
+
+[node name="BossPit" type="Node3D" parent="."]
+
+[node name="ArenaFloor" type="MeshInstance3D" parent="BossPit"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 0.000, 1.517, -26.000)
+mesh = SubResource("SubResource_1")
+material_override = SubResource("SubResource_2")
+metadata/y_offset = 0.05
+
+[node name="ArenaRuneDisk" type="MeshInstance3D" parent="BossPit"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 0.000, 1.647, -26.000)
+mesh = SubResource("SubResource_3")
+material_override = SubResource("SubResource_4")
+metadata/y_offset = 0.18
+
+[node name="ArenaLabel" type="Label3D" parent="BossPit"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 0.000, 5.967, -26.000)
+billboard = 1
+modulate = Color(1, 0.88, 0.42, 1)
+text = "★ Glacial Crevasse Pit ★\n[Boss Pit Arena]"
+font_size = 28
+metadata/y_offset = 4.5
+
+[node name="PitPillar_1" parent="BossPit" instance=ExtResource("9_res")]
+transform = Transform3D(5.8000, 0, -0.0000, 0, 5.8000, 0, 0.0000, 0, 5.8000, 9.000, 1.429, -26.000)
+metadata/y_offset = 0.0
+
+[node name="PitBrazier_1" parent="BossPit" instance=ExtResource("10_res")]
+transform = Transform3D(3.6000, 0, -0.0000, 0, 3.6000, 0, 0.0000, 0, 3.6000, 9.000, 1.529, -26.000)
+metadata/y_offset = 0.1
+
+[node name="PitPillar_2" parent="BossPit" instance=ExtResource("9_res")]
+transform = Transform3D(4.1012, 0, -4.1012, 0, 5.8000, 0, 4.1012, 0, 4.1012, 6.364, 1.449, -19.636)
+metadata/y_offset = 0.0
+
+[node name="PitPillar_3" parent="BossPit" instance=ExtResource("9_res")]
+transform = Transform3D(0.0000, 0, -5.8000, 0, 5.8000, 0, 5.8000, 0, 0.0000, 0.000, 1.467, -17.000)
+metadata/y_offset = 0.0
+
+[node name="PitBrazier_3" parent="BossPit" instance=ExtResource("10_res")]
+transform = Transform3D(0.0000, 0, -3.6000, 0, 3.6000, 0, 3.6000, 0, 0.0000, 0.000, 1.567, -17.000)
+metadata/y_offset = 0.1
+
+[node name="PitPillar_4" parent="BossPit" instance=ExtResource("9_res")]
+transform = Transform3D(-4.1012, 0, -4.1012, 0, 5.8000, 0, 4.1012, 0, -4.1012, -6.364, 1.482, -19.636)
+metadata/y_offset = 0.0
+
+[node name="PitPillar_5" parent="BossPit" instance=ExtResource("9_res")]
+transform = Transform3D(-5.8000, 0, -0.0000, 0, 5.8000, 0, 0.0000, 0, -5.8000, -9.000, 1.510, -26.000)
+metadata/y_offset = 0.0
+
+[node name="PitBrazier_5" parent="BossPit" instance=ExtResource("10_res")]
+transform = Transform3D(-3.6000, 0, -0.0000, 0, 3.6000, 0, 0.0000, 0, -3.6000, -9.000, 1.610, -26.000)
+metadata/y_offset = 0.1
+
+[node name="PitPillar_6" parent="BossPit" instance=ExtResource("9_res")]
+transform = Transform3D(-4.1012, 0, 4.1012, 0, 5.8000, 0, -4.1012, 0, -4.1012, -6.364, 1.504, -32.364)
+metadata/y_offset = 0.0
+
+[node name="PitPillar_7" parent="BossPit" instance=ExtResource("9_res")]
+transform = Transform3D(-0.0000, 0, 5.8000, 0, 5.8000, 0, -5.8000, 0, -0.0000, -0.000, 1.466, -35.000)
+metadata/y_offset = 0.0
+
+[node name="PitBrazier_7" parent="BossPit" instance=ExtResource("10_res")]
+transform = Transform3D(-0.0000, 0, 3.6000, 0, 3.6000, 0, -3.6000, 0, -0.0000, -0.000, 1.566, -35.000)
+metadata/y_offset = 0.1
+
+[node name="PitPillar_8" parent="BossPit" instance=ExtResource("9_res")]
+transform = Transform3D(4.1012, 0, 4.1012, 0, 5.8000, 0, -4.1012, 0, 4.1012, 6.364, 1.426, -32.364)
+metadata/y_offset = 0.0
+
+[node name="Landmarks" type="Node3D" parent="."]
+
+[node name="Landmark_1_hangar_smallB" parent="Landmarks" instance=ExtResource("12_res")]
+transform = Transform3D(3.9733, 0, 2.1126, 0, 4.5000, 0, -2.1126, 0, 3.9733, -26.000, 2.253, -12.000)
+metadata/y_offset = 0.0
+
+[node name="Landmark_2_craft_miner" parent="Landmarks" instance=ExtResource("13_res")]
+transform = Transform3D(3.4404, 0, -2.4090, 0, 4.2000, 0, 2.4090, 0, 3.4404, 26.000, 0.858, -14.000)
+metadata/y_offset = 0.0
+
+[node name="Landmark_3_rock_crystalsLargeA" parent="Landmarks" instance=ExtResource("14_res")]
+transform = Transform3D(6.5683, 0, 1.7600, 0, 6.8000, 0, -1.7600, 0, 6.5683, -22.000, 1.249, 18.000)
+metadata/y_offset = 0.0
+
+[node name="Landmark_4_rock_crystalsLargeB" parent="Landmarks" instance=ExtResource("15_res")]
+transform = Transform3D(6.1629, 0, -2.8738, 0, 6.8000, 0, 2.8738, 0, 6.1629, 22.000, 1.881, 18.000)
+metadata/y_offset = 0.0
+
+[node name="Landmark_5_tree_pineRoundA" parent="Landmarks" instance=ExtResource("16_res")]
+transform = Transform3D(5.5000, 0, 0.0000, 0, 5.5000, 0, -0.0000, 0, 5.5000, -34.000, 1.683, 8.000)
+metadata/y_offset = 0.0
+
+[node name="Landmark_6_tree_pineRoundA" parent="Landmarks" instance=ExtResource("16_res")]
+transform = Transform3D(4.2132, 0, 3.5353, 0, 5.5000, 0, -3.5353, 0, 4.2132, 34.000, 2.305, 8.000)
+metadata/y_offset = 0.0
+
+[node name="Landmark_7_tree_pineRoundA" parent="Landmarks" instance=ExtResource("16_res")]
+transform = Transform3D(5.1683, 0, 1.8811, 0, 5.5000, 0, -1.8811, 0, 5.1683, -38.000, 3.136, -26.000)
+metadata/y_offset = 0.0
+
+[node name="Landmark_8_tree_pineRoundA" parent="Landmarks" instance=ExtResource("16_res")]
+transform = Transform3D(5.1683, 0, -1.8811, 0, 5.5000, 0, 1.8811, 0, 5.1683, 38.000, 0.060, -26.000)
+metadata/y_offset = 0.0
+
+[node name="Landmark_9_satelliteDish" parent="Landmarks" instance=ExtResource("17_res")]
+transform = Transform3D(5.0000, 0, 0.0000, 0, 5.0000, 0, -0.0000, 0, 5.0000, 0.000, 1.164, 30.000)
+metadata/y_offset = 0.0
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="Prop_1_rock_crystals" parent="Props" instance=ExtResource("18_res")]
+transform = Transform3D(-0.7085, 0, 4.0180, 0, 4.0800, 0, -4.0180, 0, -0.7085, 29.733, 2.431, 74.270)
+metadata/y_offset = 0.0
+
+[node name="Prop_2_rock_tallA" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(-5.0734, 0, 2.5850, 0, 5.6940, 0, -2.5850, 0, -5.0734, 3.396, 1.697, 50.887)
+metadata/y_offset = 0.0
+
+[node name="Prop_3_tree_pineGroundA" parent="Props" instance=ExtResource("20_res")]
+transform = Transform3D(-4.0041, 0, -1.9529, 0, 4.4550, 0, 1.9529, 0, -4.0041, -17.150, 2.447, 67.867)
+metadata/y_offset = 0.0
+
+[node name="Prop_4_barrel" parent="Props" instance=ExtResource("21_res")]
+transform = Transform3D(-0.3377, 0, -1.7375, 0, 1.7700, 0, 1.7375, 0, -0.3377, -21.837, 0.130, 34.701)
+metadata/y_offset = 0.0
+
+[node name="Prop_5_rock_crystals" parent="Props" instance=ExtResource("18_res")]
+transform = Transform3D(3.6294, 0, -4.0308, 0, 5.4240, 0, 4.0308, 0, 3.6294, -46.085, 3.933, 38.421)
+metadata/y_offset = 0.0
+
+[node name="Prop_6_rock_tallA" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(5.3097, 0, 0.4645, 0, 5.3300, 0, -0.4645, 0, 5.3097, -73.341, 3.555, 29.361)
+metadata/y_offset = 0.0
+
+[node name="Prop_7_tree_pineGroundA" parent="Props" instance=ExtResource("20_res")]
+transform = Transform3D(2.1939, 0, 3.5109, 0, 4.1400, 0, -3.5109, 0, 2.1939, -49.889, 2.066, 3.329)
+metadata/y_offset = 0.0
+
+[node name="Prop_8_barrel" parent="Props" instance=ExtResource("21_res")]
+transform = Transform3D(-0.8350, 0, 2.1752, 0, 2.3300, 0, -2.1752, 0, -0.8350, -66.897, 1.037, -16.905)
+metadata/y_offset = 0.0
+
+[node name="Prop_9_rock_crystals" parent="Props" instance=ExtResource("18_res")]
+transform = Transform3D(-4.8909, 0, 1.4024, 0, 5.0880, 0, -1.4024, 0, -4.8909, -33.854, 2.784, -21.304)
+metadata/y_offset = 0.0
+
+[node name="Prop_10_rock_tallA" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(-3.9660, 0, -2.9886, 0, 4.9660, 0, 2.9886, 0, -3.9660, -37.781, 5.672, -45.317)
+metadata/y_offset = 0.0
+
+[node name="Prop_11_tree_pineGroundA" parent="Props" instance=ExtResource("20_res")]
+transform = Transform3D(-0.0000, 0, -3.8250, 0, 3.8250, 0, 3.8250, 0, -0.0000, -28.989, 1.897, -72.413)
+metadata/y_offset = 0.0
+
+[node name="Prop_12_barrel" parent="Props" instance=ExtResource("21_res")]
+transform = Transform3D(1.7490, 0, -1.3180, 0, 2.1900, 0, 1.3180, 0, 1.7490, -3.263, 0.966, -48.891)
+metadata/y_offset = 0.0
+
+[node name="Prop_13_rock_crystals" parent="Props" instance=ExtResource("18_res")]
+transform = Transform3D(4.5679, 0, 1.3098, 0, 4.7520, 0, -1.3098, 0, 4.5679, 16.660, 2.624, -65.928)
+metadata/y_offset = 0.0
+
+[node name="Prop_14_rock_tallA" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(1.6492, 0, 4.2963, 0, 4.6020, 0, -4.2963, 0, 1.6492, 20.772, 0.205, -33.008)
+metadata/y_offset = 0.0
+
+[node name="Prop_15_tree_pineGroundA" parent="Props" instance=ExtResource("20_res")]
+transform = Transform3D(-2.6946, 0, 4.3123, 0, 5.0850, 0, -4.3123, 0, -2.6946, 44.549, 3.667, -37.140)
+metadata/y_offset = 0.0
+
+[node name="Prop_16_barrel" parent="Props" instance=ExtResource("21_res")]
+transform = Transform3D(-2.0422, 0, 0.1787, 0, 2.0500, 0, -0.1787, 0, -2.0422, 71.484, 3.710, -28.618)
+metadata/y_offset = 0.0
+
+[node name="Prop_17_rock_crystals" parent="Props" instance=ExtResource("18_res")]
+transform = Transform3D(-2.9549, 0, -3.2817, 0, 4.4160, 0, 3.2817, 0, -2.9549, 47.893, 1.628, -3.196)
+metadata/y_offset = 0.0
+
+[node name="Prop_18_rock_tallA" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(1.1559, 0, -5.9467, 0, 6.0580, 0, 5.9467, 0, 1.1559, 64.958, 0.856, 16.415)
+metadata/y_offset = 0.0
+
+[node name="Prop_19_tree_pineGroundA" parent="Props" instance=ExtResource("20_res")]
+transform = Transform3D(4.2872, 0, -2.0910, 0, 4.7700, 0, 2.0910, 0, 4.2872, 32.162, 2.657, 20.239)
+metadata/y_offset = 0.0
+
+[node name="Prop_20_barrel" parent="Props" instance=ExtResource("21_res")]
+transform = Transform3D(1.7018, 0, 0.8671, 0, 1.9100, 0, -0.8671, 0, 1.7018, 36.500, 5.733, 43.781)
+metadata/y_offset = 0.0
+
+[node name="RidgeRock_1" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(6.0000, 0, 0.0000, 0, 6.0000, 0, -0.0000, 0, 6.0000, 93.530, 1.163, 9.384)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_2" parent="Props" instance=ExtResource("22_res")]
+transform = Transform3D(5.1150, 0, 5.4852, 0, 7.5000, 0, -5.4852, 0, 5.1150, 86.344, 5.461, 46.355)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_3" parent="Props" instance=ExtResource("23_res")]
+transform = Transform3D(-0.6278, 0, 8.9781, 0, 9.0000, 0, -8.9781, 0, -0.6278, 64.564, 6.532, 78.965)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_4" parent="Props" instance=ExtResource("24_res")]
+transform = Transform3D(-4.6629, 0, 3.7759, 0, 6.0000, 0, -3.7759, 0, -4.6629, 27.123, 0.613, 90.002)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_5" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(-7.4270, 0, -1.0438, 0, 7.5000, 0, 1.0438, 0, -7.4270, -9.784, 2.967, 97.510)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_6" parent="Props" instance=ExtResource("22_res")]
+transform = Transform3D(-5.1622, 0, -7.3724, 0, 9.0000, 0, 7.3724, 0, -5.1622, -48.247, 7.554, 89.868)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_7" parent="Props" instance=ExtResource("23_res")]
+transform = Transform3D(1.2475, 0, -5.8689, 0, 6.0000, 0, 5.8689, 0, 1.2475, -72.772, 5.650, 59.500)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_8" parent="Props" instance=ExtResource("24_res")]
+transform = Transform3D(6.4288, 0, -3.8628, 0, 7.5000, 0, 3.8628, 0, 6.4288, -93.832, 2.802, 28.277)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_9" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(8.6514, 0, 2.4807, 0, 9.0000, 0, -2.4807, 0, 8.6514, -101.490, 5.293, -10.183)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_10" parent="Props" instance=ExtResource("22_res")]
+transform = Transform3D(2.7239, 0, 5.3460, 0, 6.0000, 0, -5.3460, 0, 2.7239, -82.820, 6.362, -44.463)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_11" parent="Props" instance=ExtResource("23_res")]
+transform = Transform3D(-2.5652, 0, 7.0477, 0, 7.5000, 0, -7.0477, 0, -2.5652, -62.032, 6.260, -75.868)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_12" parent="Props" instance=ExtResource("24_res")]
+transform = Transform3D(-8.2845, 0, 3.5166, 0, 9.0000, 0, -3.5166, 0, -8.2845, -29.431, 4.031, -97.662)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_13" parent="Props" instance=ExtResource("19_res")]
+transform = Transform3D(-5.4813, 0, -2.4404, 0, 6.0000, 0, 2.4404, 0, -5.4813, 9.384, 1.137, -93.530)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_14" parent="Props" instance=ExtResource("22_res")]
+transform = Transform3D(-2.4418, 0, -7.0914, 0, 7.5000, 0, 7.0914, 0, -2.4418, 46.355, 7.828, -86.344)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_15" parent="Props" instance=ExtResource("23_res")]
+transform = Transform3D(4.2252, 0, -7.9465, 0, 9.0000, 0, 7.9465, 0, 4.2252, 78.965, 5.719, -64.564)
+metadata/y_offset = -0.5
+
+[node name="RidgeRock_16" parent="Props" instance=ExtResource("24_res")]
+transform = Transform3D(5.7956, 0, -1.5529, 0, 6.0000, 0, 1.5529, 0, 5.7956, 90.002, 3.285, -27.123)
+metadata/y_offset = -0.5
+
+[node name="Lights" type="Node3D" parent="."]
+
+[node name="ZoneLight_1" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 9.500, 5.207, -26.000)
+light_color = Color(0.350, 0.880, 1.000, 1)
+light_energy = 1.50
+omni_range = 16.0
+metadata/y_offset = 3.80
+
+[node name="ZoneLight_2" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -9.500, 5.340, -26.000)
+light_color = Color(0.350, 0.880, 1.000, 1)
+light_energy = 1.50
+omni_range = 16.0
+metadata/y_offset = 3.80
+
+[node name="ZoneLight_3" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 0.000, 5.267, -16.500)
+light_color = Color(0.350, 0.880, 1.000, 1)
+light_energy = 1.50
+omni_range = 16.0
+metadata/y_offset = 3.80
+
+[node name="ZoneLight_4" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 0.000, 5.266, -35.500)
+light_color = Color(0.350, 0.880, 1.000, 1)
+light_energy = 1.50
+omni_range = 16.0
+metadata/y_offset = 3.80
+
+[node name="ZoneLight_5" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 0.000, 4.031, 22.000)
+light_color = Color(0.350, 0.880, 1.000, 1)
+light_energy = 1.80
+omni_range = 18.0
+metadata/y_offset = 2.60
+
+[node name="ZoneLight_6" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -22.000, 4.604, 12.000)
+light_color = Color(0.350, 0.880, 1.000, 1)
+light_energy = 1.40
+omni_range = 16.0
+metadata/y_offset = 3.20
+
+[node name="ZoneLight_7" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 22.000, 5.116, 12.000)
+light_color = Color(0.350, 0.880, 1.000, 1)
+light_energy = 1.40
+omni_range = 16.0
+metadata/y_offset = 3.20
+
+[node name="PropCollisions" type="StaticBody3D" parent="."]
+
+[node name="Col_PitPillar_1" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 9.000, 3.829, -26.000)
+shape = SubResource("SubResource_5")
+
+[node name="Col_PitPillar_2" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 6.364, 3.849, -19.636)
+shape = SubResource("SubResource_6")
+
+[node name="Col_PitPillar_3" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 0.000, 3.867, -17.000)
+shape = SubResource("SubResource_7")
+
+[node name="Col_PitPillar_4" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -6.364, 3.882, -19.636)
+shape = SubResource("SubResource_8")
+
+[node name="Col_PitPillar_5" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -9.000, 3.910, -26.000)
+shape = SubResource("SubResource_9")
+
+[node name="Col_PitPillar_6" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -6.364, 3.904, -32.364)
+shape = SubResource("SubResource_10")
+
+[node name="Col_PitPillar_7" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -0.000, 3.866, -35.000)
+shape = SubResource("SubResource_11")
+
+[node name="Col_PitPillar_8" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 6.364, 3.826, -32.364)
+shape = SubResource("SubResource_12")
+
+[node name="Col_Landmark_1" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -26.000, 5.253, -12.000)
+shape = SubResource("SubResource_13")
+
+[node name="Col_Landmark_2" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 26.000, 3.858, -14.000)
+shape = SubResource("SubResource_14")
+
+[node name="Col_Landmark_3" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -22.000, 4.249, 18.000)
+shape = SubResource("SubResource_15")
+
+[node name="Col_Landmark_4" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 22.000, 4.881, 18.000)
+shape = SubResource("SubResource_16")
+
+[node name="Col_Landmark_5" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -34.000, 4.683, 8.000)
+shape = SubResource("SubResource_17")
+
+[node name="Col_Landmark_6" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 34.000, 5.305, 8.000)
+shape = SubResource("SubResource_18")
+
+[node name="Col_Landmark_7" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -38.000, 6.136, -26.000)
+shape = SubResource("SubResource_19")
+
+[node name="Col_Landmark_8" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 38.000, 3.060, -26.000)
+shape = SubResource("SubResource_20")
+
+[node name="Col_Landmark_9" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 0.000, 4.164, 30.000)
+shape = SubResource("SubResource_21")
+
+[node name="Col_RidgeRock_1" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 93.530, 4.663, 9.384)
+shape = SubResource("SubResource_22")
+
+[node name="Col_RidgeRock_2" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 86.344, 8.961, 46.355)
+shape = SubResource("SubResource_23")
+
+[node name="Col_RidgeRock_3" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 64.564, 10.032, 78.965)
+shape = SubResource("SubResource_24")
+
+[node name="Col_RidgeRock_4" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 27.123, 4.113, 90.002)
+shape = SubResource("SubResource_25")
+
+[node name="Col_RidgeRock_5" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -9.784, 6.467, 97.510)
+shape = SubResource("SubResource_26")
+
+[node name="Col_RidgeRock_6" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -48.247, 11.054, 89.868)
+shape = SubResource("SubResource_27")
+
+[node name="Col_RidgeRock_7" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -72.772, 9.150, 59.500)
+shape = SubResource("SubResource_28")
+
+[node name="Col_RidgeRock_8" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -93.832, 6.302, 28.277)
+shape = SubResource("SubResource_29")
+
+[node name="Col_RidgeRock_9" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -101.490, 8.793, -10.183)
+shape = SubResource("SubResource_30")
+
+[node name="Col_RidgeRock_10" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -82.820, 9.862, -44.463)
+shape = SubResource("SubResource_31")
+
+[node name="Col_RidgeRock_11" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -62.032, 9.760, -75.868)
+shape = SubResource("SubResource_32")
+
+[node name="Col_RidgeRock_12" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, -29.431, 7.531, -97.662)
+shape = SubResource("SubResource_33")
+
+[node name="Col_RidgeRock_13" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 9.384, 4.637, -93.530)
+shape = SubResource("SubResource_34")
+
+[node name="Col_RidgeRock_14" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 46.355, 11.328, -86.344)
+shape = SubResource("SubResource_35")
+
+[node name="Col_RidgeRock_15" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 78.965, 9.219, -64.564)
+shape = SubResource("SubResource_36")
+
+[node name="Col_RidgeRock_16" type="CollisionShape3D" parent="PropCollisions"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1.0000, 0, -0.0000, 0, 1.0000, 90.002, 6.785, -27.123)
+shape = SubResource("SubResource_37")
