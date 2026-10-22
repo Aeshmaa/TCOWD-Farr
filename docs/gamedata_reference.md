@@ -81,21 +81,55 @@ They can **only** be obtained from:
 
 ---
 
-## 6. 9-Map World Zone Architecture (`GameData.MAPS`)
+## 6. Complete 30-Map World Zone Architecture (`GameData.MAPS` & `GameData.MAP_ORDER`)
 
-Players travel between zones by walking into physical **3D Warp Portals** ([`WarpPortal`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/scripts/warp_portal.gd)) or opening the **World Map & Warp Atlas (`[M]`)**.
+Players travel between zones by walking into physical **3D Warp Portals** ([`WarpPortal`](file:///Users/wildanmuhammadyasinfadillah/Documents/antigravity/serene-einstein/scripts/warp_portal.gd)) or opening the **World Map & Warp Atlas (`[M]`)**, which features a scrollable 30-zone directory with level bands and economic farming badges.
 
-| Map ID | Zone Name | Category & Access | Level Band | Key Features, Bosses & Ore Nodes |
-| :--- | :--- | :--- | :--- | :--- |
-| **`svel_hq`** | **Ark-Zero Bastion** | **Sveleitre HQ** (`sveleitre` only) | Safe HQ / `Lv.1–12` | Core Refinery, 4 Side Vendor NPCs, HQ Rebirth NPC, Starter Vein, `Lv.3–10` Starter Mobs |
-| **`svel_basic`** | **Cryo-Scrap Frontier** | **Sveleitre Basic Ground** (`sveleitre` only) | `Lv.12–28` | Forward Relay Rebirth NPC, 2 Frontier Veins, `Lv.14–25` Mobs + **`Sub-Core Overseer MK-IV (Mini-Boss Lv.28)`** |
-| **`order_hq`** | **Asha High Sanctuary** | **Order HQ** (`order` only) | Safe HQ / `Lv.1–12` | Sacred Refinery, 4 Side Vendor NPCs, HQ Rebirth NPC, Starter Vein, `Lv.3–10` Starter Mobs |
-| **`order_basic`** | **Sun-Bleached Terraces** | **Order Basic Ground** (`order` only) | `Lv.12–28` | Flame-Keeper Rebirth NPC, 2 Terrace Veins, `Lv.14–25` Mobs + **`Disgraced High Inquisitor (Mini-Boss Lv.28)`** |
-| **`legion_hq`** | **Druj Obsidian Citadel** | **Legion HQ** (`legion` only) | Safe HQ / `Lv.1–12` | Blood Refinery, 4 Side Vendor NPCs, HQ Rebirth NPC, Starter Vein, `Lv.3–10` Starter Mobs |
-| **`legion_basic`** | **Ashen Blood-Basin** | **Legion Basic Ground** (`legion` only) | `Lv.12–28` | Soul-Binder Rebirth NPC, 2 Basin Veins, `Lv.14–25` Mobs + **`Aka-Manah War-Executioner (Mini-Boss Lv.28)`** |
-| **`contested_steppes`** | **Shattered Persepolis Steppes** | **Contested Upper Ground 1** (All 3 Factions) | `Lv.28–38` + Boss | 3 Faction Outpost Rebirth NPCs, 4 Contested Grinding Spots (`Lv.28–38`), World Boss **`Yima, the Hollow King (Lv.50)`** |
-| **`contested_cauldron`** | **Scorched Var Cauldron** | **Contested Upper Ground 2** (All 3 Factions) | `Lv.36–45` + Bosses | Endgame Contested Grinding Spots (`Lv.38–44`), World Bosses **`Aeshma, the Wrath Unbound (Lv.50)`** & **`The Orphan Process (Lv.50)`** |
-| **`farr_mining_ground`** | **The Crack — Central Farr Mining Ground** | **Central Ore War Zone** (All 3 Factions) | `Lv.25–50` PvPvE Ore War | 3 Faction Breach Camps, **3x Contested Rich Farr Veins**, **2x Scar Megavein Cores**, **Contested Field Refinery**, **`Crack Core Arch-Leviathan (Lv.45)`** |
+### 6.1 Specialized Farming Focus Multipliers (`scripts/player.gd`)
+Mirroring RF Online's design where distinct zones serve dedicated player progression goals (e.g. Ether for currency farming, Volcanic Cauldron for Talics, Outcast/Beast for rare armor, and the Crag for Chip Wars), each zone has an active `farming_focus`:
+- **`WEALTH_CREDITS`** (e.g. *Aetherium Sky-Platforms*): **`2.5x` Currency Bounty** on every monster kill (Calliana-style wealth farm).
+- **`TALIC_FARMING`** (e.g. *Great Volcanic Caldera*): **Double Talic Drops** (two independent rolls on all mini-boss and pit boss talic drops).
+- **`RARE_GEAR`** (e.g. *Catacombs of the First Kings*): **`65%` Rare Gear Drop Rate** (increased from base 20%).
+- **`FORCE_POTIONS`** (e.g. *Luminescent Aqueduct*): Boosted FP potion caches and force catalysts.
+- **`DUNGEON_LOOT`** (e.g. *Ancient Vaults & Deep Dungeons*): **`1.5x XP` Multiplier**, guaranteed multi-talics, and high-tier equipment caches.
+- **`MEGAVEIN_EXTRACTION`** (e.g. *Abyssal Vein Core*): **`3x Farr Ore` Yield** per mining cycle (`12–18` ore per extraction).
+- **`ORE_EXTRACTION` / `ARTILLERY_PVP`** (e.g. *The Crack Mining Ground* / *Ridge of Tri-Bastions*): Three-faction contested ore mining and strategic ridge warfare.
+- **`ENDGAME_RAID` / `WORLD_BOSS`**: Apex world boss encounters with guaranteed masterwork weapons, multi-talics, and max currency bounties.
+
+### 6.2 The Complete 30-Map Atlas Directory
+
+| Tier | Map ID | Zone Name | Level Band | Farming Focus | Faction Access | Zone Pit Boss |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **T1: Safe HQs** | `svel_hq` | **Ark-Zero Bastion** | `Lv.1–12` | `HQ_SAFE` | `sveleitre` only | Arc-Reactor Overseer (`Lv.12`) |
+| | `order_hq` | **Asha High Sanctuary** | `Lv.1–12` | `HQ_SAFE` | `order` only | Sanctuary Corrupted Golem (`Lv.12`) |
+| | `legion_hq` | **Druj Obsidian Citadel** | `Lv.1–12` | `HQ_SAFE` | `legion` only | Obsidian Blood-Gargant (`Lv.12`) |
+| **T2: Basic Leveling** | `svel_basic` | **Cryo-Scrap Frontier** | `Lv.12–25` | `BASIC_SOLO` | `sveleitre` only | Cryo-Conduit Dreadnought (`Lv.28`) |
+| | `order_basic` | **Sun-Bleached Terraces** | `Lv.12–25` | `BASIC_SOLO` | `order` only | Azur-Fravashi Zealot (`Lv.28`) |
+| | `legion_basic` | **Ashen Blood-Basin** | `Lv.12–25` | `BASIC_SOLO` | `legion` only | Aka-Manah War-Executioner (`Lv.28`) |
+| **T3: Outposts** | `svel_outpost` | **Sub-Deck Turbine Chasm (Outpost 117)** | `Lv.22–32` | `COMPONENT_SALVAGE` | `sveleitre` only | Sub-Deck Turbine Colossus (`Lv.30`) |
+| | `order_outpost` | **Pilgrim's Oasis Sanctuary (Solus Outpost)** | `Lv.22–32` | `RESTORATIVE_HERBS` | `order` only | Oasis Guardian Fravashi (`Lv.30`) |
+| | `legion_outpost` | **Brimstone Quarry Fortress (Anacaade)** | `Lv.22–32` | `MINERAL_ARMOR` | `legion` only | Quarry Slag-Behemoth (`Lv.30`) |
+| **T4: Borderlands** | `border_sette` | **The Sette Dune Sea** | `Lv.30–38` | `PVP_BOUNTY` | All 3 Factions | Dune-Stalker Arch-Scorpion (`Lv.35`) |
+| | `border_glacier` | **Permafrost Rift Valley** | `Lv.30–38` | `CRYO_CORE` | All 3 Factions | Permafrost Cryo-Titan (`Lv.35`) |
+| | `border_trench` | **Basalt Divide Trenches** | `Lv.30–38` | `PIERCING_AMMO` | All 3 Factions | Trench-Breaker Dread-Gorger (`Lv.35`) |
+| **T5: Economic Farms** | `farm_ether_sky` | **Aetherium Floating Platforms (The Sky Floe)** | `Lv.36–42` | `WEALTH_CREDITS` *(2.5x Currency)* | All 3 Factions | Aether-Core Arch-Valkyrie (`Lv.40`) |
+| | `farm_caldera_magma` | **The Great Volcanic Caldera** | `Lv.38–46` | `TALIC_FARMING` *(2x Talic Drops)* | All 3 Factions | Magma-Maw Drake-Tyrant (`Lv.44`) |
+| | `farm_relic_catacombs` | **Catacombs of the First Kings** | `Lv.38–46` | `RARE_GEAR` *(65% Drop Rate)* | All 3 Factions | Catacomb Tomb-Sovereign (`Lv.44`) |
+| | `farm_deep_aquifer` | **Subterranean Luminescent Aqueduct** | `Lv.36–44` | `FORCE_POTIONS` | All 3 Factions | Aqueduct Hydra-Serpent (`Lv.42`) |
+| **T6: Upper Contested** | `contested_steppes` | **Shattered Persepolis Steppes** | `Lv.38–48` | `WORLD_BOSS` | All 3 Factions | Persepolis Ruin Goliath (`Lv.38`) + **Yima (`Lv.50`)** |
+| | `contested_cauldron` | **Scorched Var Cauldron** | `Lv.40–50` | `WORLD_BOSS` | All 3 Factions | Abyssal Daeva Overlord (`Lv.44`) + **Aeshma & Orphan Process (`Lv.50`)** |
+| | `steppes_highlands` | **Persepolis Upper Royal Terrace** | `Lv.42–50` | `SOVEREIGN_TALICS` | All 3 Factions | Royal Apadana Colossus (`Lv.48`) |
+| | `cauldron_abyss` | **The Daevic Chasm of Druj** | `Lv.44–50` | `DARK_ESSENCE` | All 3 Factions | Chasm Void-Leviathan (`Lv.48`) |
+| **T7: The Crack War** | `farr_mining_ground` | **The Crack — Central Farr Mining Ground** | `Lv.25–50` | `ORE_EXTRACTION` *(Chip/Vein War)* | All 3 Factions | Crack Core Arch-Leviathan (`Lv.45`) |
+| | `mining_lower_crater` | **The Abyssal Vein Core (Lower Mining Ground)** | `Lv.45–52` | `MEGAVEIN_EXTRACTION` *(3x Ore)* | All 3 Factions | Core Drill Overclocker (`Lv.48`) |
+| | `mining_breach_ridge` | **The Ridge of Tri-Bastions** | `Lv.35–50` | `ARTILLERY_PVP` | All 3 Factions | Siege-Bastion Sentinel (`Lv.45`) |
+| **T8: Beast Highlands**| `beast_plateau` | **The Great Beast Plateau** | `Lv.45–52` | `CHITIN_ARMOR` | All 3 Factions | Chitin Queen Skorpion (`Lv.48`) |
+| | `outcast_wasteland` | **Wastelands of the Forsworn** | `Lv.46–52` | `EXILE_WEAPONS` | All 3 Factions | Exile Warlord Rostam (`Lv.48`) |
+| | `sky_fracture_ridge` | **Sky-Fracture Pinnacle** | `Lv.48–54` | `COSMIC_TALICS` | All 3 Factions | Dome-Breach Sky-Colossus (`Lv.50`) |
+| **T9: Ancient Vaults** | `dungeon_ark_core` | **Ark-Zero Mainframe Supercore** | `Lv.45–52` | `DUNGEON_LOOT` *(1.5x XP)* | All 3 Factions | Mainframe Purge Sentinel (`Lv.50`) |
+| | `dungeon_var_roots` | **The Foundations of the Var** | `Lv.46–54` | `DUNGEON_LOOT` *(1.5x XP)* | All 3 Factions | Foundation Titan of Yima (`Lv.50`) |
+| | `dungeon_daeva_crypt` | **Crypt of the Seven Corrupted Daevas** | `Lv.48–55` | `DUNGEON_LOOT` *(1.5x XP)* | All 3 Factions | Arch-Daeva of Despair (`Lv.52`) |
+| | `dungeon_sky_sanctum` | **The Celestial Seal Sanctum** | `Lv.50–55` | `ENDGAME_RAID` *(Apex Vault)* | All 3 Factions | Celestial Seraph of Asha (`Lv.55`) |
 
 ---
 

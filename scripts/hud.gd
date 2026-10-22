@@ -186,29 +186,41 @@ func _build_world_map_window() -> void:
 		_map_top_btn = Button.new()
 		_map_top_btn.focus_mode = Control.FOCUS_NONE
 		_map_top_btn.modulate = Color(1.0, 0.88, 0.45)
-		_map_top_btn.text = "World Map (9 Zones) [M]"
+		_map_top_btn.text = "World Map (30 Zones) [M]"
 		_map_top_btn.pressed.connect(func() -> void: _map_panel.visible = not _map_panel.visible)
 		top_bar.add_child(_map_top_btn)
 
 	_map_panel = PanelContainer.new()
 	_map_panel.visible = false
-	_map_panel.offset_left = 605.0
-	_map_panel.offset_top = 155.0
-	_map_panel.offset_right = 1195.0
-	_map_panel.offset_bottom = 670.0
+	_map_panel.offset_left = 500.0
+	_map_panel.offset_top = 90.0
+	_map_panel.offset_right = 1260.0
+	_map_panel.offset_bottom = 690.0
 	add_child(_map_panel)
 
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 5)
-	_map_panel.add_child(vbox)
+	var outer_vbox := VBoxContainer.new()
+	outer_vbox.add_theme_constant_override("separation", 6)
+	_map_panel.add_child(outer_vbox)
 
 	var title := Label.new()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.modulate = Color(1.0, 0.88, 0.42)
-	title.text = "=== 9-MAP WORLD ZONE ATLAS & WARP GATE [M] ===\n(3 Faction HQs + 3 Basic Leveling + 2 Contested Upper + 1 Central Mining Ground)"
-	vbox.add_child(title)
+	title.text = "=== 30-MAP EXPANDED WORLD ZONE ATLAS & WARP NETWORK [M] ===\n(Safe HQs • Outposts • Borderlands • Farming Niches • War Grounds • Ancient Vaults)"
+	outer_vbox.add_child(title)
 
-	for map_id in GameData.MAP_ORDER:
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0, 520.0)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	outer_vbox.add_child(scroll)
+
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 4)
+	scroll.add_child(vbox)
+
+	for map_id_var in GameData.MAP_ORDER:
+		var map_id: String = str(map_id_var)
 		var btn := Button.new()
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -838,24 +850,79 @@ func _update_world_map_window(d: Dictionary) -> void:
 		var mdata: Dictionary = GameData.MAPS[map_id]
 		var owner_fid: String = str(mdata.get("owner_faction", "all"))
 		var cat: String = str(mdata.get("category", ""))
+		var focus: String = str(mdata.get("farming_focus", ""))
 		var is_cur: bool = (map_id == cur_map)
-		var tag := ""
+		var is_locked: bool = (owner_fid != "all" and owner_fid != my_fid)
+
+		var focus_badge := ""
+		match focus:
+			"WEALTH_CREDITS":
+				focus_badge = "[💰 2.5x Currency Farm]"
+			"TALIC_FARMING":
+				focus_badge = "[💎 Double Talic Drops]"
+			"RARE_GEAR":
+				focus_badge = "[🛡️ 65% Rare Gear Drop]"
+			"FORCE_POTIONS":
+				focus_badge = "[✨ Force/Buff Extracts]"
+			"DUNGEON_LOOT":
+				focus_badge = "[🏰 Vault: 1.5x XP + Multi-Talics]"
+			"MEGAVEIN_EXTRACTION":
+				focus_badge = "[⛏️ Megavein Extraction Lv.45+]"
+			"ORE_EXTRACTION":
+				focus_badge = "[⛏️ Core 3-Way Ore Mining]"
+			"ARTILLERY_PVP":
+				focus_badge = "[⚔️ Strategic Ridge War]"
+			"ENDGAME_RAID":
+				focus_badge = "[👑 Apex World Boss Raid]"
+			"WORLD_BOSS":
+				focus_badge = "[💀 Contested Pit Boss Zone]"
+			"COSMIC_TALICS":
+				focus_badge = "[🌌 Cosmic Talic Sanctum]"
+			"SOVEREIGN_TALICS":
+				focus_badge = "[⚡ Sovereign Talic Vault]"
+			"EXILE_WEAPONS":
+				focus_badge = "[🗡️ Outcast Relic Cache]"
+			"PVP_BOUNTY":
+				focus_badge = "[⚔️ 3-Way Border Friction]"
+			"HQ_SAFE":
+				focus_badge = "[🛡️ Safe Sanctuary]"
+			"BASIC_SOLO":
+				focus_badge = "[🌱 Safe Leveling Ground]"
+			_:
+				if cat == "MINING_WAR":
+					focus_badge = "[⛏️ 3-Faction Ore War]"
+				elif cat == "CONTESTED_UPPER" or cat == "CONTESTED_BORDER":
+					focus_badge = "[⚔️ Contested Ground]"
+				elif is_locked:
+					focus_badge = "[Enemy Territory]"
+				else:
+					focus_badge = "[Faction Territory]"
+
 		if is_cur:
-			tag = "  <-- [CURRENT ZONE]"
-			btn.modulate = Color(0.45, 1.0, 0.55)
-		elif owner_fid != "all" and owner_fid != my_fid:
-			tag = "  [LOCKED - Enemy Faction]"
-			btn.modulate = Color(0.6, 0.45, 0.45)
-		elif cat == "MINING_WAR":
-			tag = "  [ALL 3 FACTIONS ORE WAR!]"
-			btn.modulate = Color(1.0, 0.72, 0.28)
-		elif cat == "CONTESTED_UPPER":
-			tag = "  [ALL 3 FACTIONS CONTESTED]"
-			btn.modulate = Color(1.0, 0.88, 0.45)
+			btn.modulate = Color(0.42, 1.0, 0.52)
+			btn.text = "%s  —  %s  %s  <-- [ACTIVE ZONE]" % [mdata["name"], mdata.get("level_band", ""), focus_badge]
+		elif is_locked:
+			btn.modulate = Color(0.62, 0.45, 0.45)
+			btn.text = "%s  —  %s  [LOCKED - Enemy Faction]" % [mdata["name"], mdata.get("level_band", "")]
 		else:
-			tag = "  [Your Faction Territory]"
-			btn.modulate = Color(0.75, 0.95, 1.0)
-		btn.text = "%s  —  %s%s" % [mdata["name"], mdata.get("level_band", ""), tag]
+			match cat:
+				"DUNGEON_VAULT":
+					btn.modulate = Color(0.92, 0.68, 1.0)
+				"FARMING_NICHE":
+					btn.modulate = Color(1.0, 0.88, 0.38)
+				"MINING_WAR":
+					btn.modulate = Color(1.0, 0.65, 0.25)
+				"BEAST_HIGHLAND":
+					btn.modulate = Color(0.96, 0.56, 0.46)
+				"CONTESTED_UPPER":
+					btn.modulate = Color(1.0, 0.78, 0.44)
+				"CONTESTED_BORDER":
+					btn.modulate = Color(0.95, 0.90, 0.55)
+				"FACTION_OUTPOST":
+					btn.modulate = Color(0.72, 0.88, 1.0)
+				_:
+					btn.modulate = Color(0.78, 0.95, 1.0)
+			btn.text = "%s  —  %s  %s" % [mdata["name"], mdata.get("level_band", ""), focus_badge]
 
 
 func _update_physical_vendor_panel(vinfo: Dictionary, code: String) -> void:

@@ -1845,16 +1845,33 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 		_set_selected_enemy(null)
 		auto_attacking = false
 	var f := _faction_dict()
-	wallet_credits += enemy.bounty_reward
+	var cur_mdata: Dictionary = GameData.MAPS.get(current_map_id, {})
+	var focus: String = str(cur_mdata.get("farming_focus", ""))
+
+	# 1. Economic / Bounty Multipliers per Map Niche:
+	var bounty_mult := 1.0
+	if focus == "WEALTH_CREDITS":
+		bounty_mult = 2.5 # Ether Sky Platform 2.5x Bounty Gold Farm
+	elif focus == "PVP_BOUNTY":
+		bounty_mult = 1.4 # Sette Dune Sea PvP War Bounty
+	elif focus == "DUNGEON_LOOT":
+		bounty_mult = 1.25 # Ancient Vaults
+	var final_bounty: int = int(round(enemy.bounty_reward * bounty_mult))
+	wallet_credits += final_bounty
+
 	quest_kills += 3 if enemy.level >= 50 else 1
 	story_kills += 1
 	if enemy.level >= 28:
 		story_boss_kills += 1
-	xp += 55
+
+	# 2. XP Progression Multipliers per Map Niche:
+	var xp_mult := 1.5 if (focus == "DUNGEON_LOOT" or focus == "COMPONENT_SALVAGE") else 1.0
+	xp += int(round(55 * xp_mult))
+
 	if enemy.is_pit_boss:
 		_play_sfx("level_up")
 		event_logged.emit("★★★ CONQUERED ZONE PIT BOSS [%s]! +%d %s Bounty ★★★" % [
-			enemy.enemy_name, enemy.bounty_reward, f["currency_code"]
+			enemy.enemy_name, final_bounty, f["currency_code"]
 		])
 	var needed := level * 90
 	if xp >= needed and level < 45:
@@ -1866,9 +1883,10 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 		current_sp = max_sp
 		_play_sfx("level_up")
 		event_logged.emit("LEVEL UP! Reached Level %d (Cap 45 / Leader 50)." % level)
-	else:
-		event_logged.emit("Slain %s! +%d %s Bounty (Quest Kills: %d/3) & dropped Farr bag." % [
-			enemy.enemy_name, enemy.bounty_reward, f["currency_code"], quest_kills
+	elif not enemy.is_pit_boss:
+		var bonus_tag := " [2.5x Wealth Multiplier]" if focus == "WEALTH_CREDITS" else ""
+		event_logged.emit("Slain %s! +%d %s Bounty%s (Quest Kills: %d/3) & dropped Farr bag." % [
+			enemy.enemy_name, final_bounty, f["currency_code"], bonus_tag, quest_kills
 		])
 
 	_roll_rare_equipment_drop(enemy)
@@ -1886,12 +1904,16 @@ func _on_enemy_died(enemy: EnemyUnit, _killer: Node3D) -> void:
 ## Low-probability monster equipment & Farr Talic drop placed directly into your Bag!
 ## Talics ONLY drop from Mini-Bosses (Lv.25-39), Bosses (Lv.40-49), and World Bosses (Lv.50) (or Faction Quests)!
 func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
+	var cur_mdata: Dictionary = GameData.MAPS.get(current_map_id, {})
+	var focus: String = str(cur_mdata.get("farming_focus", ""))
+
 	if enemy.is_pit_boss:
 		# GUARANTEED BOUNTIFUL PIT BOSS LOOT:
-		var pb_talics := 2 if randf() < 0.5 else 3
+		var bonus_talic: int = 1 if (focus == "TALIC_FARMING" or focus == "SOVEREIGN_TALICS" or focus == "COSMIC_TALICS" or focus == "DUNGEON_LOOT" or focus == "ENDGAME_RAID") else 0
+		var pb_talics: int = (2 if randf() < 0.5 else 3) + bonus_talic
 		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", pb_talics))
 
-		var pb_tier := 4 if enemy.level >= 35 else (3 if enemy.level >= 20 else 2)
+		var pb_tier := 5 if enemy.level >= 45 else (4 if enemy.level >= 35 else (3 if enemy.level >= 20 else 2))
 		var pb_group := GameData.EQUIP_CHASSIS_SVEL if randf() < 0.35 else GameData.EQUIP_ORGANIC_VAR
 		var pb_slot: String = GameData.EQUIP_SLOTS[randi() % GameData.EQUIP_SLOTS.size()]
 		var pb_gear := GameData.make_equipment_item(pb_tier, pb_slot, pb_group)
@@ -1905,20 +1927,20 @@ func _roll_rare_equipment_drop(enemy: EnemyUnit) -> void:
 	if enemy.level >= 50:
 		dropped_talics = 2 if randf() < 0.40 else 1
 		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", dropped_talics))
-	elif enemy.level >= 35 and randf() < 0.45:
+	elif (enemy.level >= 35 or focus == "TALIC_FARMING" or focus == "SOVEREIGN_TALICS" or focus == "COSMIC_TALICS") and randf() < (0.65 if focus == "TALIC_FARMING" else 0.45):
 		dropped_talics = 1
 		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 1))
-	elif enemy.level >= 25 and randf() < 0.22:
+	elif enemy.level >= 25 and randf() < (0.42 if focus == "TALIC_FARMING" else 0.22):
 		dropped_talics = 1
 		add_item_to_bags(GameData.make_consumable_item("TALIC_FARR", 1))
 
-	var drop_chance := 1.0 if enemy.level >= 50 else (0.45 if enemy.level >= 25 else 0.22)
+	var drop_chance := 1.0 if enemy.level >= 50 else (0.65 if focus == "RARE_GEAR" else (0.45 if enemy.level >= 25 else 0.22))
 	if randf() > drop_chance:
 		if dropped_talics > 0:
 			event_logged.emit("TALIC DROP -> Bag: +%dx Farr Talic Crystal from %s!" % [dropped_talics, enemy.enemy_name])
 		return
 
-	var dropped_tier_idx := 4 if enemy.level >= 35 else (3 if enemy.level >= 25 else 1)
+	var dropped_tier_idx := 5 if enemy.level >= 45 else (4 if enemy.level >= 35 else (3 if enemy.level >= 25 else 1))
 	var rolled_group := GameData.EQUIP_CHASSIS_SVEL if randf() < 0.35 else GameData.EQUIP_ORGANIC_VAR
 	var random_slot: String = GameData.EQUIP_SLOTS[randi() % GameData.EQUIP_SLOTS.size()]
 	var dropped_item := GameData.make_equipment_item(dropped_tier_idx, random_slot, rolled_group)

@@ -664,27 +664,66 @@ static func make_equipment_item(tier_idx: int, slot: String, equip_group: String
 # ==============================================================================
 
 const MAP_ORDER := [
+	# --- Tier 1: Faction Safe HQs (Lv.1-12) ---
 	"svel_hq",
-	"svel_basic",
 	"order_hq",
-	"order_basic",
 	"legion_hq",
+
+	# --- Tier 2: Faction Basic Leveling Grounds (Lv.12-25) ---
+	"svel_basic",
+	"order_basic",
 	"legion_basic",
+
+	# --- Tier 3: Faction Secondary Outposts (Lv.22-32) ---
+	"svel_outpost",
+	"order_outpost",
+	"legion_outpost",
+
+	# --- Tier 4: Contested Borderlands (Lv.30-38) ---
+	"border_sette",
+	"border_glacier",
+	"border_trench",
+
+	# --- Tier 5: Specialized Economic Farming Niches (Lv.36-46) ---
+	"farm_ether_sky",
+	"farm_caldera_magma",
+	"farm_relic_catacombs",
+	"farm_deep_aquifer",
+
+	# --- Tier 6: Upper Contested Steppes & Cauldron (Lv.38-50) ---
 	"contested_steppes",
 	"contested_cauldron",
+	"steppes_highlands",
+	"cauldron_abyss",
+
+	# --- Tier 7: The Crack War Grounds (Lv.25-50) ---
 	"farr_mining_ground",
+	"mining_lower_crater",
+	"mining_breach_ridge",
+
+	# --- Tier 8: Beast Highlands & Outcast Expeditions (Lv.45-52) ---
+	"beast_plateau",
+	"outcast_wasteland",
+	"sky_fracture_ridge",
+
+	# --- Tier 9: Ancient Vaults & Deep Dungeons (Lv.45-55) ---
+	"dungeon_ark_core",
+	"dungeon_var_roots",
+	"dungeon_daeva_crypt",
+	"dungeon_sky_sanctum",
 ]
 
 const MAPS := {
-	# --------------------------------------------------------------------------
-	# 1. SVELEITRE MAPS (HQ + Basic Leveling Ground)
-	# --------------------------------------------------------------------------
+	# ==========================================================================
+	# TIER 1: FACTION SAFE HOMELANDS (Lv. 1-12)
+	# ==========================================================================
 	"svel_hq": {
 		"id": "svel_hq",
 		"name": "Ark-Zero Bastion (Sveleitre HQ)",
 		"category": "FACTION_HQ",
 		"owner_faction": "sveleitre",
 		"level_band": "Safe HQ / Lv.1-12",
+		"farming_focus": "HQ_SAFE",
 		"terrain_theme": "TECH_ARK",
 		"ground_color": Color(0.18, 0.24, 0.30),
 		"sky_top": Color(0.08, 0.16, 0.28),
@@ -692,30 +731,12 @@ const MAPS := {
 		"boss_pit": {"pos": Vector3(0.0, 0.0, -32.0), "radius": 7.5, "name": "Sub-Core Scrap Pit"},
 		"summon_beacon": {"name": "Ark Defense Summon Beacon", "pos": Vector3(14.0, 0.0, 10.0), "col": Color(0.3, 0.9, 1.0)},
 		"pit_boss": {
-			"name": "ARC-REACTOR OVERSEER",
-			"title": "HQ Pit Boss",
-			"lv": 12,
-			"hp": 1350,
-			"atk": 28,
-			"bounty": 950,
-			"farr_u": 25,
-			"farr_v": 650,
-			"pos": Vector3(0.0, 0.0, -32.0),
-			"scale": 2.3,
-			"range": 3.2,
-			"aggro": 8.5,
-			"body": Color(0.20, 0.32, 0.45),
-			"accent": Color(0.35, 1.0, 0.95),
-			"is_pit_boss": true
+			"name": "ARC-REACTOR OVERSEER", "title": "HQ Pit Boss", "lv": 12, "hp": 1350, "atk": 28, "bounty": 950,
+			"farr_u": 25, "farr_v": 650, "pos": Vector3(0.0, 0.0, -32.0), "scale": 2.3, "range": 3.2, "aggro": 8.5,
+			"body": Color(0.20, 0.32, 0.45), "accent": Color(0.35, 1.0, 0.95), "is_pit_boss": true
 		},
-		"spawns": {
-			"sveleitre": Vector3(0.0, 0.1, 14.0),
-			"order": Vector3(0.0, 0.1, 14.0),
-			"legion": Vector3(0.0, 0.1, 14.0),
-		},
-		"refineries": [
-			{"name": "Sveleitre Ark-Zero Core Refinery", "pos": Vector3(0.0, 0.0, 22.0)},
-		],
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 14.0), "order": Vector3(0.0, 0.1, 14.0), "legion": Vector3(0.0, 0.1, 14.0)},
+		"refineries": [{"name": "Sveleitre Ark-Zero Core Refinery", "pos": Vector3(0.0, 0.0, 22.0)}],
 		"npcs": [
 			{"name": "Injector Unit V-01", "title": "Ark Potion & Charger NPC", "type": "POTION", "faction": "sveleitre", "pos": Vector3(-10.0, 0.0, 14.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.25, 0.95, 0.75)},
 			{"name": "Ordnance Unit W-02", "title": "Weapon & Ammo/Force NPC", "type": "WEAPON", "faction": "sveleitre", "pos": Vector3(-10.0, 0.0, 8.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.35, 0.85, 1.0)},
@@ -724,9 +745,7 @@ const MAPS := {
 			{"name": "Ark Backup Core R-00", "title": "HQ Rebirth & Save NPC", "type": "REBIRTH", "faction": "sveleitre", "pos": Vector3(-6.0, 0.0, 21.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.5, 1.0, 0.85)},
 			{"name": "INSTANCE ZERO: CODE AELFWYNE", "title": "Sveleitre Sovereign (Story Campaign)", "type": "LEADER", "faction": "sveleitre", "pos": Vector3(6.0, 0.0, 21.0), "body": Color(0.88, 0.92, 0.98), "accent": Color(0.35, 0.95, 1.0)},
 		],
-		"veins": [
-			{"name": "Ark Perimeter Starter Vein (Lv.1-12)", "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.0, "max_units": 5, "yield": 8, "val": 18, "dur": 1.6, "col": Color(0.35, 0.9, 1.0)},
-		],
+		"veins": [{"name": "Ark Perimeter Starter Vein (Lv.1-12)", "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.0, "max_units": 5, "yield": 8, "val": 18, "dur": 1.6, "col": Color(0.35, 0.9, 1.0)}],
 		"portals": [
 			{"title": "North Gate -> Sveleitre Basic Leveling", "target": "svel_basic", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(0.3, 0.9, 1.0)},
 			{"title": "East Breach -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(22.0, 0.0, 2.0), "col": Color(1.0, 0.65, 0.2)},
@@ -739,474 +758,1064 @@ const MAPS := {
 		],
 	},
 
-	"svel_basic": {
-		"id": "svel_basic",
-		"name": "Cryo-Scrap Frontier (Sveleitre Basic Lv.12-28)",
-		"category": "FACTION_BASIC",
-		"owner_faction": "sveleitre",
-		"level_band": "Lv.12-28 Basic Ground",
-		"terrain_theme": "FROZEN_SCRAP",
-		"ground_color": Color(0.22, 0.28, 0.34),
-		"sky_top": Color(0.10, 0.20, 0.32),
-		"sky_horizon": Color(0.28, 0.48, 0.62),
-		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 8.5, "name": "Cryo-Rift Boss Pit"},
-		"summon_beacon": {"name": "Cryo-Frontier Summon Beacon", "pos": Vector3(12.0, 0.0, 24.0), "col": Color(0.35, 0.9, 1.0)},
-		"pit_boss": {
-			"name": "CRYO-CONDUIT DREADNOUGHT",
-			"title": "Basic Pit Boss",
-			"lv": 28,
-			"hp": 3100,
-			"atk": 64,
-			"bounty": 1950,
-			"farr_u": 45,
-			"farr_v": 1700,
-			"pos": Vector3(0.0, 0.0, -26.0),
-			"scale": 2.7,
-			"range": 3.8,
-			"aggro": 9.5,
-			"body": Color(0.18, 0.30, 0.48),
-			"accent": Color(0.4, 0.95, 1.0),
-			"is_pit_boss": true
-		},
-		"spawns": {
-			"sveleitre": Vector3(0.0, 0.1, 30.0),
-			"order": Vector3(0.0, 0.1, 30.0),
-			"legion": Vector3(0.0, 0.1, 30.0),
-		},
-		"refineries": [],
-		"npcs": [
-			{"name": "Forward Relay Beacon R-01", "title": "Outpost Rebirth & Save NPC", "type": "REBIRTH", "faction": "sveleitre", "pos": Vector3(7.0, 0.0, 32.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.5, 1.0, 0.85)},
-		],
-		"veins": [
-			{"name": "Cryo-Scrap Farr Vein (Lv.12-25)", "pos": Vector3(-16.0, 0.0, 10.0), "scale": 1.1, "max_units": 5, "yield": 12, "val": 28, "dur": 2.0, "col": Color(0.4, 0.85, 1.0)},
-			{"name": "Frozen Conduit Vein (Lv.15-28)", "pos": Vector3(16.0, 0.0, -8.0), "scale": 1.1, "max_units": 5, "yield": 14, "val": 32, "dur": 2.0, "col": Color(0.4, 0.85, 1.0)},
-		],
-		"portals": [
-			{"title": "South Gate -> Ark-Zero Bastion (Sveleitre HQ)", "target": "svel_hq", "pos": Vector3(-7.0, 0.0, 35.0), "col": Color(0.3, 0.9, 1.0)},
-			{"title": "North-West Gate -> Shattered Steppes (Contested Lv.28-38)", "target": "contested_steppes", "pos": Vector3(-10.0, 0.0, -38.0), "col": Color(0.95, 0.75, 0.25)},
-			{"title": "North-East Gate -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(10.0, 0.0, -38.0), "col": Color(1.0, 0.55, 0.2)},
-		],
-		"enemies": [
-			{"name": "Corrupted Ark Drone (Lv.14)", "lv": 14, "hp": 380, "atk": 25, "bounty": 250, "farr_u": 16, "farr_v": 420, "pos": Vector3(-12.0, 0.0, 14.0), "scale": 1.1, "body": Color(0.32, 0.45, 0.55), "accent": Color(0.3, 0.85, 1.0)},
-			{"name": "Rogue Cryo-Welder (Lv.18)", "lv": 18, "hp": 490, "atk": 32, "bounty": 320, "farr_u": 18, "farr_v": 520, "pos": Vector3(12.0, 0.0, 12.0), "scale": 1.12, "body": Color(0.30, 0.42, 0.58), "accent": Color(0.35, 0.9, 1.0)},
-			{"name": "Hijacked Frame-Stalker (Lv.22)", "lv": 22, "hp": 620, "atk": 39, "bounty": 410, "farr_u": 22, "farr_v": 680, "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.18, "body": Color(0.28, 0.38, 0.52), "accent": Color(0.2, 0.95, 1.0)},
-			{"name": "Heavy Siege-Automaton (Lv.25)", "lv": 25, "hp": 740, "atk": 44, "bounty": 490, "farr_u": 25, "farr_v": 820, "pos": Vector3(12.0, 0.0, -12.0), "scale": 1.22, "body": Color(0.25, 0.35, 0.48), "accent": Color(0.4, 0.95, 1.0)},
-			{"name": "CRYO-CONDUIT DREADNOUGHT", "lv": 28, "hp": 3100, "atk": 64, "bounty": 1950, "farr_u": 45, "farr_v": 1700, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.7, "range": 3.8, "aggro": 9.5, "body": Color(0.18, 0.30, 0.48), "accent": Color(0.4, 0.95, 1.0), "is_pit_boss": true},
-		],
-	},
-
-	# --------------------------------------------------------------------------
-	# 2. ORDER OF THE ORACLE MAPS (HQ + Basic Leveling Ground)
-	# --------------------------------------------------------------------------
 	"order_hq": {
 		"id": "order_hq",
 		"name": "Asha High Sanctuary (Order HQ)",
 		"category": "FACTION_HQ",
 		"owner_faction": "order",
 		"level_band": "Safe HQ / Lv.1-12",
+		"farming_focus": "HQ_SAFE",
 		"terrain_theme": "HOLY_TEMPLE",
-		"ground_color": Color(0.34, 0.30, 0.22),
-		"sky_top": Color(0.22, 0.20, 0.14),
-		"sky_horizon": Color(0.58, 0.48, 0.28),
+		"ground_color": Color(0.32, 0.30, 0.25),
+		"sky_top": Color(0.18, 0.16, 0.12),
+		"sky_horizon": Color(0.48, 0.42, 0.28),
 		"boss_pit": {"pos": Vector3(0.0, 0.0, -32.0), "radius": 7.5, "name": "Sanctuary Cleansing Pit"},
 		"summon_beacon": {"name": "Asha Seal Summon Beacon", "pos": Vector3(14.0, 0.0, 10.0), "col": Color(1.0, 0.85, 0.35)},
 		"pit_boss": {
-			"name": "SANCTUARY CORRUPTED GOLEM",
-			"title": "HQ Pit Boss",
-			"lv": 12,
-			"hp": 1400,
-			"atk": 27,
-			"bounty": 950,
-			"farr_u": 25,
-			"farr_v": 650,
-			"pos": Vector3(0.0, 0.0, -32.0),
-			"scale": 2.3,
-			"range": 3.2,
-			"aggro": 8.5,
-			"body": Color(0.55, 0.45, 0.28),
-			"accent": Color(1.0, 0.9, 0.35),
-			"is_pit_boss": true
+			"name": "SANCTUARY CORRUPTED GOLEM", "title": "HQ Pit Boss", "lv": 12, "hp": 1400, "atk": 27, "bounty": 950,
+			"farr_u": 25, "farr_v": 650, "pos": Vector3(0.0, 0.0, -32.0), "scale": 2.3, "range": 3.2, "aggro": 8.5,
+			"body": Color(0.55, 0.45, 0.28), "accent": Color(1.0, 0.9, 0.35), "is_pit_boss": true
 		},
-		"spawns": {
-			"sveleitre": Vector3(0.0, 0.1, 14.0),
-			"order": Vector3(0.0, 0.1, 14.0),
-			"legion": Vector3(0.0, 0.1, 14.0),
-		},
-		"refineries": [
-			{"name": "Sanctuary of Asha Sacred Refinery", "pos": Vector3(0.0, 0.0, 22.0)},
-		],
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 14.0), "order": Vector3(0.0, 0.1, 14.0), "legion": Vector3(0.0, 0.1, 14.0)},
+		"refineries": [{"name": "Order Sacred Fire Core Refinery", "pos": Vector3(0.0, 0.0, 22.0)}],
 		"npcs": [
-			{"name": "Haoma Alchemist Darius", "title": "Sanctuary Potion NPC", "type": "POTION", "faction": "order", "pos": Vector3(-10.0, 0.0, 14.0), "body": Color(0.45, 0.38, 0.22), "accent": Color(1.0, 0.88, 0.35)},
-			{"name": "Atar Forgemaster Kaveh", "title": "Weapon & Force Charge NPC", "type": "WEAPON", "faction": "order", "pos": Vector3(-10.0, 0.0, 8.0), "body": Color(0.45, 0.38, 0.22), "accent": Color(1.0, 0.78, 0.28)},
-			{"name": "Royal Armorer Bahram", "title": "Order/Druj Shared Armor NPC", "type": "ARMOR", "faction": "order", "pos": Vector3(10.0, 0.0, 14.0), "body": Color(0.45, 0.38, 0.22), "accent": Color(1.0, 0.85, 0.45)},
-			{"name": "Scribe of the Seal", "title": "Scrolls, Bags & Talic Quest NPC", "type": "UTILITY", "faction": "order", "pos": Vector3(10.0, 0.0, 8.0), "body": Color(0.45, 0.38, 0.22), "accent": Color(1.0, 0.92, 0.55)},
-			{"name": "Chinvat Priestess Rashnu", "title": "HQ Rebirth & Save NPC", "type": "REBIRTH", "faction": "order", "pos": Vector3(-6.0, 0.0, 21.0), "body": Color(0.45, 0.38, 0.22), "accent": Color(1.0, 0.95, 0.6)},
-			{"name": "THE ORACLE, VOICE OF THE SEAL", "title": "Order Sovereign (Story Campaign)", "type": "LEADER", "faction": "order", "pos": Vector3(6.0, 0.0, 21.0), "body": Color(0.92, 0.86, 0.72), "accent": Color(1.0, 0.88, 0.35)},
+			{"name": "Haoma Priest V-01", "title": "Sacred Potion & Balm NPC", "type": "POTION", "faction": "order", "pos": Vector3(-10.0, 0.0, 14.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(1.0, 0.85, 0.35)},
+			{"name": "Sun-Smith W-02", "title": "Lances, Bows & Staffs NPC", "type": "WEAPON", "faction": "order", "pos": Vector3(-10.0, 0.0, 8.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(1.0, 0.75, 0.25)},
+			{"name": "Sanctuary Armorer A-03", "title": "Var Organic Armor NPC (Lv.1-45)", "type": "ARMOR", "faction": "order", "pos": Vector3(10.0, 0.0, 14.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(1.0, 0.90, 0.45)},
+			{"name": "Temple Bursar U-04", "title": "Scrolls, Bags & Talic Quest NPC", "type": "UTILITY", "faction": "order", "pos": Vector3(10.0, 0.0, 8.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(0.9, 0.85, 0.70)},
+			{"name": "Altar of Asha R-00", "title": "Sanctuary Rebirth & Save NPC", "type": "REBIRTH", "faction": "order", "pos": Vector3(-6.0, 0.0, 21.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(1.0, 0.95, 0.55)},
+			{"name": "THE ORACLE, LAST VOICE OF THE SEAL", "title": "Order Sovereign (Story Campaign)", "type": "LEADER", "faction": "order", "pos": Vector3(6.0, 0.0, 21.0), "body": Color(0.95, 0.92, 0.84), "accent": Color(1.0, 0.82, 0.28)},
 		],
-		"veins": [
-			{"name": "Sanctuary Courtyard Vein (Lv.1-12)", "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.0, "max_units": 5, "yield": 8, "val": 18, "dur": 1.6, "col": Color(1.0, 0.85, 0.32)},
-		],
+		"veins": [{"name": "Sanctuary Starter Farr Vein (Lv.1-12)", "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.0, "max_units": 5, "yield": 8, "val": 18, "dur": 1.6, "col": Color(1.0, 0.82, 0.25)}],
 		"portals": [
-			{"title": "North Gate -> Order Basic Leveling", "target": "order_basic", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(1.0, 0.85, 0.35)},
-			{"title": "East Breach -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(22.0, 0.0, 2.0), "col": Color(1.0, 0.65, 0.2)},
+			{"title": "North Gate -> Sun-Bleached Terraces", "target": "order_basic", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(1.0, 0.85, 0.35)},
+			{"title": "West Breach -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(-22.0, 0.0, 2.0), "col": Color(1.0, 0.65, 0.2)},
 		],
 		"enemies": [
-			{"name": "Fallen Acolyte (Lv.3)", "lv": 3, "hp": 140, "atk": 10, "bounty": 100, "farr_u": 10, "farr_v": 200, "pos": Vector3(-10.0, 0.0, -14.0), "scale": 1.0, "body": Color(0.55, 0.46, 0.25), "accent": Color(1.0, 0.85, 0.35)},
-			{"name": "Dune Ash-Jackal (Lv.6)", "lv": 6, "hp": 190, "atk": 14, "bounty": 135, "farr_u": 12, "farr_v": 240, "pos": Vector3(10.0, 0.0, -14.0), "scale": 1.0, "body": Color(0.58, 0.44, 0.26), "accent": Color(1.0, 0.75, 0.30)},
-			{"name": "Apostate Spear-Guard (Lv.10)", "lv": 10, "hp": 260, "atk": 19, "bounty": 175, "farr_u": 14, "farr_v": 280, "pos": Vector3(0.0, 0.0, -22.0), "scale": 1.05, "body": Color(0.52, 0.42, 0.22), "accent": Color(1.0, 0.88, 0.4)},
+			{"name": "Profaned Jackal (Lv.3)", "lv": 3, "hp": 140, "atk": 10, "bounty": 100, "farr_u": 10, "farr_v": 200, "pos": Vector3(-10.0, 0.0, -14.0), "scale": 1.0, "body": Color(0.48, 0.42, 0.34), "accent": Color(1.0, 0.75, 0.3)},
+			{"name": "Sun-Scorched Beetle (Lv.6)", "lv": 6, "hp": 190, "atk": 14, "bounty": 135, "farr_u": 12, "farr_v": 240, "pos": Vector3(10.0, 0.0, -14.0), "scale": 1.0, "body": Color(0.42, 0.36, 0.28), "accent": Color(1.0, 0.85, 0.35)},
+			{"name": "Grave-Looter Fanatic (Lv.10)", "lv": 10, "hp": 260, "atk": 19, "bounty": 175, "farr_u": 14, "farr_v": 280, "pos": Vector3(0.0, 0.0, -22.0), "scale": 1.05, "body": Color(0.38, 0.32, 0.25), "accent": Color(1.0, 0.65, 0.2)},
 			{"name": "SANCTUARY CORRUPTED GOLEM", "lv": 12, "hp": 1400, "atk": 27, "bounty": 950, "farr_u": 25, "farr_v": 650, "pos": Vector3(0.0, 0.0, -32.0), "scale": 2.3, "range": 3.2, "aggro": 8.5, "body": Color(0.55, 0.45, 0.28), "accent": Color(1.0, 0.9, 0.35), "is_pit_boss": true},
 		],
 	},
 
-	"order_basic": {
-		"id": "order_basic",
-		"name": "Sun-Bleached Terraces (Order Basic Lv.12-28)",
-		"category": "FACTION_BASIC",
-		"owner_faction": "order",
-		"level_band": "Lv.12-28 Basic Ground",
-		"terrain_theme": "DESERT_RUINS",
-		"ground_color": Color(0.38, 0.33, 0.24),
-		"sky_top": Color(0.25, 0.22, 0.15),
-		"sky_horizon": Color(0.64, 0.52, 0.32),
-		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 8.5, "name": "Sun-Temple Boss Pit"},
-		"summon_beacon": {"name": "Sun-Bleached Summon Beacon", "pos": Vector3(12.0, 0.0, 24.0), "col": Color(1.0, 0.85, 0.35)},
-		"pit_boss": {
-			"name": "AZUR-FRAVASHI ZEALOT",
-			"title": "Basic Pit Boss",
-			"lv": 28,
-			"hp": 3200,
-			"atk": 62,
-			"bounty": 1950,
-			"farr_u": 45,
-			"farr_v": 1700,
-			"pos": Vector3(0.0, 0.0, -26.0),
-			"scale": 2.7,
-			"range": 3.8,
-			"aggro": 9.5,
-			"body": Color(0.62, 0.50, 0.25),
-			"accent": Color(1.0, 0.95, 0.45),
-			"is_pit_boss": true
-		},
-		"spawns": {
-			"sveleitre": Vector3(0.0, 0.1, 30.0),
-			"order": Vector3(0.0, 0.1, 30.0),
-			"legion": Vector3(0.0, 0.1, 30.0),
-		},
-		"refineries": [],
-		"npcs": [
-			{"name": "Outpost Flame-Keeper Sraosha", "title": "Outpost Rebirth & Save NPC", "type": "REBIRTH", "faction": "order", "pos": Vector3(7.0, 0.0, 32.0), "body": Color(0.45, 0.38, 0.22), "accent": Color(1.0, 0.95, 0.6)},
-		],
-		"veins": [
-			{"name": "Terrace Amber Farr Vein (Lv.12-25)", "pos": Vector3(-16.0, 0.0, 10.0), "scale": 1.1, "max_units": 5, "yield": 12, "val": 28, "dur": 2.0, "col": Color(1.0, 0.85, 0.35)},
-			{"name": "Sun-Altar Farr Vein (Lv.15-28)", "pos": Vector3(16.0, 0.0, -8.0), "scale": 1.1, "max_units": 5, "yield": 14, "val": 32, "dur": 2.0, "col": Color(1.0, 0.85, 0.35)},
-		],
-		"portals": [
-			{"title": "South Gate -> Asha High Sanctuary (Order HQ)", "target": "order_hq", "pos": Vector3(-7.0, 0.0, 35.0), "col": Color(1.0, 0.85, 0.35)},
-			{"title": "North-West Gate -> Shattered Steppes (Contested Lv.28-38)", "target": "contested_steppes", "pos": Vector3(-10.0, 0.0, -38.0), "col": Color(0.95, 0.75, 0.25)},
-			{"title": "North-East Gate -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(10.0, 0.0, -38.0), "col": Color(1.0, 0.55, 0.2)},
-		],
-		"enemies": [
-			{"name": "Oathbreaker Sentinel (Lv.14)", "lv": 14, "hp": 380, "atk": 25, "bounty": 250, "farr_u": 16, "farr_v": 420, "pos": Vector3(-12.0, 0.0, 14.0), "scale": 1.1, "body": Color(0.55, 0.46, 0.25), "accent": Color(1.0, 0.85, 0.35)},
-			{"name": "Heretic Fire-Magus (Lv.18)", "lv": 18, "hp": 490, "atk": 32, "bounty": 320, "farr_u": 18, "farr_v": 520, "pos": Vector3(12.0, 0.0, 12.0), "scale": 1.12, "body": Color(0.58, 0.42, 0.22), "accent": Color(1.0, 0.72, 0.25)},
-			{"name": "Gilded War-Charioteer (Lv.22)", "lv": 22, "hp": 620, "atk": 39, "bounty": 410, "farr_u": 22, "farr_v": 680, "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.18, "body": Color(0.52, 0.40, 0.20), "accent": Color(1.0, 0.88, 0.3)},
-			{"name": "Corrupted Fravashi-Vessel (Lv.25)", "lv": 25, "hp": 740, "atk": 44, "bounty": 490, "farr_u": 25, "farr_v": 820, "pos": Vector3(12.0, 0.0, -12.0), "scale": 1.22, "body": Color(0.60, 0.48, 0.25), "accent": Color(1.0, 0.92, 0.45)},
-			{"name": "AZUR-FRAVASHI ZEALOT", "lv": 28, "hp": 3200, "atk": 62, "bounty": 1950, "farr_u": 45, "farr_v": 1700, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.7, "range": 3.8, "aggro": 9.5, "body": Color(0.62, 0.50, 0.25), "accent": Color(1.0, 0.95, 0.45), "is_pit_boss": true},
-		],
-	},
-
-	# --------------------------------------------------------------------------
-	# 3. LEGION OF THE DRUJ MAPS (HQ + Basic Leveling Ground)
-	# --------------------------------------------------------------------------
 	"legion_hq": {
 		"id": "legion_hq",
 		"name": "Druj Obsidian Citadel (Legion HQ)",
 		"category": "FACTION_HQ",
 		"owner_faction": "legion",
 		"level_band": "Safe HQ / Lv.1-12",
+		"farming_focus": "HQ_SAFE",
 		"terrain_theme": "OBSIDIAN_CITADEL",
-		"ground_color": Color(0.24, 0.14, 0.17),
-		"sky_top": Color(0.16, 0.06, 0.10),
-		"sky_horizon": Color(0.45, 0.16, 0.22),
+		"ground_color": Color(0.22, 0.16, 0.18),
+		"sky_top": Color(0.12, 0.06, 0.10),
+		"sky_horizon": Color(0.38, 0.18, 0.25),
 		"boss_pit": {"pos": Vector3(0.0, 0.0, -32.0), "radius": 7.5, "name": "Citadel Trench Pit"},
 		"summon_beacon": {"name": "Druj Blood Summon Beacon", "pos": Vector3(14.0, 0.0, 10.0), "col": Color(0.95, 0.3, 0.35)},
 		"pit_boss": {
-			"name": "OBSIDIAN BLOOD-GARGANT",
-			"title": "HQ Pit Boss",
-			"lv": 12,
-			"hp": 1450,
-			"atk": 30,
-			"bounty": 950,
-			"farr_u": 25,
-			"farr_v": 650,
-			"pos": Vector3(0.0, 0.0, -32.0),
-			"scale": 2.3,
-			"range": 3.2,
-			"aggro": 8.5,
-			"body": Color(0.42, 0.14, 0.22),
-			"accent": Color(1.0, 0.25, 0.4),
-			"is_pit_boss": true
+			"name": "OBSIDIAN BLOOD-GARGANT", "title": "HQ Pit Boss", "lv": 12, "hp": 1450, "atk": 30, "bounty": 950,
+			"farr_u": 25, "farr_v": 650, "pos": Vector3(0.0, 0.0, -32.0), "scale": 2.3, "range": 3.2, "aggro": 8.5,
+			"body": Color(0.42, 0.14, 0.22), "accent": Color(1.0, 0.25, 0.4), "is_pit_boss": true
 		},
-		"spawns": {
-			"sveleitre": Vector3(0.0, 0.1, 14.0),
-			"order": Vector3(0.0, 0.1, 14.0),
-			"legion": Vector3(0.0, 0.1, 14.0),
-		},
-		"refineries": [
-			{"name": "Citadel of Dzahhakka Blood Refinery", "pos": Vector3(0.0, 0.0, 22.0)},
-		],
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 14.0), "order": Vector3(0.0, 0.1, 14.0), "legion": Vector3(0.0, 0.1, 14.0)},
+		"refineries": [{"name": "Legion Druj Blood-Core Refinery", "pos": Vector3(0.0, 0.0, 22.0)}],
 		"npcs": [
-			{"name": "Bloodbrewer Zarik", "title": "Citadel Potion NPC", "type": "POTION", "faction": "legion", "pos": Vector3(-10.0, 0.0, 14.0), "body": Color(0.38, 0.16, 0.20), "accent": Color(0.98, 0.30, 0.38)},
-			{"name": "Aka-Warpsmith Vartan", "title": "Weapon & Force Charge NPC", "type": "WEAPON", "faction": "legion", "pos": Vector3(-10.0, 0.0, 8.0), "body": Color(0.38, 0.16, 0.20), "accent": Color(0.95, 0.25, 0.45)},
-			{"name": "Obsidian Armorer Sorush", "title": "Order/Druj Shared Armor NPC", "type": "ARMOR", "faction": "legion", "pos": Vector3(10.0, 0.0, 14.0), "body": Color(0.38, 0.16, 0.20), "accent": Color(1.0, 0.38, 0.35)},
-			{"name": "Pact-Keeper Narseh", "title": "Scrolls, Bags & Talic Quest NPC", "type": "UTILITY", "faction": "legion", "pos": Vector3(10.0, 0.0, 8.0), "body": Color(0.38, 0.16, 0.20), "accent": Color(0.95, 0.45, 0.50)},
-			{"name": "Blood-Anchor Astovidatu", "title": "HQ Rebirth & Save NPC", "type": "REBIRTH", "faction": "legion", "pos": Vector3(-6.0, 0.0, 21.0), "body": Color(0.38, 0.16, 0.20), "accent": Color(1.0, 0.45, 0.65)},
-			{"name": "AZII DZAHHAKKA, HERALD OF DRUJ", "title": "Legion Sovereign (Story Campaign)", "type": "LEADER", "faction": "legion", "pos": Vector3(6.0, 0.0, 21.0), "body": Color(0.28, 0.12, 0.16), "accent": Color(1.0, 0.22, 0.35)},
+			{"name": "Sanguine Brewer V-01", "title": "Blood Potion & Hex Tonic NPC", "type": "POTION", "faction": "legion", "pos": Vector3(-10.0, 0.0, 14.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(1.0, 0.35, 0.45)},
+			{"name": "Dread-Smith W-02", "title": "Shamshirs, Bows & Staffs NPC", "type": "WEAPON", "faction": "legion", "pos": Vector3(-10.0, 0.0, 8.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(1.0, 0.25, 0.35)},
+			{"name": "Obsidian Forger A-03", "title": "Var Organic Armor NPC (Lv.1-45)", "type": "ARMOR", "faction": "legion", "pos": Vector3(10.0, 0.0, 14.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(0.85, 0.25, 0.45)},
+			{"name": "Pact Quartermaster U-04", "title": "Scrolls, Bags & Talic Quest NPC", "type": "UTILITY", "faction": "legion", "pos": Vector3(10.0, 0.0, 8.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(0.95, 0.45, 0.55)},
+			{"name": "Altar of the Druj R-00", "title": "Citadel Rebirth & Save NPC", "type": "REBIRTH", "faction": "legion", "pos": Vector3(-6.0, 0.0, 21.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(1.0, 0.2, 0.3)},
+			{"name": "AZII DZAHHAKKA, HERALD OF THE DRUJ", "title": "Legion Sovereign (Story Campaign)", "type": "LEADER", "faction": "legion", "pos": Vector3(6.0, 0.0, 21.0), "body": Color(0.24, 0.18, 0.22), "accent": Color(0.95, 0.20, 0.40)},
 		],
-		"veins": [
-			{"name": "Citadel Blood-Vein (Lv.1-12)", "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.0, "max_units": 5, "yield": 8, "val": 18, "dur": 1.6, "col": Color(0.98, 0.28, 0.38)},
-		],
+		"veins": [{"name": "Citadel Starter Farr Vein (Lv.1-12)", "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.0, "max_units": 5, "yield": 8, "val": 18, "dur": 1.6, "col": Color(0.95, 0.28, 0.35)}],
 		"portals": [
-			{"title": "North Gate -> Legion Basic Leveling", "target": "legion_basic", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(0.95, 0.3, 0.35)},
-			{"title": "East Breach -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(22.0, 0.0, 2.0), "col": Color(1.0, 0.65, 0.2)},
+			{"title": "North Gate -> Ashen Blood-Basin", "target": "legion_basic", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(0.95, 0.3, 0.35)},
+			{"title": "West Breach -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(-22.0, 0.0, 2.0), "col": Color(1.0, 0.65, 0.2)},
 		],
 		"enemies": [
-			{"name": "Lesser Daeva (Lv.3)", "lv": 3, "hp": 140, "atk": 10, "bounty": 100, "farr_u": 10, "farr_v": 200, "pos": Vector3(-10.0, 0.0, -14.0), "scale": 1.0, "body": Color(0.50, 0.18, 0.22), "accent": Color(1.0, 0.30, 0.35)},
-			{"name": "Pit-Thrall Scavenger (Lv.6)", "lv": 6, "hp": 190, "atk": 14, "bounty": 135, "farr_u": 12, "farr_v": 240, "pos": Vector3(10.0, 0.0, -14.0), "scale": 1.0, "body": Color(0.45, 0.16, 0.24), "accent": Color(0.95, 0.25, 0.45)},
-			{"name": "Venom-Scale Viperid (Lv.10)", "lv": 10, "hp": 260, "atk": 19, "bounty": 175, "farr_u": 14, "farr_v": 280, "pos": Vector3(0.0, 0.0, -22.0), "scale": 1.05, "body": Color(0.42, 0.14, 0.20), "accent": Color(1.0, 0.35, 0.4)},
+			{"name": "Ash-Crawler Fiend (Lv.3)", "lv": 3, "hp": 140, "atk": 10, "bounty": 100, "farr_u": 10, "farr_v": 200, "pos": Vector3(-10.0, 0.0, -14.0), "scale": 1.0, "body": Color(0.45, 0.16, 0.22), "accent": Color(1.0, 0.3, 0.4)},
+			{"name": "Sulfur-Spike Imp (Lv.6)", "lv": 6, "hp": 190, "atk": 14, "bounty": 135, "farr_u": 12, "farr_v": 240, "pos": Vector3(10.0, 0.0, -14.0), "scale": 1.0, "body": Color(0.38, 0.14, 0.20), "accent": Color(1.0, 0.25, 0.35)},
+			{"name": "Corrupted Legion Deserter (Lv.10)", "lv": 10, "hp": 260, "atk": 19, "bounty": 175, "farr_u": 14, "farr_v": 280, "pos": Vector3(0.0, 0.0, -22.0), "scale": 1.05, "body": Color(0.32, 0.12, 0.18), "accent": Color(1.0, 0.20, 0.30)},
 			{"name": "OBSIDIAN BLOOD-GARGANT", "lv": 12, "hp": 1450, "atk": 30, "bounty": 950, "farr_u": 25, "farr_v": 650, "pos": Vector3(0.0, 0.0, -32.0), "scale": 2.3, "range": 3.2, "aggro": 8.5, "body": Color(0.42, 0.14, 0.22), "accent": Color(1.0, 0.25, 0.4), "is_pit_boss": true},
+		],
+	},
+
+	# ==========================================================================
+	# TIER 2: FACTION BASIC LEVELING GROUNDS (Lv. 12-25)
+	# ==========================================================================
+	"svel_basic": {
+		"id": "svel_basic",
+		"name": "Cryo-Scrap Frontier",
+		"category": "FACTION_BASIC",
+		"owner_faction": "sveleitre",
+		"level_band": "Lv.12-25",
+		"farming_focus": "BASIC_SOLO",
+		"terrain_theme": "FROZEN_SCRAP",
+		"ground_color": Color(0.20, 0.26, 0.32),
+		"sky_top": Color(0.05, 0.12, 0.22),
+		"sky_horizon": Color(0.25, 0.45, 0.65),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 8.5, "name": "Cryo-Rift Boss Pit"},
+		"summon_beacon": {"name": "Cryo-Frontier Summon Beacon", "pos": Vector3(12.0, 0.0, 24.0), "col": Color(0.35, 0.9, 1.0)},
+		"pit_boss": {
+			"name": "CRYO-CONDUIT DREADNOUGHT", "title": "Basic Ground Pit Boss", "lv": 25, "hp": 2600, "atk": 52, "bounty": 1600,
+			"farr_u": 40, "farr_v": 1400, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.6, "range": 3.6, "aggro": 9.0,
+			"body": Color(0.18, 0.30, 0.48), "accent": Color(0.4, 0.95, 1.0), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 32.0), "order": Vector3(0.0, 0.1, 32.0), "legion": Vector3(0.0, 0.1, 32.0)},
+		"refineries": [{"name": "Cryo-Scrap Forward Refinery Node", "pos": Vector3(0.0, 0.0, 36.0)}],
+		"npcs": [
+			{"name": "Relay Outpost Keeper R-12", "title": "Forward Rebirth & Save NPC", "type": "REBIRTH", "faction": "sveleitre", "pos": Vector3(-6.0, 0.0, 32.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.4, 0.9, 1.0)},
+			{"name": "Frontier Merchant S-09", "title": "Outpost Potion & Utility NPC", "type": "POTION", "faction": "sveleitre", "pos": Vector3(6.0, 0.0, 32.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.35, 0.85, 1.0)},
+		],
+		"veins": [
+			{"name": "Cryo-Frontier Farr Vein Alpha", "pos": Vector3(-16.0, 0.0, 10.0), "scale": 1.15, "max_units": 6, "yield": 12, "val": 28, "dur": 1.8, "col": Color(0.4, 0.85, 1.0)},
+			{"name": "Cryo-Frontier Farr Vein Beta", "pos": Vector3(16.0, 0.0, 10.0), "scale": 1.15, "max_units": 6, "yield": 12, "val": 28, "dur": 1.8, "col": Color(0.4, 0.85, 1.0)},
+		],
+		"portals": [
+			{"title": "South Portal -> Ark-Zero HQ", "target": "svel_hq", "pos": Vector3(0.0, 0.0, 42.0), "col": Color(0.3, 0.9, 1.0)},
+			{"title": "East Gate -> Sub-Deck Chasm Outpost", "target": "svel_outpost", "pos": Vector3(26.0, 0.0, 0.0), "col": Color(0.3, 0.9, 1.0)},
+			{"title": "North Gate -> Sette Dune Sea (Borderlands)", "target": "border_sette", "pos": Vector3(0.0, 0.0, -36.0), "col": Color(1.0, 0.75, 0.25)},
+		],
+		"enemies": [
+			{"name": "Frost-Plated Drone (Lv.14)", "lv": 14, "hp": 340, "atk": 24, "bounty": 230, "farr_u": 15, "farr_v": 320, "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.05, "body": Color(0.3, 0.42, 0.55), "accent": Color(0.4, 0.9, 1.0)},
+			{"name": "Glacial Saw-Automaton (Lv.18)", "lv": 18, "hp": 480, "atk": 32, "bounty": 310, "farr_u": 18, "farr_v": 420, "pos": Vector3(12.0, 0.0, -8.0), "scale": 1.1, "body": Color(0.28, 0.38, 0.50), "accent": Color(0.35, 0.85, 1.0)},
+			{"name": "Rogue Harvester Frame (Lv.22)", "lv": 22, "hp": 680, "atk": 42, "bounty": 420, "farr_u": 22, "farr_v": 560, "pos": Vector3(0.0, 0.0, -18.0), "scale": 1.25, "body": Color(0.22, 0.32, 0.45), "accent": Color(0.3, 0.8, 1.0)},
+			{"name": "CRYO-CONDUIT DREADNOUGHT", "lv": 25, "hp": 2600, "atk": 52, "bounty": 1600, "farr_u": 40, "farr_v": 1400, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.6, "range": 3.6, "aggro": 9.0, "body": Color(0.18, 0.30, 0.48), "accent": Color(0.4, 0.95, 1.0), "is_pit_boss": true},
+		],
+	},
+
+	"order_basic": {
+		"id": "order_basic",
+		"name": "Sun-Bleached Terraces",
+		"category": "FACTION_BASIC",
+		"owner_faction": "order",
+		"level_band": "Lv.12-25",
+		"farming_focus": "BASIC_SOLO",
+		"terrain_theme": "DESERT_RUINS",
+		"ground_color": Color(0.36, 0.32, 0.22),
+		"sky_top": Color(0.22, 0.18, 0.12),
+		"sky_horizon": Color(0.55, 0.45, 0.28),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 8.5, "name": "Sun-Temple Boss Pit"},
+		"summon_beacon": {"name": "Sun-Bleached Summon Beacon", "pos": Vector3(12.0, 0.0, 24.0), "col": Color(1.0, 0.85, 0.35)},
+		"pit_boss": {
+			"name": "AZUR-FRAVASHI ZEALOT", "title": "Basic Ground Pit Boss", "lv": 25, "hp": 2700, "atk": 50, "bounty": 1600,
+			"farr_u": 40, "farr_v": 1400, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.6, "range": 3.6, "aggro": 9.0,
+			"body": Color(0.62, 0.50, 0.25), "accent": Color(1.0, 0.95, 0.45), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 32.0), "order": Vector3(0.0, 0.1, 32.0), "legion": Vector3(0.0, 0.1, 32.0)},
+		"refineries": [{"name": "Sun-Terrace Altar Refinery", "pos": Vector3(0.0, 0.0, 36.0)}],
+		"npcs": [
+			{"name": "Flame-Keeper Rebirth NPC", "title": "Terrace Rebirth & Save NPC", "type": "REBIRTH", "faction": "order", "pos": Vector3(-6.0, 0.0, 32.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(1.0, 0.85, 0.35)},
+			{"name": "Terrace Supply Priest", "title": "Outpost Potion & Utility NPC", "type": "POTION", "faction": "order", "pos": Vector3(6.0, 0.0, 32.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(1.0, 0.75, 0.25)},
+		],
+		"veins": [
+			{"name": "Terrace Sun Vein Alpha", "pos": Vector3(-16.0, 0.0, 10.0), "scale": 1.15, "max_units": 6, "yield": 12, "val": 28, "dur": 1.8, "col": Color(1.0, 0.82, 0.25)},
+			{"name": "Terrace Sun Vein Beta", "pos": Vector3(16.0, 0.0, 10.0), "scale": 1.15, "max_units": 6, "yield": 12, "val": 28, "dur": 1.8, "col": Color(1.0, 0.82, 0.25)},
+		],
+		"portals": [
+			{"title": "South Portal -> Asha Sanctuary HQ", "target": "order_hq", "pos": Vector3(0.0, 0.0, 42.0), "col": Color(1.0, 0.85, 0.35)},
+			{"title": "East Gate -> Pilgrim Oasis Outpost", "target": "order_outpost", "pos": Vector3(26.0, 0.0, 0.0), "col": Color(1.0, 0.85, 0.35)},
+			{"title": "North Gate -> Sette Dune Sea (Borderlands)", "target": "border_sette", "pos": Vector3(0.0, 0.0, -36.0), "col": Color(1.0, 0.75, 0.25)},
+		],
+		"enemies": [
+			{"name": "Terrace Dune-Viper (Lv.14)", "lv": 14, "hp": 340, "atk": 24, "bounty": 230, "farr_u": 15, "farr_v": 320, "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.05, "body": Color(0.50, 0.42, 0.28), "accent": Color(1.0, 0.8, 0.3)},
+			{"name": "Relic-Robber Zealot (Lv.18)", "lv": 18, "hp": 480, "atk": 32, "bounty": 310, "farr_u": 18, "farr_v": 420, "pos": Vector3(12.0, 0.0, -8.0), "scale": 1.1, "body": Color(0.45, 0.38, 0.25), "accent": Color(1.0, 0.75, 0.25)},
+			{"name": "Corrupted Temple Guardian (Lv.22)", "lv": 22, "hp": 680, "atk": 42, "bounty": 420, "farr_u": 22, "farr_v": 560, "pos": Vector3(0.0, 0.0, -18.0), "scale": 1.25, "body": Color(0.40, 0.32, 0.20), "accent": Color(1.0, 0.70, 0.20)},
+			{"name": "AZUR-FRAVASHI ZEALOT", "lv": 25, "hp": 2700, "atk": 50, "bounty": 1600, "farr_u": 40, "farr_v": 1400, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.6, "range": 3.6, "aggro": 9.0, "body": Color(0.62, 0.50, 0.25), "accent": Color(1.0, 0.95, 0.45), "is_pit_boss": true},
 		],
 	},
 
 	"legion_basic": {
 		"id": "legion_basic",
-		"name": "Ashen Blood-Basin (Legion Basic Lv.12-28)",
+		"name": "Ashen Blood-Basin",
 		"category": "FACTION_BASIC",
 		"owner_faction": "legion",
-		"level_band": "Lv.12-28 Basic Ground",
+		"level_band": "Lv.12-25",
+		"farming_focus": "BASIC_SOLO",
 		"terrain_theme": "VOLCANIC_BASIN",
-		"ground_color": Color(0.28, 0.16, 0.19),
-		"sky_top": Color(0.18, 0.07, 0.12),
-		"sky_horizon": Color(0.52, 0.18, 0.25),
+		"ground_color": Color(0.24, 0.14, 0.16),
+		"sky_top": Color(0.14, 0.05, 0.08),
+		"sky_horizon": Color(0.42, 0.16, 0.22),
 		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 8.5, "name": "Boiling Blood Crater Pit"},
 		"summon_beacon": {"name": "Ashen Blood Summon Beacon", "pos": Vector3(12.0, 0.0, 24.0), "col": Color(0.95, 0.3, 0.35)},
 		"pit_boss": {
-			"name": "AKA-MANAH WAR-EXECUTIONER",
-			"title": "Basic Pit Boss",
-			"lv": 28,
-			"hp": 3300,
-			"atk": 66,
-			"bounty": 1950,
-			"farr_u": 45,
-			"farr_v": 1700,
-			"pos": Vector3(0.0, 0.0, -26.0),
-			"scale": 2.7,
-			"range": 3.8,
-			"aggro": 9.5,
-			"body": Color(0.48, 0.12, 0.20),
-			"accent": Color(1.0, 0.20, 0.35),
-			"is_pit_boss": true
+			"name": "AKA-MANAH WAR-EXECUTIONER", "title": "Basic Ground Pit Boss", "lv": 25, "hp": 2800, "atk": 54, "bounty": 1600,
+			"farr_u": 40, "farr_v": 1400, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.6, "range": 3.6, "aggro": 9.0,
+			"body": Color(0.48, 0.12, 0.20), "accent": Color(1.0, 0.20, 0.35), "is_pit_boss": true
 		},
-		"spawns": {
-			"sveleitre": Vector3(0.0, 0.1, 30.0),
-			"order": Vector3(0.0, 0.1, 30.0),
-			"legion": Vector3(0.0, 0.1, 30.0),
-		},
-		"refineries": [],
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 32.0), "order": Vector3(0.0, 0.1, 32.0), "legion": Vector3(0.0, 0.1, 32.0)},
+		"refineries": [{"name": "Basin Blood-Extraction Node", "pos": Vector3(0.0, 0.0, 36.0)}],
 		"npcs": [
-			{"name": "Outpost Soul-Binder Vizaresh", "title": "Outpost Rebirth & Save NPC", "type": "REBIRTH", "faction": "legion", "pos": Vector3(7.0, 0.0, 32.0), "body": Color(0.38, 0.16, 0.20), "accent": Color(1.0, 0.45, 0.65)},
+			{"name": "Soul-Binder Rebirth NPC", "title": "Basin Rebirth & Save NPC", "type": "REBIRTH", "faction": "legion", "pos": Vector3(-6.0, 0.0, 32.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(1.0, 0.3, 0.4)},
+			{"name": "Trench Armorer R-04", "title": "Outpost Potion & Utility NPC", "type": "POTION", "faction": "legion", "pos": Vector3(6.0, 0.0, 32.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(1.0, 0.25, 0.35)},
 		],
 		"veins": [
-			{"name": "Basin Crimson Farr Vein (Lv.12-25)", "pos": Vector3(-16.0, 0.0, 10.0), "scale": 1.1, "max_units": 5, "yield": 12, "val": 28, "dur": 2.0, "col": Color(0.95, 0.3, 0.38)},
-			{"name": "Obsidian Fissure Vein (Lv.15-28)", "pos": Vector3(16.0, 0.0, -8.0), "scale": 1.1, "max_units": 5, "yield": 14, "val": 32, "dur": 2.0, "col": Color(0.95, 0.3, 0.38)},
+			{"name": "Basin Brimstone Vein Alpha", "pos": Vector3(-16.0, 0.0, 10.0), "scale": 1.15, "max_units": 6, "yield": 12, "val": 28, "dur": 1.8, "col": Color(0.95, 0.3, 0.35)},
+			{"name": "Basin Brimstone Vein Beta", "pos": Vector3(16.0, 0.0, 10.0), "scale": 1.15, "max_units": 6, "yield": 12, "val": 28, "dur": 1.8, "col": Color(0.95, 0.3, 0.35)},
 		],
 		"portals": [
-			{"title": "South Gate -> Druj Obsidian Citadel (Legion HQ)", "target": "legion_hq", "pos": Vector3(-7.0, 0.0, 35.0), "col": Color(0.95, 0.3, 0.35)},
-			{"title": "North-West Gate -> Shattered Steppes (Contested Lv.28-38)", "target": "contested_steppes", "pos": Vector3(-10.0, 0.0, -38.0), "col": Color(0.95, 0.75, 0.25)},
-			{"title": "North-East Gate -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(10.0, 0.0, -38.0), "col": Color(1.0, 0.55, 0.2)},
+			{"title": "South Portal -> Druj Citadel HQ", "target": "legion_hq", "pos": Vector3(0.0, 0.0, 42.0), "col": Color(0.95, 0.3, 0.35)},
+			{"title": "East Gate -> Brimstone Quarry Outpost", "target": "legion_outpost", "pos": Vector3(26.0, 0.0, 0.0), "col": Color(0.95, 0.3, 0.35)},
+			{"title": "North Gate -> Sette Dune Sea (Borderlands)", "target": "border_sette", "pos": Vector3(0.0, 0.0, -36.0), "col": Color(1.0, 0.75, 0.25)},
 		],
 		"enemies": [
-			{"name": "Nasru Blood-Hound (Lv.14)", "lv": 14, "hp": 380, "atk": 25, "bounty": 250, "farr_u": 16, "farr_v": 420, "pos": Vector3(-12.0, 0.0, 14.0), "scale": 1.1, "body": Color(0.50, 0.18, 0.22), "accent": Color(1.0, 0.30, 0.35)},
-			{"name": "Flayed Executioner (Lv.18)", "lv": 18, "hp": 490, "atk": 32, "bounty": 320, "farr_u": 18, "farr_v": 520, "pos": Vector3(12.0, 0.0, 12.0), "scale": 1.12, "body": Color(0.48, 0.15, 0.25), "accent": Color(0.95, 0.25, 0.45)},
-			{"name": "Serpent-Cult Hexer (Lv.22)", "lv": 22, "hp": 620, "atk": 39, "bounty": 410, "farr_u": 22, "farr_v": 680, "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.18, "body": Color(0.42, 0.14, 0.32), "accent": Color(0.95, 0.20, 0.55)},
-			{"name": "Obsidian Titan-Spawn (Lv.25)", "lv": 25, "hp": 740, "atk": 44, "bounty": 490, "farr_u": 25, "farr_v": 820, "pos": Vector3(12.0, 0.0, -12.0), "scale": 1.22, "body": Color(0.38, 0.12, 0.22), "accent": Color(1.0, 0.22, 0.38)},
-			{"name": "AKA-MANAH WAR-EXECUTIONER", "lv": 28, "hp": 3300, "atk": 66, "bounty": 1950, "farr_u": 45, "farr_v": 1700, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.7, "range": 3.8, "aggro": 9.5, "body": Color(0.48, 0.12, 0.20), "accent": Color(1.0, 0.20, 0.35), "is_pit_boss": true},
+			{"name": "Blood-Gorged Hound (Lv.14)", "lv": 14, "hp": 340, "atk": 24, "bounty": 230, "farr_u": 15, "farr_v": 320, "pos": Vector3(-12.0, 0.0, -8.0), "scale": 1.05, "body": Color(0.44, 0.14, 0.18), "accent": Color(1.0, 0.25, 0.35)},
+			{"name": "Cinder-Spike Behemoth (Lv.18)", "lv": 18, "hp": 480, "atk": 32, "bounty": 310, "farr_u": 18, "farr_v": 420, "pos": Vector3(12.0, 0.0, -8.0), "scale": 1.1, "body": Color(0.38, 0.12, 0.16), "accent": Color(1.0, 0.2, 0.3)},
+			{"name": "Druj Heretic Berserker (Lv.22)", "lv": 22, "hp": 680, "atk": 42, "bounty": 420, "farr_u": 22, "farr_v": 560, "pos": Vector3(0.0, 0.0, -18.0), "scale": 1.25, "body": Color(0.32, 0.10, 0.14), "accent": Color(0.95, 0.18, 0.25)},
+			{"name": "AKA-MANAH WAR-EXECUTIONER", "lv": 25, "hp": 2800, "atk": 54, "bounty": 1600, "farr_u": 40, "farr_v": 1400, "pos": Vector3(0.0, 0.0, -26.0), "scale": 2.6, "range": 3.6, "aggro": 9.0, "body": Color(0.48, 0.12, 0.20), "accent": Color(1.0, 0.20, 0.35), "is_pit_boss": true},
 		],
 	},
 
-	# --------------------------------------------------------------------------
-	# 4. SHARED CONTESTED UPPER-LEVEL MAPS (2 Maps: All 3 Factions Contest Spots)
-	# --------------------------------------------------------------------------
+	# ==========================================================================
+	# TIER 3: FACTION SECONDARY OUTPOSTS (Lv. 22-32)
+	# ==========================================================================
+	"svel_outpost": {
+		"id": "svel_outpost",
+		"name": "Sub-Deck Turbine Chasm (Outpost 117)",
+		"category": "FACTION_OUTPOST",
+		"owner_faction": "sveleitre",
+		"level_band": "Lv.22-32",
+		"farming_focus": "COMPONENT_SALVAGE",
+		"terrain_theme": "TECH_ARK",
+		"ground_color": Color(0.16, 0.20, 0.26),
+		"sky_top": Color(0.06, 0.10, 0.18),
+		"sky_horizon": Color(0.20, 0.35, 0.50),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -28.0), "radius": 9.0, "name": "Turbine Vent Pit"},
+		"summon_beacon": {"name": "Sub-Deck Forward Beacon", "pos": Vector3(14.0, 0.0, 18.0), "col": Color(0.3, 0.9, 1.0)},
+		"pit_boss": {
+			"name": "SUB-DECK TURBINE COLOSSUS", "title": "Outpost Pit Boss", "lv": 30, "hp": 3400, "atk": 68, "bounty": 2100,
+			"farr_u": 45, "farr_v": 1800, "pos": Vector3(0.0, 0.0, -28.0), "scale": 2.8, "range": 3.8, "aggro": 9.5,
+			"body": Color(0.22, 0.34, 0.46), "accent": Color(0.4, 1.0, 0.95), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 28.0), "order": Vector3(0.0, 0.1, 28.0), "legion": Vector3(0.0, 0.1, 28.0)},
+		"refineries": [{"name": "Outpost 117 Sub-Deck Refinery", "pos": Vector3(0.0, 0.0, 32.0)}],
+		"npcs": [
+			{"name": "Sub-Deck Rebirth Hub", "title": "Outpost Rebirth NPC", "type": "REBIRTH", "faction": "sveleitre", "pos": Vector3(-6.0, 0.0, 26.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.35, 0.85, 1.0)},
+			{"name": "Salvage Logistics Node", "title": "Outpost Merchant NPC", "type": "POTION", "faction": "sveleitre", "pos": Vector3(6.0, 0.0, 26.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.4, 0.95, 1.0)},
+		],
+		"veins": [{"name": "Turbine Core Heavy Vein", "pos": Vector3(-14.0, 0.0, 6.0), "scale": 1.2, "max_units": 7, "yield": 14, "val": 35, "dur": 1.8, "col": Color(0.35, 0.9, 1.0)}],
+		"portals": [
+			{"title": "West Portal -> Cryo-Scrap Frontier", "target": "svel_basic", "pos": Vector3(-26.0, 0.0, 0.0), "col": Color(0.3, 0.9, 1.0)},
+			{"title": "North Breach -> Permafrost Rift (Borderlands)", "target": "border_glacier", "pos": Vector3(0.0, 0.0, -36.0), "col": Color(0.4, 0.85, 1.0)},
+		],
+		"enemies": [
+			{"name": "Overclocked Turbine Mech (Lv.24)", "lv": 24, "hp": 740, "atk": 46, "bounty": 460, "farr_u": 24, "farr_v": 620, "pos": Vector3(-10.0, 0.0, -10.0), "scale": 1.15, "body": Color(0.25, 0.36, 0.48), "accent": Color(0.4, 0.9, 1.0)},
+			{"name": "Plasma Conduit Sentry (Lv.28)", "lv": 28, "hp": 890, "atk": 56, "bounty": 550, "farr_u": 28, "farr_v": 750, "pos": Vector3(10.0, 0.0, -10.0), "scale": 1.2, "body": Color(0.22, 0.32, 0.44), "accent": Color(0.35, 0.85, 1.0)},
+			{"name": "SUB-DECK TURBINE COLOSSUS", "lv": 30, "hp": 3400, "atk": 68, "bounty": 2100, "farr_u": 45, "farr_v": 1800, "pos": Vector3(0.0, 0.0, -28.0), "scale": 2.8, "range": 3.8, "aggro": 9.5, "body": Color(0.22, 0.34, 0.46), "accent": Color(0.4, 1.0, 0.95), "is_pit_boss": true},
+		],
+	},
+
+	"order_outpost": {
+		"id": "order_outpost",
+		"name": "Pilgrim's Oasis Sanctuary (Solus Outpost)",
+		"category": "FACTION_OUTPOST",
+		"owner_faction": "order",
+		"level_band": "Lv.22-32",
+		"farming_focus": "RESTORATIVE_HERBS",
+		"terrain_theme": "HOLY_TEMPLE",
+		"ground_color": Color(0.30, 0.34, 0.26),
+		"sky_top": Color(0.16, 0.20, 0.14),
+		"sky_horizon": Color(0.45, 0.50, 0.32),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -28.0), "radius": 9.0, "name": "Sacred Spring Pit"},
+		"summon_beacon": {"name": "Oasis Pilgrim Beacon", "pos": Vector3(14.0, 0.0, 18.0), "col": Color(1.0, 0.88, 0.4)},
+		"pit_boss": {
+			"name": "OASIS GUARDIAN FRAVASHI", "title": "Outpost Pit Boss", "lv": 30, "hp": 3300, "atk": 65, "bounty": 2100,
+			"farr_u": 45, "farr_v": 1800, "pos": Vector3(0.0, 0.0, -28.0), "scale": 2.8, "range": 3.8, "aggro": 9.5,
+			"body": Color(0.58, 0.52, 0.30), "accent": Color(1.0, 0.95, 0.4), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 28.0), "order": Vector3(0.0, 0.1, 28.0), "legion": Vector3(0.0, 0.1, 28.0)},
+		"refineries": [{"name": "Solus Oasis Sacred Refinery", "pos": Vector3(0.0, 0.0, 32.0)}],
+		"npcs": [
+			{"name": "Solus Oasis Rebirth NPC", "title": "Outpost Rebirth NPC", "type": "REBIRTH", "faction": "order", "pos": Vector3(-6.0, 0.0, 26.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(1.0, 0.85, 0.35)},
+			{"name": "Oasis Herbalist Merchant", "title": "Outpost Potion NPC", "type": "POTION", "faction": "order", "pos": Vector3(6.0, 0.0, 26.0), "body": Color(0.45, 0.40, 0.32), "accent": Color(1.0, 0.9, 0.45)},
+		],
+		"veins": [{"name": "Oasis Spring Rich Farr Vein", "pos": Vector3(-14.0, 0.0, 6.0), "scale": 1.2, "max_units": 7, "yield": 14, "val": 35, "dur": 1.8, "col": Color(1.0, 0.85, 0.3)}],
+		"portals": [
+			{"title": "West Portal -> Sun-Bleached Terraces", "target": "order_basic", "pos": Vector3(-26.0, 0.0, 0.0), "col": Color(1.0, 0.85, 0.35)},
+			{"title": "North Breach -> Permafrost Rift (Borderlands)", "target": "border_glacier", "pos": Vector3(0.0, 0.0, -36.0), "col": Color(0.4, 0.85, 1.0)},
+		],
+		"enemies": [
+			{"name": "Oasis Dune-Stalker (Lv.24)", "lv": 24, "hp": 740, "atk": 46, "bounty": 460, "farr_u": 24, "farr_v": 620, "pos": Vector3(-10.0, 0.0, -10.0), "scale": 1.15, "body": Color(0.48, 0.42, 0.26), "accent": Color(1.0, 0.8, 0.35)},
+			{"name": "Corrupted Sun-Guardian (Lv.28)", "lv": 28, "hp": 890, "atk": 56, "bounty": 550, "farr_u": 28, "farr_v": 750, "pos": Vector3(10.0, 0.0, -10.0), "scale": 1.2, "body": Color(0.42, 0.36, 0.22), "accent": Color(1.0, 0.75, 0.30)},
+			{"name": "OASIS GUARDIAN FRAVASHI", "lv": 30, "hp": 3300, "atk": 65, "bounty": 2100, "farr_u": 45, "farr_v": 1800, "pos": Vector3(0.0, 0.0, -28.0), "scale": 2.8, "range": 3.8, "aggro": 9.5, "body": Color(0.58, 0.52, 0.30), "accent": Color(1.0, 0.95, 0.4), "is_pit_boss": true},
+		],
+	},
+
+	"legion_outpost": {
+		"id": "legion_outpost",
+		"name": "Brimstone Quarry Fortress (Anacaade Outpost)",
+		"category": "FACTION_OUTPOST",
+		"owner_faction": "legion",
+		"level_band": "Lv.22-32",
+		"farming_focus": "MINERAL_ARMOR",
+		"terrain_theme": "VOLCANIC_BASIN",
+		"ground_color": Color(0.20, 0.12, 0.14),
+		"sky_top": Color(0.12, 0.04, 0.06),
+		"sky_horizon": Color(0.36, 0.12, 0.18),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -28.0), "radius": 9.0, "name": "Slag Excavation Pit"},
+		"summon_beacon": {"name": "Quarry Fort Beacon", "pos": Vector3(14.0, 0.0, 18.0), "col": Color(0.95, 0.25, 0.3)},
+		"pit_boss": {
+			"name": "QUARRY SLAG-BEHEMOTH", "title": "Outpost Pit Boss", "lv": 30, "hp": 3500, "atk": 70, "bounty": 2100,
+			"farr_u": 45, "farr_v": 1800, "pos": Vector3(0.0, 0.0, -28.0), "scale": 2.8, "range": 3.8, "aggro": 9.5,
+			"body": Color(0.44, 0.12, 0.18), "accent": Color(1.0, 0.25, 0.35), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(0.0, 0.1, 28.0), "order": Vector3(0.0, 0.1, 28.0), "legion": Vector3(0.0, 0.1, 28.0)},
+		"refineries": [{"name": "Anacaade Quarry Slag Refinery", "pos": Vector3(0.0, 0.0, 32.0)}],
+		"npcs": [
+			{"name": "Anacaade Rebirth Node", "title": "Outpost Rebirth NPC", "type": "REBIRTH", "faction": "legion", "pos": Vector3(-6.0, 0.0, 26.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(1.0, 0.25, 0.35)},
+			{"name": "Quarry Supply Master", "title": "Outpost Merchant NPC", "type": "POTION", "faction": "legion", "pos": Vector3(6.0, 0.0, 26.0), "body": Color(0.35, 0.18, 0.22), "accent": Color(1.0, 0.3, 0.4)},
+		],
+		"veins": [{"name": "Quarry Heavy Slag Vein", "pos": Vector3(-14.0, 0.0, 6.0), "scale": 1.2, "max_units": 7, "yield": 14, "val": 35, "dur": 1.8, "col": Color(0.95, 0.3, 0.35)}],
+		"portals": [
+			{"title": "West Portal -> Ashen Blood-Basin", "target": "legion_basic", "pos": Vector3(-26.0, 0.0, 0.0), "col": Color(0.95, 0.3, 0.35)},
+			{"title": "North Breach -> Basalt Divide Trenches", "target": "border_trench", "pos": Vector3(0.0, 0.0, -36.0), "col": Color(0.95, 0.25, 0.3)},
+		],
+		"enemies": [
+			{"name": "Quarry Slag-Dredger (Lv.24)", "lv": 24, "hp": 740, "atk": 46, "bounty": 460, "farr_u": 24, "farr_v": 620, "pos": Vector3(-10.0, 0.0, -10.0), "scale": 1.15, "body": Color(0.40, 0.12, 0.16), "accent": Color(1.0, 0.25, 0.35)},
+			{"name": "Molten Crust Fiend (Lv.28)", "lv": 28, "hp": 890, "atk": 56, "bounty": 550, "farr_u": 28, "farr_v": 750, "pos": Vector3(10.0, 0.0, -10.0), "scale": 1.2, "body": Color(0.35, 0.10, 0.14), "accent": Color(1.0, 0.2, 0.3)},
+			{"name": "QUARRY SLAG-BEHEMOTH", "lv": 30, "hp": 3500, "atk": 70, "bounty": 2100, "farr_u": 45, "farr_v": 1800, "pos": Vector3(0.0, 0.0, -28.0), "scale": 2.8, "range": 3.8, "aggro": 9.5, "body": Color(0.44, 0.12, 0.18), "accent": Color(1.0, 0.25, 0.35), "is_pit_boss": true},
+		],
+	},
+
+	# ==========================================================================
+	# TIER 4: CONTESTED BORDERLANDS & THREE-WAY COLLISION (Lv. 30-38)
+	# ==========================================================================
+	"border_sette": {
+		"id": "border_sette",
+		"name": "The Sette Dune Sea (Three-Border Convergence)",
+		"category": "CONTESTED_BORDER",
+		"owner_faction": "all",
+		"level_band": "Lv.30-38 (PvP Border)",
+		"farming_focus": "PVP_BOUNTY",
+		"terrain_theme": "DESERT_RUINS",
+		"ground_color": Color(0.42, 0.34, 0.20),
+		"sky_top": Color(0.18, 0.15, 0.10),
+		"sky_horizon": Color(0.55, 0.44, 0.26),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -24.0), "radius": 9.5, "name": "Sette Sunken Gate Pit"},
+		"summon_beacon": {"name": "Sette Tri-Border Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.75, 0.25)},
+		"pit_boss": {
+			"name": "DUNE-STALKER ARCH-SCORPION", "title": "Borderland Pit Boss", "lv": 35, "hp": 4100, "atk": 85, "bounty": 2600,
+			"farr_u": 50, "farr_v": 2300, "pos": Vector3(0.0, 0.0, -24.0), "scale": 2.9, "range": 4.0, "aggro": 10.0,
+			"body": Color(0.52, 0.38, 0.18), "accent": Color(1.0, 0.8, 0.25), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Sette Tri-Border Field Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [
+			{"name": "Sette Neutral Outpost Merchant", "title": "Field Trader", "type": "POTION", "faction": "all", "pos": Vector3(-6.0, 0.0, 4.0), "body": Color(0.3, 0.3, 0.3), "accent": Color(1.0, 0.8, 0.3)},
+		],
+		"veins": [
+			{"name": "Sette Contested Gold Vein Alpha", "pos": Vector3(-18.0, 0.0, -8.0), "scale": 1.25, "max_units": 8, "yield": 16, "val": 42, "dur": 1.7, "col": Color(1.0, 0.78, 0.2)},
+			{"name": "Sette Contested Gold Vein Beta", "pos": Vector3(18.0, 0.0, -8.0), "scale": 1.25, "max_units": 8, "yield": 16, "val": 42, "dur": 1.7, "col": Color(1.0, 0.78, 0.2)},
+		],
+		"portals": [
+			{"title": "North Gate -> Shattered Persepolis Steppes", "target": "contested_steppes", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(1.0, 0.8, 0.3)},
+			{"title": "East Gate -> The Great Volcanic Caldera", "target": "farm_caldera_magma", "pos": Vector3(32.0, 0.0, 0.0), "col": Color(1.0, 0.4, 0.15)},
+			{"title": "West Gate -> Aetherium Floating Platforms", "target": "farm_ether_sky", "pos": Vector3(-32.0, 0.0, 0.0), "col": Color(0.35, 0.9, 1.0)},
+		],
+		"enemies": [
+			{"name": "Sette Sand-Stalker (Lv.30)", "lv": 30, "hp": 980, "atk": 62, "bounty": 620, "farr_u": 30, "farr_v": 850, "pos": Vector3(-14.0, 0.0, -12.0), "scale": 1.2, "body": Color(0.48, 0.36, 0.18), "accent": Color(1.0, 0.75, 0.25)},
+			{"name": "Armored Dune-Crusher (Lv.33)", "lv": 33, "hp": 1150, "atk": 74, "bounty": 730, "farr_u": 34, "farr_v": 980, "pos": Vector3(14.0, 0.0, -12.0), "scale": 1.3, "body": Color(0.42, 0.30, 0.14), "accent": Color(1.0, 0.70, 0.20)},
+			{"name": "DUNE-STALKER ARCH-SCORPION", "lv": 35, "hp": 4100, "atk": 85, "bounty": 2600, "farr_u": 50, "farr_v": 2300, "pos": Vector3(0.0, 0.0, -24.0), "scale": 2.9, "range": 4.0, "aggro": 10.0, "body": Color(0.52, 0.38, 0.18), "accent": Color(1.0, 0.8, 0.25), "is_pit_boss": true},
+		],
+	},
+
+	"border_glacier": {
+		"id": "border_glacier",
+		"name": "Permafrost Rift Valley",
+		"category": "CONTESTED_BORDER",
+		"owner_faction": "all",
+		"level_band": "Lv.32-40 (Glacier Rift)",
+		"farming_focus": "CRYO_CORE",
+		"terrain_theme": "FROZEN_SCRAP",
+		"ground_color": Color(0.18, 0.28, 0.36),
+		"sky_top": Color(0.04, 0.10, 0.20),
+		"sky_horizon": Color(0.22, 0.44, 0.62),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 9.5, "name": "Glacial Crevasse Pit"},
+		"summon_beacon": {"name": "Permafrost Rift Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(0.4, 0.85, 1.0)},
+		"pit_boss": {
+			"name": "PERMAFROST CRYO-TITAN", "title": "Glacier Pit Boss", "lv": 38, "hp": 4500, "atk": 92, "bounty": 2800,
+			"farr_u": 55, "farr_v": 2600, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.0, "range": 4.2, "aggro": 10.0,
+			"body": Color(0.16, 0.28, 0.45), "accent": Color(0.45, 0.95, 1.0), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Permafrost Research Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Glacial Expedition Trader", "title": "Field Trader", "type": "POTION", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.25, 0.35, 0.45), "accent": Color(0.4, 0.9, 1.0)}],
+		"veins": [{"name": "Cryo-Glacial Heavy Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.25, "max_units": 8, "yield": 16, "val": 42, "dur": 1.7, "col": Color(0.4, 0.9, 1.0)}],
+		"portals": [
+			{"title": "West Gate -> Aetherium Floating Platforms", "target": "farm_ether_sky", "pos": Vector3(-32.0, 0.0, 0.0), "col": Color(0.35, 0.9, 1.0)},
+			{"title": "North Gate -> Shattered Persepolis Steppes", "target": "contested_steppes", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(1.0, 0.8, 0.3)},
+		],
+		"enemies": [
+			{"name": "Glacial Stalker Automaton (Lv.32)", "lv": 32, "hp": 1080, "atk": 70, "bounty": 690, "farr_u": 32, "farr_v": 920, "pos": Vector3(-12.0, 0.0, -12.0), "scale": 1.2, "body": Color(0.24, 0.35, 0.48), "accent": Color(0.4, 0.9, 1.0)},
+			{"name": "Cryo-Shock Behemoth (Lv.36)", "lv": 36, "hp": 1320, "atk": 84, "bounty": 820, "farr_u": 36, "farr_v": 1100, "pos": Vector3(12.0, 0.0, -12.0), "scale": 1.3, "body": Color(0.20, 0.30, 0.42), "accent": Color(0.45, 0.95, 1.0)},
+			{"name": "PERMAFROST CRYO-TITAN", "lv": 38, "hp": 4500, "atk": 92, "bounty": 2800, "farr_u": 55, "farr_v": 2600, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.0, "range": 4.2, "aggro": 10.0, "body": Color(0.16, 0.28, 0.45), "accent": Color(0.45, 0.95, 1.0), "is_pit_boss": true},
+		],
+	},
+
+	"border_trench": {
+		"id": "border_trench",
+		"name": "Basalt Divide Trenches",
+		"category": "CONTESTED_BORDER",
+		"owner_faction": "all",
+		"level_band": "Lv.32-40 (Trench Warfare)",
+		"farming_focus": "PIERCING_AMMO",
+		"terrain_theme": "OBSIDIAN_CITADEL",
+		"ground_color": Color(0.20, 0.12, 0.16),
+		"sky_top": Color(0.10, 0.04, 0.08),
+		"sky_horizon": Color(0.34, 0.14, 0.22),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 9.5, "name": "Basalt Divide Pit"},
+		"summon_beacon": {"name": "Divide Trench Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(0.95, 0.25, 0.35)},
+		"pit_boss": {
+			"name": "TRENCH-BREAKER DREAD-GORGER", "title": "Trench Pit Boss", "lv": 38, "hp": 4600, "atk": 95, "bounty": 2800,
+			"farr_u": 55, "farr_v": 2600, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.0, "range": 4.2, "aggro": 10.0,
+			"body": Color(0.44, 0.10, 0.18), "accent": Color(1.0, 0.20, 0.35), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Basalt Trench Field Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Frontline Ammo Provisioner", "title": "Field Trader", "type": "WEAPON", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.3, 0.2, 0.25), "accent": Color(1.0, 0.3, 0.4)}],
+		"veins": [{"name": "Obsidian Trench Heavy Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.25, "max_units": 8, "yield": 16, "val": 42, "dur": 1.7, "col": Color(0.95, 0.25, 0.35)}],
+		"portals": [
+			{"title": "East Gate -> The Great Volcanic Caldera", "target": "farm_caldera_magma", "pos": Vector3(32.0, 0.0, 0.0), "col": Color(1.0, 0.4, 0.15)},
+			{"title": "North Gate -> Scorched Var Cauldron", "target": "contested_cauldron", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(1.0, 0.35, 0.2)},
+		],
+		"enemies": [
+			{"name": "Barbed Trench-Slasher (Lv.32)", "lv": 32, "hp": 1080, "atk": 70, "bounty": 690, "farr_u": 32, "farr_v": 920, "pos": Vector3(-12.0, 0.0, -12.0), "scale": 1.2, "body": Color(0.40, 0.12, 0.18), "accent": Color(1.0, 0.25, 0.35)},
+			{"name": "Obsidian Bone-Gorger (Lv.36)", "lv": 36, "hp": 1320, "atk": 84, "bounty": 820, "farr_u": 36, "farr_v": 1100, "pos": Vector3(12.0, 0.0, -12.0), "scale": 1.3, "body": Color(0.36, 0.10, 0.15), "accent": Color(1.0, 0.2, 0.3)},
+			{"name": "TRENCH-BREAKER DREAD-GORGER", "lv": 38, "hp": 4600, "atk": 95, "bounty": 2800, "farr_u": 55, "farr_v": 2600, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.0, "range": 4.2, "aggro": 10.0, "body": Color(0.44, 0.10, 0.18), "accent": Color(1.0, 0.20, 0.35), "is_pit_boss": true},
+		],
+	},
+
+	# ==========================================================================
+	# TIER 5: SPECIALIZED ECONOMIC FARMING NICHES (Lv. 36-46)
+	# ==========================================================================
+	"farm_ether_sky": {
+		"id": "farm_ether_sky",
+		"name": "Aetherium Floating Platforms (The Sky Floe)",
+		"category": "FARMING_NICHE",
+		"owner_faction": "all",
+		"level_band": "Lv.38-46 (💰 Wealth Farm)",
+		"farming_focus": "WEALTH_CREDITS",
+		"terrain_theme": "TECH_ARK",
+		"ground_color": Color(0.24, 0.30, 0.38),
+		"sky_top": Color(0.12, 0.24, 0.40),
+		"sky_horizon": Color(0.40, 0.65, 0.85),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -24.0), "radius": 10.0, "name": "Gravity-Anchor Core Pit"},
+		"summon_beacon": {"name": "Aether Platform Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(0.4, 0.95, 1.0)},
+		"pit_boss": {
+			"name": "AETHER-CORE ARCH-VALKYRIE", "title": "Aetherium Pit Boss", "lv": 42, "hp": 5100, "atk": 108, "bounty": 3500,
+			"farr_u": 60, "farr_v": 3400, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.2, "range": 4.5, "aggro": 10.5,
+			"body": Color(0.85, 0.92, 1.0), "accent": Color(0.3, 0.95, 1.0), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Aetherium High-Purity Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Aether Gold Exchange NPC", "title": "Wealth Merchant", "type": "POTION", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.8, 0.85, 0.95), "accent": Color(0.4, 0.9, 1.0)}],
+		"veins": [{"name": "Floating Aetherium Megavein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.3, "max_units": 9, "yield": 20, "val": 60, "dur": 1.6, "col": Color(0.45, 0.95, 1.0)}],
+		"portals": [
+			{"title": "Portal -> Sette Dune Sea", "target": "border_sette", "pos": Vector3(0.0, 0.0, 36.0), "col": Color(1.0, 0.75, 0.25)},
+			{"title": "Sky Gate -> Catacombs of First Kings", "target": "farm_relic_catacombs", "pos": Vector3(32.0, 0.0, 0.0), "col": Color(1.0, 0.8, 0.35)},
+		],
+		"enemies": [
+			{"name": "Aether-Winged Corsair (Lv.38)", "lv": 38, "hp": 1420, "atk": 90, "bounty": 1250, "farr_u": 40, "farr_v": 1300, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.25, "body": Color(0.4, 0.55, 0.70), "accent": Color(0.4, 0.95, 1.0)},
+			{"name": "Calliana Scrap-Matron (Lv.40)", "lv": 40, "hp": 1650, "atk": 100, "bounty": 1500, "farr_u": 45, "farr_v": 1550, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.35, 0.50, 0.65), "accent": Color(0.35, 0.90, 1.0)},
+			{"name": "AETHER-CORE ARCH-VALKYRIE", "lv": 42, "hp": 5100, "atk": 108, "bounty": 3500, "farr_u": 60, "farr_v": 3400, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.2, "range": 4.5, "aggro": 10.5, "body": Color(0.85, 0.92, 1.0), "accent": Color(0.3, 0.95, 1.0), "is_pit_boss": true},
+		],
+	},
+
+	"farm_caldera_magma": {
+		"id": "farm_caldera_magma",
+		"name": "The Great Volcanic Caldera",
+		"category": "FARMING_NICHE",
+		"owner_faction": "all",
+		"level_band": "Lv.40-47 (💎 Talic Farm)",
+		"farming_focus": "TALIC_FARMING",
+		"terrain_theme": "VOLCANIC_BASIN",
+		"ground_color": Color(0.24, 0.12, 0.10),
+		"sky_top": Color(0.14, 0.04, 0.04),
+		"sky_horizon": Color(0.50, 0.18, 0.08),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -24.0), "radius": 10.0, "name": "Molten Caldera Core Pit"},
+		"summon_beacon": {"name": "Volcano Caldera Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.45, 0.15)},
+		"pit_boss": {
+			"name": "MAGMA-MAW DRAKE-TYRANT", "title": "Caldera Pit Boss", "lv": 44, "hp": 5300, "atk": 114, "bounty": 3700,
+			"farr_u": 65, "farr_v": 3700, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.3, "range": 4.6, "aggro": 10.5,
+			"body": Color(0.55, 0.14, 0.08), "accent": Color(1.0, 0.45, 0.1), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Volcano Caldera Smelter Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Caldera Blacksmith Trader", "title": "Talic Merchant", "type": "POTION", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.35, 0.16, 0.12), "accent": Color(1.0, 0.4, 0.15)}],
+		"veins": [{"name": "Caldera Pure Brimstone Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.3, "max_units": 9, "yield": 20, "val": 60, "dur": 1.6, "col": Color(1.0, 0.45, 0.15)}],
+		"portals": [
+			{"title": "Portal -> Sette Dune Sea", "target": "border_sette", "pos": Vector3(0.0, 0.0, 36.0), "col": Color(1.0, 0.75, 0.25)},
+			{"title": "Gate -> Subterranean Luminescent Aqueduct", "target": "farm_deep_aquifer", "pos": Vector3(32.0, 0.0, 0.0), "col": Color(0.3, 0.85, 0.75)},
+		],
+		"enemies": [
+			{"name": "Caldera Ash-Drake (Lv.40)", "lv": 40, "hp": 1600, "atk": 102, "bounty": 1050, "farr_u": 42, "farr_v": 1400, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.25, "body": Color(0.48, 0.16, 0.10), "accent": Color(1.0, 0.45, 0.15)},
+			{"name": "Magma Golem Titan (Lv.42)", "lv": 42, "hp": 1850, "atk": 112, "bounty": 1200, "farr_u": 48, "farr_v": 1650, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.40, 0.12, 0.08), "accent": Color(1.0, 0.40, 0.10)},
+			{"name": "MAGMA-MAW DRAKE-TYRANT", "lv": 44, "hp": 5300, "atk": 114, "bounty": 3700, "farr_u": 65, "farr_v": 3700, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.3, "range": 4.6, "aggro": 10.5, "body": Color(0.55, 0.14, 0.08), "accent": Color(1.0, 0.45, 0.1), "is_pit_boss": true},
+		],
+	},
+
+	"farm_relic_catacombs": {
+		"id": "farm_relic_catacombs",
+		"name": "Catacombs of the First Kings",
+		"category": "FARMING_NICHE",
+		"owner_faction": "all",
+		"level_band": "Lv.38-46 (🛡️ Rare Gear)",
+		"farming_focus": "RARE_GEAR",
+		"terrain_theme": "DESERT_RUINS",
+		"ground_color": Color(0.34, 0.28, 0.22),
+		"sky_top": Color(0.12, 0.10, 0.08),
+		"sky_horizon": Color(0.40, 0.32, 0.20),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -24.0), "radius": 10.0, "name": "Royal Sarcophagus Pit"},
+		"summon_beacon": {"name": "First Kings Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.85, 0.35)},
+		"pit_boss": {
+			"name": "CATACOMB TOMB-SOVEREIGN", "title": "Catacomb Pit Boss", "lv": 43, "hp": 5200, "atk": 110, "bounty": 3600,
+			"farr_u": 62, "farr_v": 3500, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.2, "range": 4.5, "aggro": 10.5,
+			"body": Color(0.55, 0.44, 0.25), "accent": Color(1.0, 0.88, 0.35), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Tomb Excavation Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Relic Archaeologist NPC", "title": "Relic Merchant", "type": "POTION", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.4, 0.35, 0.28), "accent": Color(1.0, 0.8, 0.3)}],
+		"veins": [{"name": "Sarcophagus Gold Farr Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.3, "max_units": 9, "yield": 20, "val": 60, "dur": 1.6, "col": Color(1.0, 0.82, 0.25)}],
+		"portals": [
+			{"title": "Portal -> Aetherium Platforms", "target": "farm_ether_sky", "pos": Vector3(-32.0, 0.0, 0.0), "col": Color(0.35, 0.9, 1.0)},
+			{"title": "Gate -> Foundations of the Var (Dungeon)", "target": "dungeon_var_roots", "pos": Vector3(0.0, 0.0, -36.0), "col": Color(1.0, 0.85, 0.3)},
+		],
+		"enemies": [
+			{"name": "Mummified Royal Spearguard (Lv.38)", "lv": 38, "hp": 1450, "atk": 92, "bounty": 1100, "farr_u": 42, "farr_v": 1350, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.25, "body": Color(0.48, 0.40, 0.24), "accent": Color(1.0, 0.8, 0.3)},
+			{"name": "Ancient Stone Sphinx (Lv.41)", "lv": 41, "hp": 1780, "atk": 108, "bounty": 1320, "farr_u": 46, "farr_v": 1580, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.42, 0.34, 0.20), "accent": Color(1.0, 0.85, 0.35)},
+			{"name": "CATACOMB TOMB-SOVEREIGN", "lv": 43, "hp": 5200, "atk": 110, "bounty": 3600, "farr_u": 62, "farr_v": 3500, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.2, "range": 4.5, "aggro": 10.5, "body": Color(0.55, 0.44, 0.25), "accent": Color(1.0, 0.88, 0.35), "is_pit_boss": true},
+		],
+	},
+
+	"farm_deep_aquifer": {
+		"id": "farm_deep_aquifer",
+		"name": "Subterranean Luminescent Aqueduct",
+		"category": "FARMING_NICHE",
+		"owner_faction": "all",
+		"level_band": "Lv.36-44 (💧 Force / Buff Farm)",
+		"farming_focus": "FORCE_POTIONS",
+		"terrain_theme": "HOLY_TEMPLE",
+		"ground_color": Color(0.20, 0.28, 0.30),
+		"sky_top": Color(0.08, 0.14, 0.16),
+		"sky_horizon": Color(0.25, 0.45, 0.45),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -24.0), "radius": 10.0, "name": "Sunken Cistern Pit"},
+		"summon_beacon": {"name": "Luminescent Aquifer Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(0.3, 0.95, 0.85)},
+		"pit_boss": {
+			"name": "AQUEDUCT HYDRA-SERPENT", "title": "Aqueduct Pit Boss", "lv": 40, "hp": 4800, "atk": 102, "bounty": 3200,
+			"farr_u": 58, "farr_v": 3000, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.1, "range": 4.4, "aggro": 10.0,
+			"body": Color(0.20, 0.42, 0.45), "accent": Color(0.35, 1.0, 0.85), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Aqueduct Water-Purifier Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Aquifer Alchemist Trader", "title": "Potion Merchant", "type": "POTION", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.25, 0.35, 0.38), "accent": Color(0.3, 0.9, 0.8)}],
+		"veins": [{"name": "Luminescent Cyan Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.3, "max_units": 9, "yield": 20, "val": 60, "dur": 1.6, "col": Color(0.3, 0.95, 0.85)}],
+		"portals": [
+			{"title": "Portal -> Volcanic Caldera", "target": "farm_caldera_magma", "pos": Vector3(-32.0, 0.0, 0.0), "col": Color(1.0, 0.45, 0.15)},
+			{"title": "Gate -> Shattered Persepolis Steppes", "target": "contested_steppes", "pos": Vector3(0.0, 0.0, -36.0), "col": Color(1.0, 0.8, 0.3)},
+		],
+		"enemies": [
+			{"name": "Luminescent Water-Nymph (Lv.36)", "lv": 36, "hp": 1340, "atk": 82, "bounty": 840, "farr_u": 38, "farr_v": 1150, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.2, "body": Color(0.26, 0.44, 0.48), "accent": Color(0.35, 0.95, 0.85)},
+			{"name": "Deep-Channel Basilisk (Lv.39)", "lv": 39, "hp": 1580, "atk": 96, "bounty": 1020, "farr_u": 42, "farr_v": 1380, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.22, 0.38, 0.42), "accent": Color(0.3, 0.9, 0.8)},
+			{"name": "AQUEDUCT HYDRA-SERPENT", "lv": 40, "hp": 4800, "atk": 102, "bounty": 3200, "farr_u": 58, "farr_v": 3000, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.1, "range": 4.4, "aggro": 10.0, "body": Color(0.20, 0.42, 0.45), "accent": Color(0.35, 1.0, 0.85), "is_pit_boss": true},
+		],
+	},
+
+	# ==========================================================================
+	# TIER 6: UPPER CONTESTED STEPPES & CAULDRON (Lv. 38-50)
+	# ==========================================================================
 	"contested_steppes": {
 		"id": "contested_steppes",
-		"name": "Shattered Persepolis Steppes (Contested Lv.28-38)",
+		"name": "Shattered Persepolis Steppes",
 		"category": "CONTESTED_UPPER",
 		"owner_faction": "all",
-		"level_band": "Contested Lv.28-38 + Boss Yima",
+		"level_band": "Lv.38-48 (World Boss)",
+		"farming_focus": "WORLD_BOSS",
 		"terrain_theme": "PERSEPOLIS_STEPPES",
-		"ground_color": Color(0.32, 0.27, 0.22),
-		"sky_top": Color(0.16, 0.14, 0.22),
-		"sky_horizon": Color(0.48, 0.36, 0.28),
+		"ground_color": Color(0.38, 0.30, 0.20),
+		"sky_top": Color(0.20, 0.16, 0.10),
+		"sky_horizon": Color(0.52, 0.42, 0.25),
 		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 12.0, "name": "Throne Pit of King Yima"},
 		"summon_beacon": {"name": "Persepolis Steppes Summon Beacon", "pos": Vector3(0.0, 0.0, 20.0), "col": Color(1.0, 0.78, 0.25)},
 		"pit_boss": {
-			"name": "PERSEPOLIS RUIN GOLIATH",
-			"title": "Steppes Pit Boss",
-			"lv": 38,
-			"hp": 4500,
-			"atk": 96,
-			"bounty": 2900,
-			"farr_u": 55,
-			"farr_v": 2900,
-			"pos": Vector3(0.0, 0.0, -6.0),
-			"scale": 3.0,
-			"range": 4.5,
-			"aggro": 10.0,
-			"body": Color(0.52, 0.38, 0.22),
-			"accent": Color(1.0, 0.82, 0.28),
-			"is_pit_boss": true
+			"name": "PERSEPOLIS RUIN GOLIATH", "title": "Steppes Pit Boss", "lv": 38, "hp": 4500, "atk": 96, "bounty": 2900,
+			"farr_u": 55, "farr_v": 2900, "pos": Vector3(0.0, 0.0, -6.0), "scale": 3.0, "range": 4.5, "aggro": 10.0,
+			"body": Color(0.52, 0.38, 0.22), "accent": Color(1.0, 0.82, 0.28), "is_pit_boss": true
 		},
-		"spawns": {
-			"sveleitre": Vector3(-34.0, 0.1, 26.0),
-			"order": Vector3(34.0, 0.1, 26.0),
-			"legion": Vector3(0.0, 0.1, 36.0),
-		},
-		"refineries": [],
+		"spawns": {"sveleitre": Vector3(-28.0, 0.1, 28.0), "order": Vector3(28.0, 0.1, 28.0), "legion": Vector3(0.0, 0.1, -38.0)},
+		"refineries": [{"name": "Persepolis Steppes Central Field Refinery", "pos": Vector3(0.0, 0.0, 8.0)}],
 		"npcs": [
-			{"name": "Steppes Relay R-02 (Svel)", "title": "Contested Rebirth & Save NPC", "type": "REBIRTH", "faction": "sveleitre", "pos": Vector3(-38.0, 0.0, 28.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.5, 1.0, 0.85)},
-			{"name": "Steppes Shrine Sraosha (Order)", "title": "Contested Rebirth & Save NPC", "type": "REBIRTH", "faction": "order", "pos": Vector3(38.0, 0.0, 28.0), "body": Color(0.45, 0.38, 0.22), "accent": Color(1.0, 0.95, 0.6)},
-			{"name": "Steppes Blood-Pillar (Legion)", "title": "Contested Rebirth & Save NPC", "type": "REBIRTH", "faction": "legion", "pos": Vector3(4.0, 0.0, 40.0), "body": Color(0.38, 0.16, 0.20), "accent": Color(1.0, 0.45, 0.65)},
+			{"name": "Steppes Forward Post Trader", "title": "Field Provisioner", "type": "POTION", "faction": "all", "pos": Vector3(-6.0, 0.0, 14.0), "body": Color(0.42, 0.32, 0.22), "accent": Color(1.0, 0.8, 0.3)},
 		],
 		"veins": [
-			{"name": "Steppes Ruin Farr Vein (Lv.28-38)", "pos": Vector3(0.0, 0.0, 8.0), "scale": 1.2, "max_units": 6, "yield": 16, "val": 48, "dur": 2.3, "col": Color(1.0, 0.68, 0.22)},
+			{"name": "Steppes Megavein Alpha (Lv.28-38)", "pos": Vector3(-18.0, 0.0, 0.0), "scale": 1.35, "max_units": 9, "yield": 20, "val": 45, "dur": 1.7, "col": Color(1.0, 0.8, 0.25)},
+			{"name": "Steppes Megavein Beta (Lv.28-38)", "pos": Vector3(18.0, 0.0, 0.0), "scale": 1.35, "max_units": 9, "yield": 20, "val": 45, "dur": 1.7, "col": Color(1.0, 0.8, 0.25)},
 		],
 		"portals": [
-			{"title": "SW Gate -> Sveleitre Basic Frontier", "target": "svel_basic", "pos": Vector3(-42.0, 0.0, 22.0), "col": Color(0.3, 0.9, 1.0)},
-			{"title": "SE Gate -> Order Basic Terraces", "target": "order_basic", "pos": Vector3(42.0, 0.0, 22.0), "col": Color(1.0, 0.85, 0.35)},
-			{"title": "South Gate -> Legion Basic Blood-Basin", "target": "legion_basic", "pos": Vector3(-4.0, 0.0, 42.0), "col": Color(0.95, 0.3, 0.35)},
-			{"title": "North-West Gate -> Scorched Var Cauldron (Lv.36-45)", "target": "contested_cauldron", "pos": Vector3(-12.0, 0.0, -40.0), "col": Color(1.0, 0.3, 0.2)},
-			{"title": "North-East Gate -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(12.0, 0.0, -40.0), "col": Color(1.0, 0.6, 0.15)},
+			{"title": "South Portal -> Sette Dune Sea", "target": "border_sette", "pos": Vector3(0.0, 0.0, 42.0), "col": Color(1.0, 0.75, 0.25)},
+			{"title": "East Gate -> Royal Upper Terrace", "target": "steppes_highlands", "pos": Vector3(34.0, 0.0, 0.0), "col": Color(1.0, 0.85, 0.35)},
+			{"title": "North Breach -> Scorched Var Cauldron", "target": "contested_cauldron", "pos": Vector3(0.0, 0.0, -44.0), "col": Color(1.0, 0.4, 0.2)},
 		],
 		"enemies": [
-			{"name": "Druj Vein-Stalker (Contested Spot A - Lv.28)", "lv": 28, "hp": 820, "atk": 48, "bounty": 540, "farr_u": 28, "farr_v": 900, "pos": Vector3(-18.0, 0.0, 6.0), "scale": 1.25, "body": Color(0.45, 0.15, 0.55), "accent": Color(1.0, 0.2, 0.45)},
-			{"name": "Immortal Bull-Capital Construct (Spot B - Lv.32)", "lv": 32, "hp": 1020, "atk": 58, "bounty": 680, "farr_u": 32, "farr_v": 1150, "pos": Vector3(18.0, 0.0, 6.0), "scale": 1.28, "body": Color(0.55, 0.42, 0.24), "accent": Color(1.0, 0.82, 0.3)},
+			{"name": "Achaemenid Bronze Centurion (Lv.36)", "lv": 36, "hp": 1350, "atk": 84, "bounty": 780, "farr_u": 38, "farr_v": 1100, "pos": Vector3(-14.0, 0.0, -12.0), "scale": 1.25, "body": Color(0.50, 0.38, 0.24), "accent": Color(1.0, 0.8, 0.3)},
+			{"name": "Ruined Bull-Gargant (Lv.38)", "lv": 38, "hp": 1500, "atk": 94, "bounty": 890, "farr_u": 42, "farr_v": 1250, "pos": Vector3(14.0, 0.0, -12.0), "scale": 1.3, "body": Color(0.44, 0.32, 0.18), "accent": Color(1.0, 0.75, 0.25)},
 			{"name": "PERSEPOLIS RUIN GOLIATH", "lv": 38, "hp": 4500, "atk": 96, "bounty": 2900, "farr_u": 55, "farr_v": 2900, "pos": Vector3(0.0, 0.0, -6.0), "scale": 3.0, "range": 4.5, "aggro": 10.0, "body": Color(0.52, 0.38, 0.22), "accent": Color(1.0, 0.82, 0.28), "is_pit_boss": true},
-			{"name": "Orphaned Fork-Guard (Contested Spot C - Lv.35)", "lv": 35, "hp": 1220, "atk": 68, "bounty": 840, "farr_u": 36, "farr_v": 1400, "pos": Vector3(-14.0, 0.0, -12.0), "scale": 1.32, "body": Color(0.25, 0.42, 0.48), "accent": Color(0.2, 0.95, 1.0)},
-			{"name": "Hollow Royal Warden (Contested Spot D - Lv.38)", "lv": 38, "hp": 1420, "atk": 76, "bounty": 980, "farr_u": 40, "farr_v": 1620, "pos": Vector3(14.0, 0.0, -12.0), "scale": 1.35, "body": Color(0.48, 0.36, 0.22), "accent": Color(1.0, 0.78, 0.22)},
 			{"name": "YIMA, THE HOLLOW KING (Forsworn World Boss)", "lv": 50, "hp": 5800, "atk": 140, "bounty": 4500, "farr_u": 70, "farr_v": 5200, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.8, "range": 5.0, "aggro": 11.0, "body": Color(0.55, 0.42, 0.24), "accent": Color(1.0, 0.85, 0.25), "is_pit_boss": true},
 		],
 	},
 
 	"contested_cauldron": {
 		"id": "contested_cauldron",
-		"name": "Scorched Var Cauldron (Contested Lv.36-45)",
+		"name": "Scorched Var Cauldron",
 		"category": "CONTESTED_UPPER",
 		"owner_faction": "all",
-		"level_band": "Contested Lv.36-45 + Bosses Aeshma & Orphan",
+		"level_band": "Lv.42-50 (Endgame War)",
+		"farming_focus": "WORLD_BOSS",
 		"terrain_theme": "SCORCHED_CAULDRON",
-		"ground_color": Color(0.22, 0.16, 0.16),
-		"sky_top": Color(0.18, 0.06, 0.08),
-		"sky_horizon": Color(0.55, 0.20, 0.16),
+		"ground_color": Color(0.24, 0.14, 0.18),
+		"sky_top": Color(0.12, 0.04, 0.08),
+		"sky_horizon": Color(0.40, 0.15, 0.20),
 		"boss_pit": {"pos": Vector3(0.0, 0.0, -22.0), "radius": 14.0, "name": "Forsworn Crucible Pit"},
 		"summon_beacon": {"name": "Scorched Cauldron Summon Beacon", "pos": Vector3(0.0, 0.0, 20.0), "col": Color(1.0, 0.35, 0.18)},
 		"pit_boss": {
-			"name": "ABYSSAL DAEVA OVERLORD",
-			"title": "Cauldron Pit Boss",
-			"lv": 44,
-			"hp": 5200,
-			"atk": 112,
-			"bounty": 3600,
-			"farr_u": 60,
-			"farr_v": 3600,
-			"pos": Vector3(0.0, 0.0, -8.0),
-			"scale": 3.2,
-			"range": 4.8,
-			"aggro": 10.5,
-			"body": Color(0.45, 0.12, 0.35),
-			"accent": Color(1.0, 0.25, 0.55),
-			"is_pit_boss": true
+			"name": "ABYSSAL DAEVA OVERLORD", "title": "Cauldron Pit Boss", "lv": 44, "hp": 5200, "atk": 112, "bounty": 3600,
+			"farr_u": 60, "farr_v": 3600, "pos": Vector3(0.0, 0.0, -8.0), "scale": 3.2, "range": 4.8, "aggro": 10.5,
+			"body": Color(0.45, 0.12, 0.35), "accent": Color(1.0, 0.25, 0.55), "is_pit_boss": true
 		},
-		"spawns": {
-			"sveleitre": Vector3(-34.0, 0.1, 28.0),
-			"order": Vector3(34.0, 0.1, 28.0),
-			"legion": Vector3(0.0, 0.1, 36.0),
-		},
-		"refineries": [],
-		"npcs": [],
+		"spawns": {"sveleitre": Vector3(-28.0, 0.1, 28.0), "order": Vector3(28.0, 0.1, 28.0), "legion": Vector3(0.0, 0.1, -38.0)},
+		"refineries": [{"name": "Scorched Cauldron Crucible Refinery", "pos": Vector3(0.0, 0.0, 8.0)}],
+		"npcs": [{"name": "Crucible War Provisioner", "title": "Field Trader", "type": "POTION", "faction": "all", "pos": Vector3(-6.0, 0.0, 14.0), "body": Color(0.38, 0.16, 0.22), "accent": Color(1.0, 0.3, 0.4)}],
 		"veins": [
-			{"name": "Cauldron Magma-Farr Vein (Lv.36-45)", "pos": Vector3(0.0, 0.0, 6.0), "scale": 1.35, "max_units": 6, "yield": 20, "val": 75, "dur": 2.6, "col": Color(1.0, 0.35, 0.18)},
+			{"name": "Cauldron Abyssal Vein Alpha (Lv.36-45)", "pos": Vector3(-18.0, 0.0, 0.0), "scale": 1.4, "max_units": 10, "yield": 25, "val": 55, "dur": 1.6, "col": Color(1.0, 0.35, 0.2)},
+			{"name": "Cauldron Abyssal Vein Beta (Lv.36-45)", "pos": Vector3(18.0, 0.0, 0.0), "scale": 1.4, "max_units": 10, "yield": 25, "val": 55, "dur": 1.6, "col": Color(1.0, 0.35, 0.2)},
 		],
 		"portals": [
-			{"title": "South Gate -> Shattered Persepolis Steppes (Lv.28-38)", "target": "contested_steppes", "pos": Vector3(-10.0, 0.0, 40.0), "col": Color(0.95, 0.75, 0.25)},
-			{"title": "East Gate -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(10.0, 0.0, 40.0), "col": Color(1.0, 0.55, 0.2)},
+			{"title": "South Portal -> Shattered Persepolis Steppes", "target": "contested_steppes", "pos": Vector3(0.0, 0.0, 42.0), "col": Color(1.0, 0.8, 0.3)},
+			{"title": "East Gate -> The Daevic Chasm", "target": "cauldron_abyss", "pos": Vector3(34.0, 0.0, 0.0), "col": Color(0.85, 0.15, 0.35)},
+			{"title": "North Breach -> Central Farr Mining Ground", "target": "farr_mining_ground", "pos": Vector3(0.0, 0.0, -44.0), "col": Color(1.0, 0.65, 0.2)},
 		],
 		"enemies": [
-			{"name": "Orphaned Dread-Chassis (Spot A - Lv.38)", "lv": 38, "hp": 1400, "atk": 75, "bounty": 960, "farr_u": 38, "farr_v": 1580, "pos": Vector3(-18.0, 0.0, 10.0), "scale": 1.35, "body": Color(0.25, 0.42, 0.48), "accent": Color(0.2, 0.95, 1.0)},
-			{"name": "Aeshma's Wrath-Fiend (Spot B - Lv.41)", "lv": 41, "hp": 1720, "atk": 88, "bounty": 1200, "farr_u": 44, "farr_v": 1950, "pos": Vector3(18.0, 0.0, 10.0), "scale": 1.4, "body": Color(0.55, 0.16, 0.18), "accent": Color(1.0, 0.22, 0.18)},
+			{"name": "Daevic Blood-Fiend (Lv.42)", "lv": 42, "hp": 1800, "atk": 110, "bounty": 1180, "farr_u": 46, "farr_v": 1600, "pos": Vector3(-14.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.48, 0.14, 0.24), "accent": Color(1.0, 0.3, 0.5)},
+			{"name": "Forsworn Arch-Executioner (Lv.44)", "lv": 44, "hp": 2100, "atk": 122, "bounty": 1350, "farr_u": 52, "farr_v": 1850, "pos": Vector3(14.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.42, 0.10, 0.20), "accent": Color(1.0, 0.2, 0.4)},
 			{"name": "ABYSSAL DAEVA OVERLORD", "lv": 44, "hp": 5200, "atk": 112, "bounty": 3600, "farr_u": 60, "farr_v": 3600, "pos": Vector3(0.0, 0.0, -8.0), "scale": 3.2, "range": 4.8, "aggro": 10.5, "body": Color(0.45, 0.12, 0.35), "accent": Color(1.0, 0.25, 0.55), "is_pit_boss": true},
 			{"name": "AESHMA, THE WRATH UNBOUND (Forsworn World Boss)", "lv": 50, "hp": 6500, "atk": 165, "bounty": 5000, "farr_u": 80, "farr_v": 6000, "pos": Vector3(-20.0, 0.0, -26.0), "scale": 4.5, "range": 5.5, "aggro": 12.0, "body": Color(0.88, 0.86, 0.85), "accent": Color(1.0, 0.15, 0.15), "is_pit_boss": true},
 			{"name": "THE ORPHAN PROCESS (Forsworn World Boss)", "lv": 50, "hp": 6000, "atk": 148, "bounty": 4600, "farr_u": 75, "farr_v": 5500, "pos": Vector3(20.0, 0.0, -26.0), "scale": 3.8, "range": 5.5, "aggro": 11.5, "body": Color(0.28, 0.34, 0.40), "accent": Color(0.18, 0.95, 1.0), "is_pit_boss": true},
 		],
 	},
 
-	# --------------------------------------------------------------------------
-	# 5. CENTRAL FARR MINING WAR GROUND (1 Map: All 3 Factions Gather for Ore!)
-	# --------------------------------------------------------------------------
+	"steppes_highlands": {
+		"id": "steppes_highlands",
+		"name": "Persepolis Upper Royal Terrace",
+		"category": "CONTESTED_UPPER",
+		"owner_faction": "all",
+		"level_band": "Lv.44-50 (Royal Ridge)",
+		"farming_focus": "SOVEREIGN_TALICS",
+		"terrain_theme": "PERSEPOLIS_STEPPES",
+		"ground_color": Color(0.40, 0.32, 0.22),
+		"sky_top": Color(0.18, 0.14, 0.10),
+		"sky_horizon": Color(0.58, 0.46, 0.28),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 11.0, "name": "High Apadana Throne Pit"},
+		"summon_beacon": {"name": "Royal Terrace Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.85, 0.35)},
+		"pit_boss": {
+			"name": "ROYAL APADANA COLOSSUS", "title": "Royal Terrace Pit Boss", "lv": 48, "hp": 5700, "atk": 125, "bounty": 4100,
+			"farr_u": 70, "farr_v": 4400, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.4, "range": 4.8, "aggro": 11.0,
+			"body": Color(0.58, 0.46, 0.26), "accent": Color(1.0, 0.9, 0.35), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Royal Apadana Gold Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "High Court Rebirth Scribe", "title": "Royal Outpost NPC", "type": "REBIRTH", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.48, 0.38, 0.26), "accent": Color(1.0, 0.85, 0.35)}],
+		"veins": [{"name": "Apadana Imperial Farr Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.35, "max_units": 10, "yield": 24, "val": 65, "dur": 1.6, "col": Color(1.0, 0.85, 0.35)}],
+		"portals": [
+			{"title": "West Gate -> Shattered Persepolis Steppes", "target": "contested_steppes", "pos": Vector3(-34.0, 0.0, 0.0), "col": Color(1.0, 0.78, 0.25)},
+			{"title": "East Gate -> The Great Beast Plateau", "target": "beast_plateau", "pos": Vector3(34.0, 0.0, 0.0), "col": Color(1.0, 0.5, 0.2)},
+		],
+		"enemies": [
+			{"name": "Imperial Apadana Guardian (Lv.45)", "lv": 45, "hp": 2200, "atk": 128, "bounty": 1450, "farr_u": 55, "farr_v": 2000, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.52, 0.40, 0.25), "accent": Color(1.0, 0.85, 0.35)},
+			{"name": "Ancient Gilded Sphinx (Lv.47)", "lv": 47, "hp": 2500, "atk": 138, "bounty": 1650, "farr_u": 60, "farr_v": 2300, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.48, 0.36, 0.22), "accent": Color(1.0, 0.90, 0.40)},
+			{"name": "ROYAL APADANA COLOSSUS", "lv": 48, "hp": 5700, "atk": 125, "bounty": 4100, "farr_u": 70, "farr_v": 4400, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.4, "range": 4.8, "aggro": 11.0, "body": Color(0.58, 0.46, 0.26), "accent": Color(1.0, 0.9, 0.35), "is_pit_boss": true},
+		],
+	},
+
+	"cauldron_abyss": {
+		"id": "cauldron_abyss",
+		"name": "The Daevic Chasm of Druj",
+		"category": "CONTESTED_UPPER",
+		"owner_faction": "all",
+		"level_band": "Lv.45-50 (Abyssal Void)",
+		"farming_focus": "DARK_ESSENCE",
+		"terrain_theme": "SCORCHED_CAULDRON",
+		"ground_color": Color(0.18, 0.10, 0.14),
+		"sky_top": Color(0.08, 0.02, 0.06),
+		"sky_horizon": Color(0.32, 0.08, 0.16),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -26.0), "radius": 11.0, "name": "Abyssal Void Crack Pit"},
+		"summon_beacon": {"name": "Daevic Chasm Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(0.9, 0.2, 0.4)},
+		"pit_boss": {
+			"name": "CHASM VOID-LEVIATHAN", "title": "Chasm Pit Boss", "lv": 49, "hp": 5900, "atk": 132, "bounty": 4300,
+			"farr_u": 75, "farr_v": 4600, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.5, "range": 5.0, "aggro": 11.0,
+			"body": Color(0.38, 0.08, 0.20), "accent": Color(1.0, 0.20, 0.45), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Daevic Blood-Furnace Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Void Trench Rebirth Scribe", "title": "Chasm Outpost NPC", "type": "REBIRTH", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.35, 0.12, 0.18), "accent": Color(1.0, 0.25, 0.40)}],
+		"veins": [{"name": "Deep Abyssal Void Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.35, "max_units": 10, "yield": 24, "val": 65, "dur": 1.6, "col": Color(0.95, 0.2, 0.4)}],
+		"portals": [
+			{"title": "West Gate -> Scorched Var Cauldron", "target": "contested_cauldron", "pos": Vector3(-34.0, 0.0, 0.0), "col": Color(1.0, 0.35, 0.2)},
+			{"title": "North Gate -> Crypt of Seven Daevas (Dungeon)", "target": "dungeon_daeva_crypt", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(0.85, 0.15, 0.35)},
+		],
+		"enemies": [
+			{"name": "Abyssal Shadow-Daeva (Lv.46)", "lv": 46, "hp": 2350, "atk": 134, "bounty": 1550, "farr_u": 58, "farr_v": 2150, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.42, 0.10, 0.22), "accent": Color(1.0, 0.25, 0.45)},
+			{"name": "Corrupted Slag-Gargant (Lv.48)", "lv": 48, "hp": 2700, "atk": 145, "bounty": 1780, "farr_u": 65, "farr_v": 2450, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.36, 0.08, 0.18), "accent": Color(1.0, 0.20, 0.40)},
+			{"name": "CHASM VOID-LEVIATHAN", "lv": 49, "hp": 5900, "atk": 132, "bounty": 4300, "farr_u": 75, "farr_v": 4600, "pos": Vector3(0.0, 0.0, -26.0), "scale": 3.5, "range": 5.0, "aggro": 11.0, "body": Color(0.38, 0.08, 0.20), "accent": Color(1.0, 0.20, 0.45), "is_pit_boss": true},
+		],
+	},
+
+	# ==========================================================================
+	# TIER 7: THE CRACK WAR GROUNDS (Lv. 25-50)
+	# ==========================================================================
 	"farr_mining_ground": {
 		"id": "farr_mining_ground",
 		"name": "The Crack — Central Farr Mining Ground",
 		"category": "MINING_WAR",
 		"owner_faction": "all",
-		"level_band": "All-Faction PvPvE Ore War (Lv.25-50)",
+		"level_band": "Lv.25-50 (PvPvE Ore War)",
+		"farming_focus": "ORE_EXTRACTION",
 		"terrain_theme": "CRACK_MINING",
-		"ground_color": Color(0.24, 0.20, 0.28),
-		"sky_top": Color(0.14, 0.08, 0.24),
-		"sky_horizon": Color(0.62, 0.38, 0.18),
+		"ground_color": Color(0.26, 0.24, 0.20),
+		"sky_top": Color(0.20, 0.14, 0.06),
+		"sky_horizon": Color(0.62, 0.45, 0.15),
 		"boss_pit": {"pos": Vector3(0.0, 0.0, 2.0), "radius": 12.0, "name": "Central Core Megavein Pit"},
 		"summon_beacon": {"name": "Crack War Summon Beacon", "pos": Vector3(0.0, 0.0, 28.0), "col": Color(1.0, 0.65, 0.2)},
 		"pit_boss": {
-			"name": "CRACK CORE ARCH-LEVIATHAN",
-			"title": "Central Mine Pit Boss",
-			"lv": 45,
-			"hp": 5800,
-			"atk": 128,
-			"bounty": 4200,
-			"farr_u": 80,
-			"farr_v": 4600,
-			"pos": Vector3(0.0, 0.0, 2.0),
-			"scale": 3.5,
-			"range": 5.0,
-			"aggro": 11.0,
-			"body": Color(0.58, 0.18, 0.42),
-			"accent": Color(1.0, 0.55, 0.15),
-			"is_pit_boss": true
+			"name": "CRACK CORE ARCH-LEVIATHAN", "title": "Mining War Pit Boss", "lv": 45, "hp": 5800, "atk": 128, "bounty": 4200,
+			"farr_u": 80, "farr_v": 4600, "pos": Vector3(0.0, 0.0, 2.0), "scale": 3.5, "range": 5.0, "aggro": 11.0,
+			"body": Color(0.58, 0.18, 0.42), "accent": Color(1.0, 0.55, 0.15), "is_pit_boss": true
 		},
-		"spawns": {
-			"sveleitre": Vector3(-34.0, 0.1, 28.0),
-			"order": Vector3(34.0, 0.1, 28.0),
-			"legion": Vector3(0.0, 0.1, -36.0),
-		},
+		"spawns": {"sveleitre": Vector3(-42.0, 0.1, 42.0), "order": Vector3(42.0, 0.1, 42.0), "legion": Vector3(0.0, 0.1, -48.0)},
 		"refineries": [
-			{"name": "Crack Core Contested Field Refinery", "pos": Vector3(0.0, 0.0, 18.0)},
+			{"name": "Sveleitre Mining Outpost Refinery (SW)", "pos": Vector3(-36.0, 0.0, 36.0)},
+			{"name": "Order Mining Outpost Refinery (SE)", "pos": Vector3(36.0, 0.0, 36.0)},
+			{"name": "Legion Mining Outpost Refinery (North)", "pos": Vector3(0.0, 0.0, -42.0)},
+			{"name": "Central Contested Megavein Core Refinery", "pos": Vector3(0.0, 0.0, 2.0)},
 		],
-		"npcs": [],
+		"npcs": [
+			{"name": "Field Ammo & Charger Depot", "title": "War Provisioner", "type": "WEAPON", "faction": "all", "pos": Vector3(-8.0, 0.0, 18.0), "body": Color(0.35, 0.32, 0.28), "accent": Color(1.0, 0.65, 0.2)},
+			{"name": "Field Medical Pod", "title": "Stim & Balm Trader", "type": "POTION", "faction": "all", "pos": Vector3(8.0, 0.0, 18.0), "body": Color(0.35, 0.32, 0.28), "accent": Color(0.4, 0.95, 0.7)},
+		],
 		"veins": [
-			{"name": "West Contested Rich Farr Vein (Lv.25-35)", "pos": Vector3(-14.0, 0.0, 6.0), "scale": 1.25, "max_units": 6, "yield": 16, "val": 55, "dur": 2.3, "col": Color(1.0, 0.55, 0.12)},
-			{"name": "East Contested Rich Farr Vein (Lv.25-35)", "pos": Vector3(14.0, 0.0, 6.0), "scale": 1.25, "max_units": 6, "yield": 16, "val": 55, "dur": 2.3, "col": Color(1.0, 0.55, 0.12)},
-			{"name": "North Contested Rich Farr Vein (Lv.25-35)", "pos": Vector3(0.0, 0.0, -16.0), "scale": 1.25, "max_units": 6, "yield": 16, "val": 55, "dur": 2.3, "col": Color(1.0, 0.55, 0.12)},
-			{"name": "SCAR MEGAVEIN ALPHA (Lv.35-45 Core Ore)", "pos": Vector3(-6.0, 0.0, -2.0), "scale": 1.55, "max_units": 8, "yield": 26, "val": 98, "dur": 2.8, "col": Color(0.98, 0.22, 0.38)},
-			{"name": "SCAR MEGAVEIN OMEGA (Lv.35-45 Core Ore)", "pos": Vector3(6.0, 0.0, -2.0), "scale": 1.55, "max_units": 8, "yield": 26, "val": 98, "dur": 2.8, "col": Color(0.98, 0.22, 0.38)},
+			{"name": "Crack Scar Core Megavein Alpha", "pos": Vector3(-14.0, 0.0, -8.0), "scale": 1.5, "max_units": 14, "yield": 32, "val": 65, "dur": 1.4, "col": Color(1.0, 0.72, 0.15)},
+			{"name": "Crack Scar Core Megavein Beta", "pos": Vector3(14.0, 0.0, -8.0), "scale": 1.5, "max_units": 14, "yield": 32, "val": 65, "dur": 1.4, "col": Color(1.0, 0.72, 0.15)},
+			{"name": "Central Crater Pure Amber Megaspire", "pos": Vector3(0.0, 0.0, -18.0), "scale": 1.7, "max_units": 18, "yield": 40, "val": 75, "dur": 1.3, "col": Color(1.0, 0.85, 0.25)},
 		],
 		"portals": [
-			{"title": "SW Breach -> Sveleitre HQ (Ark-Zero Bastion)", "target": "svel_hq", "pos": Vector3(-40.0, 0.0, 32.0), "col": Color(0.3, 0.9, 1.0)},
-			{"title": "SE Breach -> Order HQ (Asha Sanctuary)", "target": "order_hq", "pos": Vector3(40.0, 0.0, 32.0), "col": Color(1.0, 0.85, 0.35)},
-			{"title": "North Breach -> Legion HQ (Druj Citadel)", "target": "legion_hq", "pos": Vector3(0.0, 0.0, -42.0), "col": Color(0.95, 0.3, 0.35)},
-			{"title": "South Gate -> Shattered Persepolis Steppes", "target": "contested_steppes", "pos": Vector3(0.0, 0.0, 38.0), "col": Color(0.95, 0.75, 0.25)},
+			{"title": "SW Gate -> Sveleitre Bastion HQ", "target": "svel_hq", "pos": Vector3(-46.0, 0.0, 46.0), "col": Color(0.3, 0.9, 1.0)},
+			{"title": "SE Gate -> Order Sanctuary HQ", "target": "order_hq", "pos": Vector3(46.0, 0.0, 46.0), "col": Color(1.0, 0.85, 0.35)},
+			{"title": "North Gate -> Legion Citadel HQ", "target": "legion_hq", "pos": Vector3(0.0, 0.0, -54.0), "col": Color(0.95, 0.3, 0.35)},
+			{"title": "Down Gate -> Abyssal Vein Core (Lower Mine)", "target": "mining_lower_crater", "pos": Vector3(0.0, 0.0, -32.0), "col": Color(1.0, 0.55, 0.15)},
+			{"title": "Up Gate -> Ridge of Tri-Bastions", "target": "mining_breach_ridge", "pos": Vector3(0.0, 0.0, 38.0), "col": Color(1.0, 0.75, 0.25)},
 		],
 		"enemies": [
-			{"name": "Crack Vein-Warden West (Lv.30)", "lv": 30, "hp": 900, "atk": 52, "bounty": 600, "farr_u": 32, "farr_v": 1100, "pos": Vector3(-18.0, 0.0, 2.0), "scale": 1.25, "body": Color(0.45, 0.22, 0.55), "accent": Color(1.0, 0.45, 0.2)},
-			{"name": "Crack Vein-Warden East (Lv.30)", "lv": 30, "hp": 900, "atk": 52, "bounty": 600, "farr_u": 32, "farr_v": 1100, "pos": Vector3(18.0, 0.0, 2.0), "scale": 1.25, "body": Color(0.45, 0.22, 0.55), "accent": Color(1.0, 0.45, 0.2)},
-			{"name": "Core Megavein Enforcer (Lv.38)", "lv": 38, "hp": 1450, "atk": 76, "bounty": 1050, "farr_u": 45, "farr_v": 1800, "pos": Vector3(0.0, 0.0, -10.0), "scale": 1.38, "body": Color(0.52, 0.16, 0.38), "accent": Color(1.0, 0.25, 0.45)},
+			{"name": "Contested Slag-Ravager (Lv.35)", "lv": 35, "hp": 1300, "atk": 82, "bounty": 760, "farr_u": 36, "farr_v": 1050, "pos": Vector3(-18.0, 0.0, -12.0), "scale": 1.25, "body": Color(0.55, 0.24, 0.20), "accent": Color(1.0, 0.45, 0.2)},
+			{"name": "Deep-Earth Harvester Beast (Lv.40)", "lv": 40, "hp": 1700, "atk": 104, "bounty": 1080, "farr_u": 44, "farr_v": 1450, "pos": Vector3(18.0, 0.0, -12.0), "scale": 1.3, "body": Color(0.48, 0.20, 0.16), "accent": Color(1.0, 0.40, 0.15)},
 			{"name": "CRACK CORE ARCH-LEVIATHAN", "lv": 45, "hp": 5800, "atk": 128, "bounty": 4200, "farr_u": 80, "farr_v": 4600, "pos": Vector3(0.0, 0.0, 2.0), "scale": 3.5, "range": 5.0, "aggro": 11.0, "body": Color(0.58, 0.18, 0.42), "accent": Color(1.0, 0.55, 0.15), "is_pit_boss": true},
+		],
+	},
+
+	"mining_lower_crater": {
+		"id": "mining_lower_crater",
+		"name": "The Abyssal Vein Core (Lower Mining Ground)",
+		"category": "MINING_WAR",
+		"owner_faction": "all",
+		"level_band": "Lv.42-50 (⛏️ Extreme Ore)",
+		"farming_focus": "MEGAVEIN_EXTRACTION",
+		"terrain_theme": "CRACK_MINING",
+		"ground_color": Color(0.22, 0.18, 0.14),
+		"sky_top": Color(0.14, 0.08, 0.04),
+		"sky_horizon": Color(0.55, 0.35, 0.10),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -22.0), "radius": 11.0, "name": "Deep Spire Cavity Pit"},
+		"summon_beacon": {"name": "Lower Core Vein Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.7, 0.15)},
+		"pit_boss": {
+			"name": "CORE DRILL OVERCLOCKER", "title": "Lower Mine Pit Boss", "lv": 47, "hp": 5600, "atk": 124, "bounty": 4000,
+			"farr_u": 85, "farr_v": 4800, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.3, "range": 4.8, "aggro": 11.0,
+			"body": Color(0.48, 0.28, 0.16), "accent": Color(1.0, 0.70, 0.20), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Sub-Crater Heavy Smelter Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Core Drill Logistics Master", "title": "Field Trader", "type": "POTION", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.35, 0.28, 0.20), "accent": Color(1.0, 0.7, 0.2)}],
+		"veins": [
+			{"name": "Ultra-Rich Amber Megaspire A", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.6, "max_units": 16, "yield": 45, "val": 80, "dur": 1.3, "col": Color(1.0, 0.75, 0.15)},
+			{"name": "Ultra-Rich Amber Megaspire B", "pos": Vector3(16.0, 0.0, -10.0), "scale": 1.6, "max_units": 16, "yield": 45, "val": 80, "dur": 1.3, "col": Color(1.0, 0.75, 0.15)},
+		],
+		"portals": [
+			{"title": "Up Portal -> Central Mining Ground", "target": "farr_mining_ground", "pos": Vector3(0.0, 0.0, 36.0), "col": Color(1.0, 0.65, 0.2)},
+		],
+		"enemies": [
+			{"name": "Core-Borer Drill-Beast (Lv.43)", "lv": 43, "hp": 1950, "atk": 118, "bounty": 1300, "farr_u": 50, "farr_v": 1750, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.45, 0.25, 0.14), "accent": Color(1.0, 0.65, 0.15)},
+			{"name": "Molten Ore Golem (Lv.46)", "lv": 46, "hp": 2400, "atk": 132, "bounty": 1600, "farr_u": 60, "farr_v": 2200, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.40, 0.20, 0.10), "accent": Color(1.0, 0.60, 0.10)},
+			{"name": "CORE DRILL OVERCLOCKER", "lv": 47, "hp": 5600, "atk": 124, "bounty": 4000, "farr_u": 85, "farr_v": 4800, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.3, "range": 4.8, "aggro": 11.0, "body": Color(0.48, 0.28, 0.16), "accent": Color(1.0, 0.70, 0.20), "is_pit_boss": true},
+		],
+	},
+
+	"mining_breach_ridge": {
+		"id": "mining_breach_ridge",
+		"name": "The Ridge of Tri-Bastions",
+		"category": "MINING_WAR",
+		"owner_faction": "all",
+		"level_band": "Lv.38-48 (Sniper Ridge)",
+		"farming_focus": "ARTILLERY_PVP",
+		"terrain_theme": "CRACK_MINING",
+		"ground_color": Color(0.28, 0.25, 0.20),
+		"sky_top": Color(0.18, 0.12, 0.06),
+		"sky_horizon": Color(0.58, 0.40, 0.18),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -22.0), "radius": 11.0, "name": "High Overlook Ridge Pit"},
+		"summon_beacon": {"name": "Tri-Bastion Ridge Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.75, 0.25)},
+		"pit_boss": {
+			"name": "SIEGE-BASTION SENTINEL", "title": "Ridge Pit Boss", "lv": 46, "hp": 5500, "atk": 120, "bounty": 3900,
+			"farr_u": 75, "farr_v": 4400, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.3, "range": 4.8, "aggro": 11.0,
+			"body": Color(0.38, 0.32, 0.24), "accent": Color(1.0, 0.75, 0.25), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Ridge Overlook Munitions Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Ridge Ordnance Merchant", "title": "Field Trader", "type": "WEAPON", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.35, 0.30, 0.24), "accent": Color(1.0, 0.75, 0.25)}],
+		"veins": [{"name": "Overlook High-Purity Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.3, "max_units": 9, "yield": 22, "val": 60, "dur": 1.6, "col": Color(1.0, 0.75, 0.25)}],
+		"portals": [
+			{"title": "Down Portal -> Central Mining Ground", "target": "farr_mining_ground", "pos": Vector3(0.0, 0.0, 36.0), "col": Color(1.0, 0.65, 0.2)},
+		],
+		"enemies": [
+			{"name": "Bunker Rail-Sniper (Lv.40)", "lv": 40, "hp": 1600, "atk": 105, "bounty": 1050, "farr_u": 42, "farr_v": 1400, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.25, "body": Color(0.40, 0.34, 0.25), "accent": Color(1.0, 0.75, 0.25)},
+			{"name": "Heavy Siege Drone (Lv.44)", "lv": 44, "hp": 2150, "atk": 124, "bounty": 1380, "farr_u": 52, "farr_v": 1900, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.36, 0.30, 0.20), "accent": Color(1.0, 0.70, 0.20)},
+			{"name": "SIEGE-BASTION SENTINEL", "lv": 46, "hp": 5500, "atk": 120, "bounty": 3900, "farr_u": 75, "farr_v": 4400, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.3, "range": 4.8, "aggro": 11.0, "body": Color(0.38, 0.32, 0.24), "accent": Color(1.0, 0.75, 0.25), "is_pit_boss": true},
+		],
+	},
+
+	# ==========================================================================
+	# TIER 8: BEAST HIGHLANDS & OUTCAST EXPEDITIONS (Lv. 45-52)
+	# ==========================================================================
+	"beast_plateau": {
+		"id": "beast_plateau",
+		"name": "The Great Beast Plateau",
+		"category": "BEAST_HIGHLAND",
+		"owner_faction": "all",
+		"level_band": "Lv.45-52 (Beast Hunting)",
+		"farming_focus": "CHITIN_ARMOR",
+		"terrain_theme": "VOLCANIC_BASIN",
+		"ground_color": Color(0.28, 0.18, 0.14),
+		"sky_top": Color(0.16, 0.08, 0.06),
+		"sky_horizon": Color(0.50, 0.24, 0.14),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -24.0), "radius": 11.0, "name": "Broodmother Nest Pit"},
+		"summon_beacon": {"name": "Beast Plateau Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.5, 0.2)},
+		"pit_boss": {
+			"name": "CHITIN QUEEN SKORPION", "title": "Beast Plateau Pit Boss", "lv": 50, "hp": 6200, "atk": 142, "bounty": 4600,
+			"farr_u": 80, "farr_v": 5200, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.6, "range": 5.0, "aggro": 11.5,
+			"body": Color(0.52, 0.20, 0.12), "accent": Color(1.0, 0.55, 0.20), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Beast Plateau Camp Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Beast Hunter Outpost Trader", "title": "Field Trader", "type": "POTION", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.4, 0.25, 0.18), "accent": Color(1.0, 0.5, 0.2)}],
+		"veins": [{"name": "Plateau Chitin-Rich Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.35, "max_units": 10, "yield": 24, "val": 65, "dur": 1.6, "col": Color(1.0, 0.55, 0.2)}],
+		"portals": [
+			{"title": "West Gate -> Royal Upper Terrace", "target": "steppes_highlands", "pos": Vector3(-34.0, 0.0, 0.0), "col": Color(1.0, 0.85, 0.35)},
+			{"title": "North Gate -> Wastelands of the Forsworn", "target": "outcast_wasteland", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(1.0, 0.6, 0.25)},
+		],
+		"enemies": [
+			{"name": "Colossal Chitin-Crawler (Lv.46)", "lv": 46, "hp": 2350, "atk": 130, "bounty": 1500, "farr_u": 55, "farr_v": 2100, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.46, 0.18, 0.12), "accent": Color(1.0, 0.5, 0.2)},
+			{"name": "Titan Mantis Stalker (Lv.48)", "lv": 48, "hp": 2750, "atk": 142, "bounty": 1750, "farr_u": 62, "farr_v": 2400, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.42, 0.14, 0.10), "accent": Color(1.0, 0.45, 0.15)},
+			{"name": "CHITIN QUEEN SKORPION", "lv": 50, "hp": 6200, "atk": 142, "bounty": 4600, "farr_u": 80, "farr_v": 5200, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.6, "range": 5.0, "aggro": 11.5, "body": Color(0.52, 0.20, 0.12), "accent": Color(1.0, 0.55, 0.20), "is_pit_boss": true},
+		],
+	},
+
+	"outcast_wasteland": {
+		"id": "outcast_wasteland",
+		"name": "Wastelands of the Forsworn",
+		"category": "BEAST_HIGHLAND",
+		"owner_faction": "all",
+		"level_band": "Lv.46-52 (Lawless Exiles)",
+		"farming_focus": "EXILE_WEAPONS",
+		"terrain_theme": "DESERT_RUINS",
+		"ground_color": Color(0.35, 0.30, 0.24),
+		"sky_top": Color(0.15, 0.12, 0.08),
+		"sky_horizon": Color(0.48, 0.38, 0.22),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -24.0), "radius": 11.0, "name": "Outcast Arena of Rust"},
+		"summon_beacon": {"name": "Forsworn Wasteland Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.65, 0.25)},
+		"pit_boss": {
+			"name": "EXILE WARLORD ROSTAM", "title": "Outcast Pit Boss", "lv": 50, "hp": 6400, "atk": 146, "bounty": 4800,
+			"farr_u": 85, "farr_v": 5400, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.6, "range": 5.0, "aggro": 11.5,
+			"body": Color(0.45, 0.35, 0.22), "accent": Color(1.0, 0.70, 0.25), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Outcast Scrap Refinery Node", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Forsworn Arms Dealer", "title": "Black Market Trader", "type": "WEAPON", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.38, 0.30, 0.22), "accent": Color(1.0, 0.65, 0.25)}],
+		"veins": [{"name": "Wasteland Desolate Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.35, "max_units": 10, "yield": 24, "val": 65, "dur": 1.6, "col": Color(1.0, 0.65, 0.25)}],
+		"portals": [
+			{"title": "South Gate -> The Great Beast Plateau", "target": "beast_plateau", "pos": Vector3(0.0, 0.0, 38.0), "col": Color(1.0, 0.5, 0.2)},
+			{"title": "North Gate -> Sky-Fracture Pinnacle", "target": "sky_fracture_ridge", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(0.4, 0.85, 1.0)},
+		],
+		"enemies": [
+			{"name": "Exiled Mercenary Trooper (Lv.47)", "lv": 47, "hp": 2550, "atk": 138, "bounty": 1650, "farr_u": 60, "farr_v": 2300, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.42, 0.34, 0.22), "accent": Color(1.0, 0.65, 0.25)},
+			{"name": "Forsworn Heavy Juggernaut (Lv.49)", "lv": 49, "hp": 2900, "atk": 148, "bounty": 1850, "farr_u": 68, "farr_v": 2600, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.38, 0.30, 0.18), "accent": Color(1.0, 0.60, 0.20)},
+			{"name": "EXILE WARLORD ROSTAM", "lv": 50, "hp": 6400, "atk": 146, "bounty": 4800, "farr_u": 85, "farr_v": 5400, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.6, "range": 5.0, "aggro": 11.5, "body": Color(0.45, 0.35, 0.22), "accent": Color(1.0, 0.70, 0.25), "is_pit_boss": true},
+		],
+	},
+
+	"sky_fracture_ridge": {
+		"id": "sky_fracture_ridge",
+		"name": "Sky-Fracture Pinnacle",
+		"category": "BEAST_HIGHLAND",
+		"owner_faction": "all",
+		"level_band": "Lv.48-52 (Cosmic Pinnacle)",
+		"farming_focus": "COSMIC_TALICS",
+		"terrain_theme": "FROZEN_SCRAP",
+		"ground_color": Color(0.25, 0.32, 0.42),
+		"sky_top": Color(0.08, 0.16, 0.30),
+		"sky_horizon": Color(0.35, 0.55, 0.75),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -24.0), "radius": 11.0, "name": "Glass Fracture Crater Pit"},
+		"summon_beacon": {"name": "Sky Pinnacle Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(0.5, 0.95, 1.0)},
+		"pit_boss": {
+			"name": "DOME-BREACH SKY-COLOSSUS", "title": "Pinnacle Pit Boss", "lv": 51, "hp": 6600, "atk": 152, "bounty": 5000,
+			"farr_u": 90, "farr_v": 5600, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.7, "range": 5.2, "aggro": 11.5,
+			"body": Color(0.30, 0.42, 0.58), "accent": Color(0.5, 1.0, 0.95), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Sky Pinnacle Starlight Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Dome Observatory Rebirth NPC", "title": "Pinnacle Rebirth NPC", "type": "REBIRTH", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.30, 0.40, 0.52), "accent": Color(0.45, 0.95, 1.0)}],
+		"veins": [{"name": "Starlight Farr Megavein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.35, "max_units": 10, "yield": 24, "val": 65, "dur": 1.6, "col": Color(0.45, 0.95, 1.0)}],
+		"portals": [
+			{"title": "South Gate -> Wastelands of the Forsworn", "target": "outcast_wasteland", "pos": Vector3(0.0, 0.0, 38.0), "col": Color(1.0, 0.65, 0.25)},
+			{"title": "Sky Portal -> Celestial Seal Sanctum (Raid)", "target": "dungeon_sky_sanctum", "pos": Vector3(0.0, 0.0, -38.0), "col": Color(1.0, 0.9, 0.45)},
+		],
+		"enemies": [
+			{"name": "Cosmic Fracture-Elemental (Lv.48)", "lv": 48, "hp": 2700, "atk": 144, "bounty": 1780, "farr_u": 65, "farr_v": 2450, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.32, 0.44, 0.60), "accent": Color(0.5, 0.95, 1.0)},
+			{"name": "Astral Void-Stalker (Lv.50)", "lv": 50, "hp": 3100, "atk": 155, "bounty": 2000, "farr_u": 72, "farr_v": 2750, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.28, 0.38, 0.54), "accent": Color(0.45, 0.90, 1.0)},
+			{"name": "DOME-BREACH SKY-COLOSSUS", "lv": 51, "hp": 6600, "atk": 152, "bounty": 5000, "farr_u": 90, "farr_v": 5600, "pos": Vector3(0.0, 0.0, -24.0), "scale": 3.7, "range": 5.2, "aggro": 11.5, "body": Color(0.30, 0.42, 0.58), "accent": Color(0.5, 1.0, 0.95), "is_pit_boss": true},
+		],
+	},
+
+	# ==========================================================================
+	# TIER 9: ANCIENT VAULTS & DEEP DUNGEONS (Lv. 45-55)
+	# ==========================================================================
+	"dungeon_ark_core": {
+		"id": "dungeon_ark_core",
+		"name": "Ark-Zero Mainframe Supercore",
+		"category": "DUNGEON_VAULT",
+		"owner_faction": "all",
+		"level_band": "Lv.45-52 (AI Hive Dungeon)",
+		"farming_focus": "DUNGEON_LOOT",
+		"terrain_theme": "TECH_ARK",
+		"ground_color": Color(0.14, 0.18, 0.24),
+		"sky_top": Color(0.04, 0.08, 0.14),
+		"sky_horizon": Color(0.16, 0.30, 0.45),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -22.0), "radius": 11.0, "name": "Supercore AI Matrix Pit"},
+		"summon_beacon": {"name": "Ark Mainframe Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(0.35, 0.95, 1.0)},
+		"pit_boss": {
+			"name": "MAINFRAME PURGE SENTINEL", "title": "Dungeon Boss", "lv": 50, "hp": 6500, "atk": 150, "bounty": 4900,
+			"farr_u": 85, "farr_v": 5500, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.6, "range": 5.0, "aggro": 11.5,
+			"body": Color(0.20, 0.32, 0.44), "accent": Color(0.35, 1.0, 0.95), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Mainframe Energy Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Core Backup Sub-Instance", "title": "Dungeon Save Terminal", "type": "REBIRTH", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.22, 0.28, 0.35), "accent": Color(0.35, 0.9, 1.0)}],
+		"veins": [{"name": "Mainframe Super-Conduit Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.35, "max_units": 10, "yield": 25, "val": 70, "dur": 1.5, "col": Color(0.35, 0.95, 1.0)}],
+		"portals": [
+			{"title": "Exit Portal -> Ark-Zero Bastion HQ", "target": "svel_hq", "pos": Vector3(0.0, 0.0, 36.0), "col": Color(0.3, 0.9, 1.0)},
+		],
+		"enemies": [
+			{"name": "Mainframe Defense Drone (Lv.46)", "lv": 46, "hp": 2400, "atk": 132, "bounty": 1520, "farr_u": 56, "farr_v": 2150, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.24, 0.35, 0.48), "accent": Color(0.4, 0.95, 1.0)},
+			{"name": "Heavy Core-Purge Automaton (Lv.48)", "lv": 48, "hp": 2800, "atk": 144, "bounty": 1800, "farr_u": 64, "farr_v": 2500, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.20, 0.30, 0.42), "accent": Color(0.35, 0.90, 1.0)},
+			{"name": "MAINFRAME PURGE SENTINEL", "lv": 50, "hp": 6500, "atk": 150, "bounty": 4900, "farr_u": 85, "farr_v": 5500, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.6, "range": 5.0, "aggro": 11.5, "body": Color(0.20, 0.32, 0.44), "accent": Color(0.35, 1.0, 0.95), "is_pit_boss": true},
+		],
+	},
+
+	"dungeon_var_roots": {
+		"id": "dungeon_var_roots",
+		"name": "The Foundations of the Var",
+		"category": "DUNGEON_VAULT",
+		"owner_faction": "all",
+		"level_band": "Lv.46-54 (Titan Vault)",
+		"farming_focus": "DUNGEON_LOOT",
+		"terrain_theme": "PERSEPOLIS_STEPPES",
+		"ground_color": Color(0.34, 0.26, 0.18),
+		"sky_top": Color(0.12, 0.08, 0.05),
+		"sky_horizon": Color(0.42, 0.30, 0.18),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -22.0), "radius": 11.0, "name": "Cyclopean Foundation Pit"},
+		"summon_beacon": {"name": "Var Foundation Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.85, 0.3)},
+		"pit_boss": {
+			"name": "FOUNDATION TITAN OF YIMA", "title": "Dungeon Boss", "lv": 52, "hp": 6800, "atk": 158, "bounty": 5200,
+			"farr_u": 90, "farr_v": 5800, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.7, "range": 5.2, "aggro": 12.0,
+			"body": Color(0.55, 0.40, 0.22), "accent": Color(1.0, 0.85, 0.30), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Titan Foundation Smelter", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Achaemenid Relic Custodian", "title": "Dungeon Scribe", "type": "REBIRTH", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.45, 0.35, 0.22), "accent": Color(1.0, 0.8, 0.3)}],
+		"veins": [{"name": "Foundational Gold Farr Vein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.35, "max_units": 10, "yield": 25, "val": 70, "dur": 1.5, "col": Color(1.0, 0.85, 0.25)}],
+		"portals": [
+			{"title": "Exit Portal -> Catacombs of First Kings", "target": "farm_relic_catacombs", "pos": Vector3(0.0, 0.0, 36.0), "col": Color(1.0, 0.85, 0.35)},
+		],
+		"enemies": [
+			{"name": "Foundational Stone-Gargant (Lv.48)", "lv": 48, "hp": 2800, "atk": 145, "bounty": 1800, "farr_u": 65, "farr_v": 2500, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.48, 0.36, 0.20), "accent": Color(1.0, 0.85, 0.30)},
+			{"name": "Titan Apadana Centurion (Lv.50)", "lv": 50, "hp": 3200, "atk": 156, "bounty": 2100, "farr_u": 72, "farr_v": 2800, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.42, 0.30, 0.16), "accent": Color(1.0, 0.80, 0.25)},
+			{"name": "FOUNDATION TITAN OF YIMA", "lv": 52, "hp": 6800, "atk": 158, "bounty": 5200, "farr_u": 90, "farr_v": 5800, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.7, "range": 5.2, "aggro": 12.0, "body": Color(0.55, 0.40, 0.22), "accent": Color(1.0, 0.85, 0.30), "is_pit_boss": true},
+		],
+	},
+
+	"dungeon_daeva_crypt": {
+		"id": "dungeon_daeva_crypt",
+		"name": "Crypt of the Seven Corrupted Daevas",
+		"category": "DUNGEON_VAULT",
+		"owner_faction": "all",
+		"level_band": "Lv.48-55 (Demonic Crypt)",
+		"farming_focus": "DUNGEON_LOOT",
+		"terrain_theme": "SCORCHED_CAULDRON",
+		"ground_color": Color(0.16, 0.08, 0.12),
+		"sky_top": Color(0.06, 0.02, 0.04),
+		"sky_horizon": Color(0.28, 0.06, 0.12),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -22.0), "radius": 11.0, "name": "Daevic Binding Seal Pit"},
+		"summon_beacon": {"name": "Daeva Crypt Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(0.95, 0.15, 0.35)},
+		"pit_boss": {
+			"name": "ARCH-DAEVA OF DESPAIR", "title": "Dungeon Boss", "lv": 53, "hp": 7200, "atk": 165, "bounty": 5500,
+			"farr_u": 95, "farr_v": 6200, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.8, "range": 5.4, "aggro": 12.0,
+			"body": Color(0.40, 0.06, 0.18), "accent": Color(1.0, 0.15, 0.40), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Crypt Blood-Extraction Core", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Bound Heretic Priest", "title": "Crypt Scribe", "type": "REBIRTH", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.32, 0.10, 0.16), "accent": Color(1.0, 0.2, 0.35)}],
+		"veins": [{"name": "Daevic Corrupted Megavein", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.35, "max_units": 10, "yield": 25, "val": 70, "dur": 1.5, "col": Color(0.95, 0.15, 0.35)}],
+		"portals": [
+			{"title": "Exit Portal -> The Daevic Chasm", "target": "cauldron_abyss", "pos": Vector3(0.0, 0.0, 36.0), "col": Color(0.85, 0.15, 0.35)},
+		],
+		"enemies": [
+			{"name": "Crypt Daeva Zealot (Lv.50)", "lv": 50, "hp": 3100, "atk": 154, "bounty": 2050, "farr_u": 72, "farr_v": 2800, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.3, "body": Color(0.38, 0.08, 0.18), "accent": Color(1.0, 0.20, 0.40)},
+			{"name": "Tormentor of Ahriman (Lv.52)", "lv": 52, "hp": 3500, "atk": 164, "bounty": 2300, "farr_u": 80, "farr_v": 3100, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.32, 0.06, 0.14), "accent": Color(1.0, 0.15, 0.35)},
+			{"name": "ARCH-DAEVA OF DESPAIR", "lv": 53, "hp": 7200, "atk": 165, "bounty": 5500, "farr_u": 95, "farr_v": 6200, "pos": Vector3(0.0, 0.0, -22.0), "scale": 3.8, "range": 5.4, "aggro": 12.0, "body": Color(0.40, 0.06, 0.18), "accent": Color(1.0, 0.15, 0.40), "is_pit_boss": true},
+		],
+	},
+
+	"dungeon_sky_sanctum": {
+		"id": "dungeon_sky_sanctum",
+		"name": "The Celestial Seal Sanctum",
+		"category": "DUNGEON_VAULT",
+		"owner_faction": "all",
+		"level_band": "Lv.50-55 (Apex Raid)",
+		"farming_focus": "ENDGAME_RAID",
+		"terrain_theme": "HOLY_TEMPLE",
+		"ground_color": Color(0.40, 0.38, 0.32),
+		"sky_top": Color(0.24, 0.22, 0.16),
+		"sky_horizon": Color(0.65, 0.58, 0.40),
+		"boss_pit": {"pos": Vector3(0.0, 0.0, -22.0), "radius": 12.0, "name": "Apex of the Sky Seal Pit"},
+		"summon_beacon": {"name": "Celestial Sanctum Beacon", "pos": Vector3(0.0, 0.0, 18.0), "col": Color(1.0, 0.95, 0.45)},
+		"pit_boss": {
+			"name": "CELESTIAL SERAPH OF ASHA", "title": "Apex Raid Boss", "lv": 55, "hp": 8000, "atk": 180, "bounty": 6500,
+			"farr_u": 110, "farr_v": 7500, "pos": Vector3(0.0, 0.0, -22.0), "scale": 4.0, "range": 5.6, "aggro": 12.5,
+			"body": Color(0.92, 0.88, 0.78), "accent": Color(1.0, 0.95, 0.50), "is_pit_boss": true
+		},
+		"spawns": {"sveleitre": Vector3(-24.0, 0.1, 24.0), "order": Vector3(24.0, 0.1, 24.0), "legion": Vector3(0.0, 0.1, -28.0)},
+		"refineries": [{"name": "Apex Celestial Light Refinery", "pos": Vector3(0.0, 0.0, 0.0)}],
+		"npcs": [{"name": "Seraphic Herald of Truth", "title": "Apex Rebirth Scribe", "type": "REBIRTH", "faction": "all", "pos": Vector3(6.0, 0.0, 4.0), "body": Color(0.50, 0.45, 0.35), "accent": Color(1.0, 0.95, 0.50)}],
+		"veins": [{"name": "Celestial Radiant Farr Spire", "pos": Vector3(-16.0, 0.0, -10.0), "scale": 1.45, "max_units": 12, "yield": 30, "val": 85, "dur": 1.4, "col": Color(1.0, 0.95, 0.45)}],
+		"portals": [
+			{"title": "Down Gate -> Sky-Fracture Pinnacle", "target": "sky_fracture_ridge", "pos": Vector3(0.0, 0.0, 36.0), "col": Color(0.5, 0.95, 1.0)},
+		],
+		"enemies": [
+			{"name": "Celestial Sun-Valkyrie (Lv.52)", "lv": 52, "hp": 3600, "atk": 168, "bounty": 2400, "farr_u": 85, "farr_v": 3300, "pos": Vector3(-12.0, 0.0, -10.0), "scale": 1.35, "body": Color(0.55, 0.50, 0.40), "accent": Color(1.0, 0.95, 0.50)},
+			{"name": "Archon Seraphic Sentinel (Lv.54)", "lv": 54, "hp": 4100, "atk": 178, "bounty": 2800, "farr_u": 95, "farr_v": 3700, "pos": Vector3(12.0, 0.0, -10.0), "scale": 1.4, "body": Color(0.50, 0.45, 0.35), "accent": Color(1.0, 0.90, 0.45)},
+			{"name": "CELESTIAL SERAPH OF ASHA", "lv": 55, "hp": 8000, "atk": 180, "bounty": 6500, "farr_u": 110, "farr_v": 7500, "pos": Vector3(0.0, 0.0, -22.0), "scale": 4.0, "range": 5.6, "aggro": 12.5, "body": Color(0.92, 0.88, 0.78), "accent": Color(1.0, 0.95, 0.50), "is_pit_boss": true},
 		],
 	},
 }
